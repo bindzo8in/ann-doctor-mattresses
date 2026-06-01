@@ -1,7 +1,7 @@
 import { VerificationTokenType } from "@/app/generated/prisma/enums";
 import prisma from "@/lib/prisma";
 import { getFieldErrors } from "@/lib/utils";
-import { verifyEmailSchema } from "@/lib/verify-email-schema";
+import { verifyEmailSchema } from "@/lib/schema/verify-email-schema";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {

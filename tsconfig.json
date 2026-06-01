@@ -30,6 +30,6 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "next-auth.d.ts"
-  ],
+, "lib/schema", "components/file-upload.bak.tsx"  ],
   "exclude": ["node_modules"]
 }

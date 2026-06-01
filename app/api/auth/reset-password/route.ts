@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { resetPasswordSchema } from "@/lib/reset-password-schema";
+import { resetPasswordSchema } from "@/lib/schema/reset-password-schema";
 import { VerificationTokenType } from "@/app/generated/prisma/enums";
 import { getFieldErrors } from "@/lib/utils";
 

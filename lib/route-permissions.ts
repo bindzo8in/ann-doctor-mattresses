@@ -1,6 +1,7 @@
 // lib/route-permissions.ts
 
 import { UserRole } from "@/app/generated/prisma/enums";
+import { routes } from "./routes";
 
 type RouteConfig = {
   exact: string[];
@@ -9,13 +10,12 @@ type RouteConfig = {
 
 export const roleRoutes: Record<UserRole, RouteConfig> = {
   [UserRole.SUPER_ADMIN]: {
-    exact: ["/dashboard"],
-    nested: ["/dashboard/users", "/dashboard/settings"],
+    exact: [routes.dashboard],
+    nested: [routes.product_create],
   },
 
   [UserRole.CUSTOMER]: {
     exact: [],
-    nested: []
+    nested: [],
   },
-
 };

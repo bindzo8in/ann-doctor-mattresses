@@ -8,11 +8,15 @@ export const routes = {
     resetPassword: "/reset-password",
     home: "/",
 
+    dashboard: "/dashboard",
+    product_create: "/dashboard/products/create",
 
     api_signup: "/api/auth/signup",
     api_signin: "/api/auth/signin",
     api_verify_token: "/api/auth/verify-token",
-    api_resend_verify_token: "/api/auth/resend-verify-token"
+    api_resend_verify_token: "/api/auth/resend-verify-token",
+
+    api_upload: "/api/upload",
 }
 
 export const publicRoutes = [routes.login, routes.unauthorized, routes.authError, routes.signup, routes.verifyEmail, routes.forgotPassword, routes.resetPassword, routes.home]

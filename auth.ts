@@ -1,56 +1,69 @@
 import NextAuth from "next-auth";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 
+import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
+import bcrypt from "bcryptjs";
+
 import prisma from "./lib/prisma";
 import authConfig from "./auth.config";
-import { routes } from "./lib/routes";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   debug: process.env.NODE_ENV === "development",
 
   adapter: PrismaAdapter(prisma),
 
-  ...authConfig,
+  providers: [
+    Google({
+      allowDangerousEmailAccountLinking: true,
+    }),
 
-  pages: {
-    signIn: routes.login,
-    error: routes.authError,
-  },
+    Credentials({
+      credentials: {
+        email: {},
+        password: {},
+      },
 
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60,
-  },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        const user = await prisma.user.findUnique({
+          where: {
+            email: String(credentials.email).toLowerCase(),
+          },
+        });
+
+        if (!user) {
+          return null;
+        }
+
+        const validPassword = await bcrypt.compare(
+          String(credentials.password),
+          user.password,
+        );
+
+        if (!validPassword) {
+          return null;
+        }
+
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          isActive: user.isActive,
+          emailVerified: user.emailVerified,
+        };
+      },
+    }),
+  ],
+
+  ...authConfig.pages,
+  ...authConfig.session,
 
   callbacks: {
     ...authConfig.callbacks,
-
-    async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.isActive = user.isActive;
-        token.isEmailVerified = !!user.emailVerified;
-
-        token.name = user.name;
-        token.email = user.email;
-      }
-
-      return token;
-    },
-
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.isActive = token.isActive;
-        session.user.isEmailVerified = token.isEmailVerified;
-
-        session.user.name = token.name ?? "";
-        session.user.email = token.email ?? "";
-      }
-
-      return session;
-    },
   },
 });

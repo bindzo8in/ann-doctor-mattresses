@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import prisma from "@/lib/prisma";
 import { getFieldErrors } from "@/lib/utils";
-import { resendVerificationSchema } from "@/lib/resend-verification-schema";
+import { resendVerificationSchema } from "@/lib/schema/resend-verification-schema";
 import { VerificationTokenType } from "@/app/generated/prisma/enums";
 import { env } from "@/env";
 

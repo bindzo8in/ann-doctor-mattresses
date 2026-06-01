@@ -1,6 +1,6 @@
 "use client";
 import * as z from "zod";
-import { formSchema } from "@/lib/signin-schema";
+import { formSchema } from "@/lib/schema/signin-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { motion } from "motion/react";

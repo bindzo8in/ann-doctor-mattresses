@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
-import { formSchema } from "@/lib/signup-schema";
+import { formSchema } from "@/lib/schema/signup-schema";
 import { UserRole, VerificationTokenType } from "@/app/generated/prisma/enums";
 import { getFieldErrors } from "@/lib/utils";
 import { Prisma } from "@/app/generated/prisma/client";

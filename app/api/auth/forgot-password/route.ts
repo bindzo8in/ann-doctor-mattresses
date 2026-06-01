@@ -1,7 +1,7 @@
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { forgotPasswordSchema } from "@/lib/forgot-password-schema";
+import { forgotPasswordSchema } from "@/lib/schema/forgot-password-schema";
 import { VerificationTokenType } from "@/app/generated/prisma/enums";
 import { getFieldErrors } from "@/lib/utils";
 import { env } from "@/env";

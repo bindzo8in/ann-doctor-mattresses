@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-import { forgotPasswordSchema } from "@/lib/forgot-password-schema";
+import { forgotPasswordSchema } from "@/lib/schema/forgot-password-schema";
 
 type Schema = z.infer<typeof forgotPasswordSchema>;
 
