@@ -153,8 +153,13 @@ export function BasicInfoStep({ form }: BasicInfoStepProps) {
       <Controller
         control={form.control}
         name="categoryId"
-        render={({ field }) => (
-          <CategoryCombobox value={field.value} onChange={field.onChange} />
+        render={({ field, fieldState }) => (
+
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel htmlFor="categoryId">Category *</FieldLabel>
+            <CategoryCombobox value={field.value} onChange={field.onChange} />
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
         )}
       />
       <FieldSeparator />

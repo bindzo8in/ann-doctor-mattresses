@@ -36,6 +36,9 @@ export function ProductForm() {
     defaultValues,
   });
 
+  console.log(form.formState.errors);
+  console.table(form.getValues());
+
   async function onSubmit(values: CreateProductInput) {
     try {
       const res = await fetch("/api/products", {

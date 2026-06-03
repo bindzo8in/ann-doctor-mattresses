@@ -24,6 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MATTRESS_SIZE_NAMES } from "@/lib/enum";
+import { AGE_GROUP_OPTIONS, FIRMNESS_OPTIONS, SLEEPING_POSITION_OPTIONS, WEIGHT_GROUP_OPTIONS } from "../constants";
+import { MultiSelect } from "@/components/multi-select";
 
 interface MattressVariantArrayProps {
   form: UseFormReturn<CreateProductInput>;
@@ -45,10 +47,22 @@ export function MattressVariantArray({ form }: MattressVariantArrayProps) {
       length: 72,
       thickness: 4,
 
+      firmness: "MEDIUM",
+
+      comfortLevel: "BALANCED",
+
+      healthBenefits: [],
+
+      recommendedAgeGroups: [],
+
+      recommendedWeightGroups: [],
+
+      recommendedPositions: [],
+
       sku: "",
 
       mrp: 1,
-      salesPrice: 1,
+      salePrice: 1,
 
       isDefault: fields.length === 0,
     });
@@ -197,6 +211,76 @@ export function MattressVariantArray({ form }: MattressVariantArrayProps) {
           </div>
 
           <Controller
+            control={form.control}
+            name={`variants.${index}.firmness`}
+            render={({ field, fieldState }) => (
+              <Field>
+                <FieldLabel>Firmness</FieldLabel>
+
+                <Select value={field.value} onValueChange={field.onChange}>
+                  {FIRMNESS_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </Select>
+                <FieldError errors={[fieldState.error]} />
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name={`variants.${index}.recommendedAgeGroups`}
+            render={({ field, fieldState }) => (
+              <Field>
+                <FieldLabel>Recommended Age Groups</FieldLabel>
+                <MultiSelect
+                  options={[...AGE_GROUP_OPTIONS]}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select Age Groups"
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name={`variants.${index}.recommendedWeightGroups`}
+            render={({ field, fieldState }) => (
+              <Field>
+                <FieldLabel>Recommended Weight Groups</FieldLabel>
+                <MultiSelect
+                  options={[...WEIGHT_GROUP_OPTIONS]}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select Weight Groups"
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={form.control}
+            name={`variants.${index}.recommendedPositions`}
+            render={({ field, fieldState }) => (
+              <Field>
+                <FieldLabel>Recommended Positions</FieldLabel>
+                <MultiSelect
+                  options={[...SLEEPING_POSITION_OPTIONS]}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder="Select Positions"
+                />
+                <FieldError errors={[fieldState.error]} />
+              </Field>
+            )}
+          />
+
+          <Controller
             name={`variants.${index}.sku`}
             control={form.control}
             render={({ field, fieldState }) => (
@@ -236,11 +320,11 @@ export function MattressVariantArray({ form }: MattressVariantArrayProps) {
             />
 
             <Controller
-              name={`variants.${index}.salesPrice`}
+              name={`variants.${index}.salePrice`}
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field>
-                  <FieldLabel>Sales Price</FieldLabel>
+                  <FieldLabel>Sale Price</FieldLabel>
 
                   <Input
                     type="number"

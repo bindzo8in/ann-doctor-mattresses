@@ -1,129 +1,255 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
-@theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
-}
-
+/* Doctor Mattresses Brand Theme - Production Ready */
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+  /* Core Colors - Doctor Mattresses Brand Palette */
+  --background: oklch(1 0 0); /* #FFFFFF - Pure White */
+  --foreground: oklch(0.1 0 0); /* #272424 - Dark Foreground */
+  --card: oklch(1 0 0); /* #FFFFFF - Card Background */
+  --card-foreground: oklch(0.1 0 0); /* #272424 - Card Text */
+  
+  /* Popover Styling */
+  --popover: oklch(1 0 0); /* #FFFFFF */
+  --popover-foreground: oklch(0.1 0 0); /* #272424 */
+  
+  /* Primary - Doctor Mattresses Red */
+  --primary: oklch(0.534 0.219 15.557); /* #DB292D - Brand Red */
+  --primary-foreground: oklch(1 0 0); /* #FFFFFF - White Text */
+  
+  /* Secondary - Dark Green (Store Locator, Success) */
+  --secondary: oklch(0.283 0.072 146.426); /* #1B361C - Deep Green */
+  --secondary-foreground: oklch(1 0 0); /* #FFFFFF - White Text */
+  
+  /* Muted - Light Gray/Surface */
+  --muted: oklch(0.90 0.01 15); /* #F0EAEA - Light Surface */
+  --muted-foreground: oklch(0.4 0.01 0); /* #63666B - Muted Text */
+  
+  /* Accent - Accent Blue */
+  --accent: oklch(0.706 0.105 249.549); /* #89C6E6 - Sky Blue */
+  --accent-foreground: oklch(0.1 0 0); /* #272424 - Dark Text */
+  
+  /* Destructive - Error State */
+  --destructive: oklch(0.534 0.219 15.557); /* #DB292D - Red */
+  --destructive-foreground: oklch(1 0 0); /* #FFFFFF */
+  
+  /* Border - Subtle Pink-Gray */
+  --border: oklch(0.85 0.007 15.557);
+--input: oklch(0.80 0.007 15.557); /* #F0EAEA - Input Background */
+  --ring: oklch(0.534 0.219 15.557); /* #DB292D - Focus Ring */
+  
+  /* Soft Pink Background - Product Sections */
+  --soft-pink: oklch(0.957 0.016 15.557); /* #F2E3E4 - Soft Pink */
+  
+  /* Chart Colors - Professional Palette */
+  --chart-1: oklch(0.534 0.219 15.557); /* Red - Primary Data */
+  --chart-2: oklch(0.706 0.105 249.549); /* Blue - Secondary Data */
+  --chart-3: oklch(0.283 0.072 146.426); /* Green - Success Data */
+  --chart-4: oklch(0.957 0.016 15.557); /* Pink - Accent Data */
+  --chart-5: oklch(0.4 0.01 0); /* Gray - Muted Data */
+  
+  /* Border Radius */
+  --radius: 0.5rem;
+  
+  /* Sidebar - Clean Professional */
+  --sidebar: oklch(1 0 0); /* #FFFFFF - Light Sidebar */
+  --sidebar-foreground: oklch(0.1 0 0); /* #272424 - Dark Text */
+  --sidebar-primary: oklch(0.534 0.219 15.557); /* #DB292D - Active/Hover */
+  --sidebar-primary-foreground: oklch(1 0 0); /* #FFFFFF */
+  --sidebar-accent: oklch(0.90 0.03 15.557); /* #F2E3E4 - Subtle Highlight */
+  --sidebar-accent-foreground: oklch(0.1 0 0); /* #272424 */
+  --sidebar-border: oklch(0.92 0.007 15.557); /* #E0D1D2 - Border */
+  --sidebar-ring: oklch(0.534 0.219 15.557); /* #DB292D - Focus */
+  
+  /* Success Color - Green */
+  --success: oklch(0.283 0.072 146.426); /* #1B361C - Deep Green */
+  --success-foreground: oklch(1 0 0); /* #FFFFFF */
+  
+  /* Warning Color */
+  --warning: oklch(0.7 0.15 75); /* Golden/Orange */
+  --warning-foreground: oklch(0.1 0 0); /* Dark Text */
+  
+  /* Info Color */
+  --info: oklch(0.706 0.105 249.549); /* #89C6E6 - Blue */
+  --info-foreground: oklch(0.1 0 0); /* Dark Text */
 }
 
+/* Dark Theme - Maintains brand consistency */
 .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
-    --chart-1: oklch(0.87 0 0);
-    --chart-2: oklch(0.556 0 0);
-    --chart-3: oklch(0.439 0 0);
-    --chart-4: oklch(0.371 0 0);
-    --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
+  --background: oklch(0.15 0 0); /* Deep Dark */
+  --foreground: oklch(0.95 0 0); /* Light Text */
+  --card: oklch(0.18 0 0); /* Dark Card */
+  --card-foreground: oklch(0.95 0 0); /* Light Text */
+  
+  --popover: oklch(0.18 0 0); /* Dark Popover */
+  --popover-foreground: oklch(0.95 0 0); /* Light Text */
+  
+  /* Primary - Lighter Red for Dark Mode */
+  --primary: oklch(0.62 0.219 15.557); /* Brighter Red */
+  --primary-foreground: oklch(0.15 0 0); /* Dark Text */
+  
+  /* Secondary - Light Green */
+  --secondary: oklch(0.4 0.072 146.426); /* Lighter Green */
+  --secondary-foreground: oklch(0.95 0 0); /* Light Text */
+  
+  --muted: oklch(0.27 0 0); /* Dark Muted */
+  --muted-foreground: oklch(0.7 0 0); /* Light Muted Text */
+  
+--accent: oklch(0.93 0.03 15.557);
+--accent-foreground: oklch(0.1 0 0); /* Dark Text */
+  
+  --destructive: oklch(0.62 0.219 15.557); /* Bright Red */
+  --destructive-foreground: oklch(0.15 0 0); /* Dark Text */
+  
+  --border: oklch(0.27 0 0); /* Dark Border */
+  --input: oklch(0.22 0 0); /* Dark Input */
+  --ring: oklch(0.62 0.219 15.557); /* Bright Red Focus */
+  
+  --soft-pink: oklch(0.27 0.016 15.557); /* Dark Pink */
+  
+  /* Dark Mode Charts */
+  --chart-1: oklch(0.62 0.219 15.557); /* Bright Red */
+  --chart-2: oklch(0.75 0.105 249.549); /* Bright Blue */
+  --chart-3: oklch(0.4 0.072 146.426); /* Light Green */
+  --chart-4: oklch(0.35 0.016 15.557); /* Dark Pink */
+  --chart-5: oklch(0.65 0.01 0); /* Light Gray */
+  
+  --sidebar: oklch(0.18 0 0); /* Dark Sidebar */
+  --sidebar-foreground: oklch(0.95 0 0); /* Light Text */
+  --sidebar-primary: oklch(0.62 0.219 15.557); /* Bright Red */
+  --sidebar-primary-foreground: oklch(0.15 0 0); /* Dark Text */
+  --sidebar-accent: oklch(0.27 0.016 15.557); /* Dark Pink */
+  --sidebar-accent-foreground: oklch(0.95 0 0); /* Light Text */
+  --sidebar-border: oklch(0.27 0 0); /* Dark Border */
+  --sidebar-ring: oklch(0.62 0.219 15.557); /* Bright Red */
+  
+  --success: oklch(0.4 0.072 146.426); /* Light Green */
+  --success-foreground: oklch(0.15 0 0); /* Dark Text */
+  
+  --warning: oklch(0.78 0.15 75); /* Bright Gold */
+  --warning-foreground: oklch(0.15 0 0); /* Dark Text */
+  
+  --info: oklch(0.75 0.105 249.549); /* Bright Blue */
+  --info-foreground: oklch(0.15 0 0); /* Dark Text */
+}
+
+@theme inline {
+  --font-sans: 'Geist', 'Geist Fallback';
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-soft-pink: var(--soft-pink);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
-    }
+    @apply border-border;
+  }
   body {
     @apply bg-background text-foreground;
-    }
-  html {
-    @apply font-sans;
-    }
+  }
+  
+  /* Premium Typography Defaults */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  /* Product Card Styling */
+  .product-card {
+    @apply bg-card border border-border rounded-lg overflow-hidden transition-shadow;
+  }
+  
+  .product-card:hover {
+    @apply shadow-lg;
+  }
+  
+  /* CTA Hierarchy - Doctor Mattresses Red Primary */
+  .btn-primary {
+    @apply bg-primary text-primary-foreground transition-colors;
+  }
+  
+  .btn-primary:hover {
+    @apply opacity-90;
+  }
+  
+  .btn-primary:active {
+    @apply opacity-75;
+  }
+  
+  /* Secondary CTA - Green for alt actions */
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground transition-colors;
+  }
+  
+  .btn-secondary:hover {
+    @apply opacity-90;
+  }
+  
+  .btn-secondary:active {
+    @apply opacity-75;
+  }
+  
+  /* Section Background - Soft Pink for Product Showcase */
+  .section-soft-pink {
+    @apply bg-soft-pink;
+  }
+}
+
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
 }

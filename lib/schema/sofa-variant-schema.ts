@@ -12,7 +12,7 @@ export const sofaVariantSchema = z.object({
 
   mrp: z.number().positive(),
 
-  salesPrice: z.number().positive(),
+  salePrice: z.number().positive(),
 
   isDefault: z.boolean(),
 });

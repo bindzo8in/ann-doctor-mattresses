@@ -9,6 +9,71 @@ export const PRODUCT_STEPS = [
   "FAQs",
 ] as const;
 
+export const MATTRESS_SIZES = [
+  { value: "Single", label: "Single" },
+  { value: "Double", label: "Double" },
+  { value: "Queen", label: "Queen" },
+  { value: "King", label: "King" },
+] as const;
+
+export const FIRMNESS_OPTIONS = [
+  { value: "SOFT", label: "Soft" },
+  { value: "MEDIUM_SOFT", label: "Medium Soft" },
+  { value: "MEDIUM", label: "Medium" },
+  { value: "MEDIUM_FIRM", label: "Medium Firm" },
+  { value: "FIRM", label: "Firm" },
+] as const;
+
+export const COMFORT_LEVEL_OPTIONS = [
+  { value: "PLUSH", label: "Plush" },
+  { value: "BALANCED", label: "Balanced" },
+  { value: "SUPPORTIVE", label: "Supportive" },
+] as const;
+
+export const AGE_GROUP_OPTIONS = [
+  { value: "KIDS", label: "Kids" },
+  { value: "TEEN", label: "Teen" },
+  { value: "ADULT", label: "Adult" },
+  { value: "SENIOR", label: "Senior" },
+] as const;
+
+export const WEIGHT_GROUP_OPTIONS = [
+  { value: "UNDER_60", label: "Under 60 kg" },
+  { value: "KG_60_80", label: "60 - 80 kg" },
+  { value: "KG_80_100", label: "80 - 100 kg" },
+  { value: "OVER_100", label: "Over 100 kg" },
+] as const;
+
+export const SLEEPING_POSITION_OPTIONS = [
+  { value: "SIDE", label: "Side Sleeper" },
+  { value: "BACK", label: "Back Sleeper" },
+  { value: "STOMACH", label: "Stomach Sleeper" },
+  { value: "COMBINATION", label: "Combination Sleeper" },
+] as const;
+
+export const HEALTH_BENEFIT_OPTIONS = [
+  {
+    value: "ORTHOPEDIC",
+    label: "Orthopedic Support",
+  },
+  {
+    value: "BACK_PAIN_RELIEF",
+    label: "Back Pain Relief",
+  },
+  {
+    value: "PRESSURE_RELIEF",
+    label: "Pressure Relief",
+  },
+  {
+    value: "COOLING",
+    label: "Cooling Comfort",
+  },
+  {
+    value: "MOTION_ISOLATION",
+    label: "Motion Isolation",
+  },
+] as const;
+
 export const defaultValues: CreateProductInput = {
   name: "",
   slug: "",
@@ -17,7 +82,7 @@ export const defaultValues: CreateProductInput = {
 
   shortDescription: [],
 
-  description: "",
+  // description: "",
 
   categoryId: "",
 
@@ -31,6 +96,8 @@ export const defaultValues: CreateProductInput = {
 
   specifications: [],
 
+  sectionsHeading: "",
+
   sections: [
     {
       type: "FEATURES_WITH_IMAGE",
@@ -39,7 +106,7 @@ export const defaultValues: CreateProductInput = {
       content: {
         description: "",
         image: null,
-        features: [],
+        features: [{ title: "", description: "" }],
       },
     },
 

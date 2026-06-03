@@ -22,9 +22,9 @@ export const createProductSchema = z
 
     shortDescription: z.array(tagSchema),
 
-    description: z.string().optional(),
+    // description: z.string().optional(),
 
-    categoryId: z.string(),
+    categoryId: z.string().nonempty(),
 
     thumbnail: imageSchema.nullable(),
     // thumbnailUrl: z.url(),
@@ -39,6 +39,8 @@ export const createProductSchema = z
 
     specifications: z.array(productSpecificationSchema),
 
+    sectionsHeading: z.string().nonempty(),
+
     sections: z.array(productSectionSchema),
 
     faqs: z.array(productFaqSchema),
@@ -48,6 +50,13 @@ export const createProductSchema = z
       .min(1, "At least one variant is required"),
   })
   .superRefine((data, ctx) => {
+    if (data.thumbnail?.url === null || data.thumbnail?.publicId === null) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["thumbnail"],
+        message: "Thumbnail is required",
+      });
+    }
     if (
       data.type === "MATTRESS" &&
       data.variants.some((v) => v.variantType !== "MATTRESS")

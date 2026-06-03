@@ -106,7 +106,7 @@ model Product {
   type ProductType
 
   shortDescription  String[] @default([])
-  description       String?
+  // description       String?
   // price       Float
   categoryId        String
   thumbnailUrl      String
@@ -123,6 +123,7 @@ model Product {
   images         ProductImage[]
   variants       ProductVariant[]
   specifications ProductSpecification[]
+  sectionHeading String
   sections       ProductSection[]
   faqs           ProductFaq[]
 
@@ -141,6 +142,49 @@ model ProductImage {
   sortOrder Int @default(0)
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+enum Firmness {
+  SOFT
+  MEDIUM_SOFT
+  MEDIUM
+  MEDIUM_FIRM
+  FIRM
+}
+
+enum AgeGroup {
+  KIDS
+  TEEN
+  ADULT
+  SENIOR
+}
+
+enum WeightGroup {
+  UNDER_60
+  KG_60_80
+  KG_80_100
+  OVER_100
+}
+
+enum SleepingPosition {
+  SIDE
+  BACK
+  STOMACH
+  COMBINATION
+}
+
+enum ComfortLevel {
+  PLUSH
+  BALANCED
+  SUPPORTIVE
+}
+
+enum HealthBenefit {
+  ORTHOPEDIC
+  BACK_PAIN_RELIEF
+  PRESSURE_RELIEF
+  COOLING
+  MOTION_ISOLATION
 }
 
 model ProductVariant {
@@ -174,10 +218,25 @@ model MattressVariant {
 
   thickness Int
 
+  firmness        Firmness
+
+  recommendedAgeGroups AgeGroup[] @default([])
+
+  recommendedWeightGroups WeightGroup[] @default([])
+
+  recommendedPositions SleepingPosition[] @default([])
+
+  comfortLevel ComfortLevel
+
+  healthBenefits HealthBenefit[] @default([])
+  
   variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
   @@index([sizeName])
   @@index([thickness])
+  @@index([firmness])
+  @@index([comfortLevel])
+  // @@index([isOrthopedic])
 }
 
 model SofaVariant {
@@ -216,7 +275,7 @@ model ProductSection {
 
   productId String
 
-  title String
+  // title String
 
   type String
 

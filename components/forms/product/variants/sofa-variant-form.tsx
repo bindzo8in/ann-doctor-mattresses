@@ -51,7 +51,7 @@ export function SofaVariantArray({ form }: SofaVariantArrayProps) {
 
       mrp: 1,
 
-      salesPrice: 1,
+      salePrice: 1,
 
       isDefault: fields.length === 0, // Set the first variant as default by default
     });
@@ -221,11 +221,11 @@ export function SofaVariantArray({ form }: SofaVariantArrayProps) {
             />
 
             <Controller
-              name={`variants.${index}.salesPrice`}
+              name={`variants.${index}.salePrice`}
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field>
-                  <FieldLabel>Sales Price</FieldLabel>
+                  <FieldLabel>Sale Price</FieldLabel>
 
                   <Input
                     type="number"
