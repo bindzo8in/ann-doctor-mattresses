@@ -21,6 +21,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  
+  // Pagination State
+  const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   // Detail Sheet state
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
@@ -117,7 +123,7 @@ export default function OrdersPage() {
               </tr>
             </thead>
             <tbody>
-              ${selectedOrder.items.map((item: any) => {
+              ${selectedOrder.items.slice(0, 3).map((item: any) => {
                 const isBogo = item.quantityFree > 0;
                 const qtyText = isBogo 
                   ? `${item.quantity} total <span style="font-size: 8px; font-weight: normal;">(${item.quantityPurchased} Paid + ${item.quantityFree} Free)</span>`
@@ -132,6 +138,13 @@ export default function OrdersPage() {
                   </tr>
                 `;
               }).join("")}
+              ${selectedOrder.items.length > 3 ? `
+                <tr>
+                  <td colspan="2" style="text-align: center; font-style: italic; padding-top: 4px; font-weight: bold;">
+                    + ${selectedOrder.items.length - 3} more items (See Invoice)
+                  </td>
+                </tr>
+              ` : ""}
             </tbody>
           </table>
         </div>
@@ -147,216 +160,239 @@ export default function OrdersPage() {
       `;
     }
 
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Shipping Label - ${selectedOrder.orderNumber}</title>
-        <style>
-          @page {
-            size: 4in 6in;
-            margin: 0;
-          }
-          html, body {
-            margin: 0;
-            padding: 0;
-            width: 4in;
-            height: 6in;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            background-color: #fff;
-            color: #000;
-          }
-          .label-container {
-            border: 3px solid #000;
-            width: 4in;
-            height: 6in;
-            box-sizing: border-box;
-            padding: 8px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-          }
-          .header {
-            border-bottom: 2px solid #000;
-            padding-bottom: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          }
-          .logo {
-            font-weight: 900;
-            font-size: 11px;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-          }
-          .badge {
-            border: 2px solid #000;
-            padding: 2px 6px;
-            font-weight: 900;
-            font-size: 11px;
-            text-transform: uppercase;
-            background-color: #000;
-            color: #fff;
-          }
-          .barcode-section {
-            border-bottom: 2px solid #000;
-            padding: 4px 0;
-            text-align: center;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-          }
-          .barcode-svg {
-            max-height: 60px;
-            width: 90%;
-          }
-          .addresses {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-          }
-          .section-title {
-            font-size: 8px;
-            text-transform: uppercase;
-            font-weight: 900;
-            color: #000;
-            margin-bottom: 2px;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid #000;
-            width: fit-content;
-            padding-bottom: 1px;
-          }
-          .from-section {
-            border-bottom: 1px dashed #000;
-            padding: 4px 0;
-            font-size: 9px;
-          }
-          .to-section {
-            padding: 6px 0;
-            flex-grow: 1;
-          }
-          .address-name {
-            font-size: 12px;
-            font-weight: 900;
-            margin-bottom: 2px;
-            text-transform: uppercase;
-          }
-          .address-details {
-            font-size: 10px;
-            font-weight: 500;
-            line-height: 1.3;
-          }
-          .address-phone {
-            font-size: 11px;
-            font-weight: 900;
-            margin-top: 4px;
-            border: 1.5px solid #000;
-            display: inline-block;
-            padding: 1px 6px;
-            text-transform: uppercase;
-          }
-          .items-section {
-            border-top: 2px solid #000;
-            padding-top: 4px;
-            font-size: 8px;
-          }
-          .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 2px;
-          }
-          .items-table th {
-            border-bottom: 1px solid #000;
-            text-align: left;
-            font-weight: 900;
-            font-size: 8px;
-            text-transform: uppercase;
-          }
-          .items-table td {
-            padding: 2px 0;
-            vertical-align: top;
-            font-size: 8px;
-            border-bottom: 0.5px solid #eee;
-          }
-          .notes-section {
-            border-top: 1.5px solid #000;
-            padding-top: 3px;
-            font-size: 7.5px;
-            margin-top: 4px;
-            line-height: 1.2;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="label-container">
-          <div class="header">
-            <div class="logo">Ann Doctor Mattresses</div>
-            <div class="badge">${printLabelType}</div>
-          </div>
-          
-          <div class="barcode-section">
-            <div class="barcode-svg">
-              ${barcodeSvgString}
-            </div>
-          </div>
-          
-          <div class="addresses">
-            <div class="from-section">
-              <div class="section-title">Sender (From)</div>
-              <div class="address-name">${printFromName}</div>
-              <div class="address-details">
-                ${printFromAddress1}${printFromAddress2 ? ", " + printFromAddress2 : ""}
-                ${printFromPhone ? "<br/>Phone: " + printFromPhone : ""}
-              </div>
-            </div>
-            
-            <div class="to-section">
-              <div class="section-title">Ship To (Recipient)</div>
-              <div class="address-name">${printToName}</div>
-              <div class="address-details">
-                ${printToAddress1}
-                ${printToAddress2 ? "<br/>" + printToAddress2 : ""}
-                <br/>
-                <strong style="font-size: 11px;">${printToCity.toUpperCase()}, ${printToState.toUpperCase()} - ${printToPincode}</strong>
-              </div>
-              <div class="address-phone">Phone: ${printToPhone}</div>
-            </div>
-          </div>
-          
-          ${itemsHtml}
-          ${notesHtml}
+    printWindow.document.head.innerHTML = `
+      <title>Shipping Label - ${selectedOrder.orderNumber}</title>
+      <style>
+        @page {
+          size: 4in 6in;
+          margin: 0;
+        }
+        html, body {
+          margin: 0;
+          padding: 0;
+          width: 4in;
+          height: 6in;
+          box-sizing: border-box;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+          background-color: #fff;
+          color: #000;
+        }
+        .label-container {
+          border: 3px solid #000;
+          width: 4in;
+          height: 6in;
+          box-sizing: border-box;
+          padding: 8px;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+        .header {
+          border-bottom: 2px solid #000;
+          padding-bottom: 4px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .logo {
+          font-weight: 900;
+          font-size: 11px;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+        }
+        .badge {
+          border: 2px solid #000;
+          padding: 2px 6px;
+          font-weight: 900;
+          font-size: 11px;
+          text-transform: uppercase;
+          background-color: #000;
+          color: #fff;
+        }
+        .barcode-section {
+          border-bottom: 2px solid #000;
+          padding: 4px 0;
+          text-align: center;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        .barcode-svg {
+          max-height: 60px;
+          width: 90%;
+        }
+        .addresses {
+          flex-grow: 1;
+          display: flex;
+          flex-direction: column;
+        }
+        .section-title {
+          font-size: 8px;
+          text-transform: uppercase;
+          font-weight: 900;
+          color: #000;
+          margin-bottom: 2px;
+          letter-spacing: 0.5px;
+          border-bottom: 1px solid #000;
+          width: fit-content;
+          padding-bottom: 1px;
+        }
+        .from-section {
+          border-bottom: 1px dashed #000;
+          padding: 4px 0;
+          font-size: 9px;
+        }
+        .to-section {
+          padding: 6px 0;
+          flex-grow: 1;
+        }
+        .address-name {
+          font-size: 12px;
+          font-weight: 900;
+          margin-bottom: 2px;
+          text-transform: uppercase;
+        }
+        .address-details {
+          font-size: 10px;
+          font-weight: 500;
+          line-height: 1.3;
+        }
+        .address-phone {
+          font-size: 11px;
+          font-weight: 900;
+          margin-top: 4px;
+          border: 1.5px solid #000;
+          display: inline-block;
+          padding: 1px 6px;
+          text-transform: uppercase;
+        }
+        .items-section {
+          border-top: 2px solid #000;
+          padding-top: 4px;
+          font-size: 8px;
+        }
+        .items-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 2px;
+        }
+        .items-table th {
+          border-bottom: 1px solid #000;
+          text-align: left;
+          font-weight: 900;
+          font-size: 8px;
+          text-transform: uppercase;
+        }
+        .items-table td {
+          padding: 2px 0;
+          vertical-align: top;
+          font-size: 8px;
+          border-bottom: 0.5px solid #eee;
+        }
+        .notes-section {
+          border-top: 1.5px solid #000;
+          padding-top: 3px;
+          font-size: 7.5px;
+          margin-top: 4px;
+          line-height: 1.2;
+        }
+      </style>
+    `;
+
+    printWindow.document.body.innerHTML = `
+      <div class="label-container">
+        <div class="header">
+          <div class="logo">Ann Doctor Mattresses</div>
+          <div class="badge">${printLabelType}</div>
         </div>
         
-        <script>
-          window.onload = function() {
-            setTimeout(function() {
-              window.print();
-              window.close();
-            }, 500);
-          };
-        </script>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
+        <div class="barcode-section">
+          <div class="barcode-svg">
+            ${barcodeSvgString}
+          </div>
+        </div>
+        
+        <div class="addresses">
+          <div class="from-section">
+            <div class="section-title">Sender (From)</div>
+            <div class="address-name">${printFromName}</div>
+            <div class="address-details">
+              ${printFromAddress1}${printFromAddress2 ? ", " + printFromAddress2 : ""}
+              ${printFromPhone ? "<br/>Phone: " + printFromPhone : ""}
+            </div>
+          </div>
+          
+          <div class="to-section">
+            <div class="section-title">Ship To (Recipient)</div>
+            <div class="address-name">${printToName}</div>
+            <div class="address-details">
+              ${printToAddress1}
+              ${printToAddress2 ? "<br/>" + printToAddress2 : ""}
+              <br/>
+              <strong style="font-size: 11px;">${printToCity.toUpperCase()}, ${printToState.toUpperCase()} - ${printToPincode}</strong>
+            </div>
+            <div class="address-phone">Phone: ${printToPhone}</div>
+          </div>
+        </div>
+        
+        ${itemsHtml}
+        ${notesHtml}
+      </div>
+    `;
+
+    printWindow.setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+
     setIsPrintModalOpen(false);
   };
 
-  const fetchOrders = () => {
+  const fetchOrders = (cursor: string | null = null) => {
     setIsLoading(true);
-    fetch("/api/admin/orders", { credentials: "include" })
+    
+    const url = cursor 
+      ? `/api/admin/orders?cursor=${cursor}&limit=10` 
+      : "/api/admin/orders?limit=10";
+
+    fetch(url, { credentials: "include" })
       .then(res => res.json())
-      .then(data => setOrders(Array.isArray(data) ? data : []))
+      .then(data => {
+        if (data.orders) {
+          setOrders(data.orders);
+          setNextCursor(data.nextCursor || null);
+        } else {
+          setOrders(Array.isArray(data) ? data : []);
+          setNextCursor(null);
+        }
+      })
       .catch(err => {
         console.error(err);
         toast.error("Failed to load orders");
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        setIsLoading(false);
+        setIsLoadingMore(false);
+      });
+  };
+
+  const handleNextPage = () => {
+    if (!nextCursor) return;
+    const nextHistory = [...cursorHistory.slice(0, currentIndex + 1), nextCursor];
+    setCursorHistory(nextHistory);
+    setCurrentIndex(currentIndex + 1);
+    fetchOrders(nextCursor);
+  };
+
+  const handlePrevPage = () => {
+    if (currentIndex <= 0) return;
+    const prevIndex = currentIndex - 1;
+    setCurrentIndex(prevIndex);
+    fetchOrders(cursorHistory[prevIndex]);
   };
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(null);
   }, []);
 
   const handleOpenSheet = (order: any) => {
@@ -376,20 +412,21 @@ export default function OrdersPage() {
     setPrintToState(addr.state || "");
     setPrintToPincode(addr.postalCode || "");
     setPrintNotes(order.notes || "");
-    setPrintLabelType(order.status === "PENDING_PAYMENT" ? "COD" : "PREPAID");
+    setPrintLabelType("PREPAID");
   };
 
-  const handleUpdateOrder = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdateOrder = async (e?: React.FormEvent, overrideStatus?: string) => {
+    if (e) e.preventDefault();
     if (!selectedOrder) return;
 
     setIsUpdating(true);
+    const finalStatus = overrideStatus || status;
     try {
       const res = await fetch(`/api/admin/orders/${selectedOrder.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          status,
+          status: finalStatus,
           courierName: courierName || null,
           trackingNumber: trackingNumber || null,
           trackingUrl: trackingUrl || null,
@@ -454,6 +491,53 @@ export default function OrdersPage() {
     { label: "Refunded", value: "REFUNDED" },
   ];
 
+  const getNextStatusOptions = (currentStatus: string) => {
+    switch (currentStatus) {
+      case "PENDING_PAYMENT":
+        return [
+          { value: "PAID", label: "Mark as Paid", variant: "default" },
+          { value: "CANCELLED", label: "Cancel Order", variant: "destructive" }
+        ];
+      case "PAID":
+        return [
+          { value: "PENDING_ASSIGNMENT", label: "Pending Assignment", variant: "default" },
+          { value: "REFUNDED", label: "Refund Order", variant: "destructive" }
+        ];
+      case "PENDING_ASSIGNMENT":
+        return [
+          { value: "ASSIGNED", label: "Assign Branch", variant: "default" },
+          { value: "CANCELLED", label: "Cancel Order", variant: "destructive" }
+        ];
+      case "ASSIGNED":
+        return [
+          { value: "PROCESSING", label: "Start Processing", variant: "default" },
+          { value: "CANCELLED", label: "Cancel Order", variant: "destructive" }
+        ];
+      case "PROCESSING":
+        return [
+          { value: "SHIPPED", label: "Mark as Shipped", variant: "default" },
+          { value: "CANCELLED", label: "Cancel Order", variant: "destructive" }
+        ];
+      case "SHIPPED":
+        return [
+          { value: "OUT_FOR_DELIVERY", label: "Out for Delivery", variant: "default" }
+        ];
+      case "OUT_FOR_DELIVERY":
+        return [
+          { value: "DELIVERED", label: "Mark as Delivered", variant: "default" }
+        ];
+      case "DELIVERED":
+        return [
+          { value: "REFUNDED", label: "Refund Order", variant: "destructive" }
+        ];
+      case "CANCELLED":
+      case "REFUNDED":
+        return [];
+      default:
+        return [];
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-8 flex justify-center">
@@ -469,7 +553,7 @@ export default function OrdersPage() {
           <h1 className="text-2xl font-bold text-slate-900">Orders Management</h1>
           <p className="text-sm text-slate-500">Track user payments, assign shipping details, and modify status.</p>
         </div>
-        <Button onClick={fetchOrders} variant="outline" size="sm">
+        <Button onClick={() => fetchOrders(null)} variant="outline" size="sm">
           Refresh List
         </Button>
       </div>
@@ -522,6 +606,26 @@ export default function OrdersPage() {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="flex items-center justify-end space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handlePrevPage}
+          disabled={currentIndex === 0 || isLoading}
+        >
+          Previous
+        </Button>
+        <div className="text-sm font-medium px-2">Page {currentIndex + 1}</div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleNextPage}
+          disabled={!nextCursor || isLoading}
+        >
+          Next
+        </Button>
       </div>
 
       {/* Slide-out Order Details & Edit Sheet */}
@@ -587,20 +691,58 @@ export default function OrdersPage() {
                 </div>
               )}
 
-              {/* Status Update */}
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Order Status</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  {statusOptions.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
+              {/* Status Update UI */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border">
+                  <div>
+                    <p className="text-[10px] uppercase font-semibold text-slate-500 mb-1">Current Status</p>
+                    {getStatusBadge(selectedOrder.status)}
+                  </div>
+                  {status !== selectedOrder.status && (
+                    <div className="text-right">
+                      <p className="text-[10px] uppercase font-semibold text-blue-500 mb-1">Proposed Change</p>
+                      {getStatusBadge(status)}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-slate-700">Quick Actions (Next Steps)</label>
+                  <div className="flex flex-wrap gap-2">
+                    {getNextStatusOptions(selectedOrder.status).length > 0 ? (
+                      getNextStatusOptions(selectedOrder.status).map(opt => (
+                        <Button
+                          key={opt.value}
+                          type="button"
+                          variant={opt.variant as any || "outline"}
+                          size="sm"
+                          onClick={() => handleUpdateOrder(undefined, opt.value)}
+                          disabled={isUpdating}
+                          className={status === opt.value ? "ring-2 ring-primary ring-offset-1" : ""}
+                        >
+                          {opt.label}
+                        </Button>
+                      ))
+                    ) : (
+                      <span className="text-xs text-slate-500 italic">No quick actions available.</span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <label className="text-[10px] uppercase font-semibold text-slate-400 mb-1 block">Manual Override</label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="flex h-8 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  >
+                    {statusOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Courier Tracking Details */}
@@ -651,15 +793,17 @@ export default function OrdersPage() {
               )}
 
               {/* Actions Button Panel */}
-              <div className="space-y-2 border-t pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsPrintModalOpen(true)}
-                  className="w-full gap-2 border-slate-300 hover:bg-slate-50 text-slate-800"
-                >
-                  <Printer className="w-4 h-4" /> Print Shipping Label
-                </Button>
+              <div className="sticky bottom-0 bg-white space-y-2 border-t pt-4 pb-2 z-10 mt-6">
+                {["PAID", "PENDING_ASSIGNMENT", "ASSIGNED", "PROCESSING", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"].includes(selectedOrder.status) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsPrintModalOpen(true)}
+                    className="w-full gap-2 border-slate-300 hover:bg-slate-50 text-slate-800"
+                  >
+                    <Printer className="w-4 h-4" /> Print Shipping Label
+                  </Button>
+                )}
 
                 <Button type="submit" disabled={isUpdating} className="w-full">
                   {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
@@ -673,7 +817,7 @@ export default function OrdersPage() {
 
       {/* Print Shipping Label Modal */}
       <Dialog open={isPrintModalOpen} onOpenChange={setIsPrintModalOpen}>
-        <DialogContent className="max-w-4xl w-full p-6 bg-white overflow-y-auto max-h-[90vh]">
+        <DialogContent className="sm:max-w-4xl w-full p-4 sm:p-6 bg-white overflow-y-auto max-h-[90vh]">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-slate-900 flex items-center gap-2">
               <Printer className="w-5 h-5 text-slate-600" /> Print Shipping Label
@@ -690,7 +834,7 @@ export default function OrdersPage() {
                 <div className="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wider">Live Sticker Preview (4" x 6")</div>
                 
                 {/* Visual Representation of Sticker */}
-                <div className="bg-white text-black border-[3px] border-black w-[300px] h-[450px] p-3 flex flex-col justify-between overflow-hidden shadow-md font-sans">
+                <div className="bg-white text-black border-[3px] border-black w-full max-w-[300px] aspect-[2/3] p-3 flex flex-col justify-between overflow-hidden shadow-md font-sans shrink-0">
                   {/* Header */}
                   <div className="border-b-2 border-black pb-1 flex justify-between items-center">
                     <span className="font-extrabold text-[11px] uppercase tracking-wide">Ann Doctor Mattresses</span>
@@ -738,7 +882,7 @@ export default function OrdersPage() {
                     <div className="border-t-2 border-black pt-1">
                       <div className="text-[7px] uppercase font-black tracking-wider text-slate-700">Package Contents</div>
                       <div className="text-[7.5px] max-h-[60px] overflow-hidden space-y-0.5 mt-0.5">
-                        {selectedOrder.items.map((item: any) => {
+                        {selectedOrder.items.slice(0, 3).map((item: any) => {
                           const isBogo = item.quantityFree > 0;
                           return (
                             <div key={item.id} className="flex justify-between font-bold leading-tight">
@@ -747,6 +891,11 @@ export default function OrdersPage() {
                             </div>
                           );
                         })}
+                        {selectedOrder.items.length > 3 && (
+                          <div className="text-center font-bold italic text-[6px] mt-1 text-slate-700">
+                            + {selectedOrder.items.length - 3} more items (See Invoice)
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

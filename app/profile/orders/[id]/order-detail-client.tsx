@@ -19,6 +19,7 @@ interface OrderDetailClientProps {
     id: string;
     orderNumber: string;
     createdAt: Date;
+    updatedAt: Date;
     status: string;
     subTotal: number;
     discountTotal: number;
@@ -265,24 +266,24 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
           // Purchased Line
           doc.text(item.productName, 18, currentY + 6);
           doc.text(String(item.quantityPurchased), 120, currentY + 6);
-          doc.text(`Rs. ${formatPrice(item.unitPrice)}`, 145, currentY + 6);
-          doc.text(`Rs. ${formatPrice(item.totalPaid)}`, 175, currentY + 6);
+          doc.text(`₹ ${formatPrice(item.unitPrice)}`, 145, currentY + 6);
+          doc.text(`₹ ${formatPrice(item.totalPaid)}`, 175, currentY + 6);
 
           currentY += 8;
 
           // Free Line
           doc.text(`Free ${item.productName}`, 18, currentY + 6);
           doc.text(String(item.quantityFree), 120, currentY + 6);
-          doc.text("Rs. 0", 145, currentY + 6);
-          doc.text("Rs. 0", 175, currentY + 6);
+          doc.text("₹ 0", 145, currentY + 6);
+          doc.text("₹ 0", 175, currentY + 6);
 
           currentY += 10;
         } else {
           // Regular Line
           doc.text(item.productName, 18, currentY + 6);
           doc.text(String(item.quantity), 120, currentY + 6);
-          doc.text(`Rs. ${formatPrice(item.price)}`, 145, currentY + 6);
-          doc.text(`Rs. ${formatPrice(item.price * item.quantity)}`, 175, currentY + 6);
+          doc.text(`₹ ${formatPrice(item.price)}`, 145, currentY + 6);
+          doc.text(`₹ ${formatPrice(item.price * item.quantity)}`, 175, currentY + 6);
 
           currentY += 10;
         }
@@ -297,19 +298,19 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.text("Subtotal:", 130, currentY);
-      doc.text(`Rs. ${formatPrice(order.subTotal)}`, 175, currentY);
+      doc.text(`₹ ${formatPrice(order.subTotal)}`, 175, currentY);
 
       if (order.discountTotal > 0) {
         currentY += 5;
         doc.setTextColor(16, 185, 129); // Green BOGO discount
         doc.text("BOGO Discount:", 130, currentY);
-        doc.text(`-Rs. ${formatPrice(order.discountTotal)}`, 175, currentY);
+        doc.text(`-₹ ${formatPrice(order.discountTotal)}`, 175, currentY);
         doc.setTextColor(30, 41, 59); // reset color
       }
 
       currentY += 5;
       doc.text("Shipping Charge:", 130, currentY);
-      doc.text(order.shippingTotal === 0 ? "Free" : `Rs. ${formatPrice(order.shippingTotal)}`, 175, currentY);
+      doc.text(order.shippingTotal === 0 ? "Free" : `₹ ${formatPrice(order.shippingTotal)}`, 175, currentY);
 
       currentY += 8;
       doc.setDrawColor(15, 23, 42);
@@ -318,7 +319,7 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
       currentY += 6;
       doc.setFont("helvetica", "bold");
       doc.text("Grand Total (INR):", 130, currentY);
-      doc.text(`Rs. ${formatPrice(order.totalAmount)}`, 175, currentY);
+      doc.text(`₹ ${formatPrice(order.totalAmount)}`, 175, currentY);
 
       // Disclaimer Notes
       currentY += 25;
@@ -451,13 +452,22 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
                             <span className="text-xs font-bold">{index + 1}</span>
                           )}
                         </div>
-                        <span
-                          className={`text-xs font-semibold whitespace-nowrap ${
-                            isActive ? "text-slate-900" : "text-slate-500"
-                          }`}
-                        >
-                          {stepItem.label}
-                        </span>
+                        <div className="text-center">
+                          <span
+                            className={`text-xs font-semibold whitespace-nowrap block ${
+                              isActive ? "text-slate-900" : "text-slate-500"
+                            }`}
+                          >
+                            {stepItem.label}
+                          </span>
+                          {(index === 0 || isActive) && isCompleted && (
+                            <span className="text-[10px] text-slate-400 block mt-0.5 whitespace-nowrap">
+                              {new Date(index === 0 ? order.createdAt : order.updatedAt).toLocaleDateString('en-IN', {
+                                day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+                              })}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       {index < timelineSteps.length - 1 && (
                         <div

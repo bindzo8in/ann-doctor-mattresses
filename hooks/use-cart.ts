@@ -98,7 +98,10 @@ const useCartStore = create<CartStore>((set, get) => ({
         body: JSON.stringify({ productId, variantId, quantity }),
       });
       if (res.status === 401) throw new Error("UNAUTHORIZED");
-      if (!res.ok) throw new Error("Failed to add to cart");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to add to cart");
+      }
       
       // Re-fetch to sync with backend
       await get().fetchCart();
@@ -126,7 +129,10 @@ const useCartStore = create<CartStore>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cartItemId, quantity }),
       });
-      if (!res.ok) throw new Error("Failed to update cart quantity");
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to update cart quantity");
+      }
       
       await get().fetchCart();
       set({ isUpdatingQuantity: false });

@@ -28,7 +28,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const { searchParams } = new URL(req.url);
+    const cursor = searchParams.get("cursor");
+    const limit = parseInt(searchParams.get("limit") || "100");
+
     const orders = await prisma.order.findMany({
+      take: limit + 1,
+      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
       orderBy: { createdAt: "desc" },
       include: {
         customer: { select: { name: true, email: true } },
@@ -36,7 +42,14 @@ export async function GET(req: NextRequest) {
         items: true,
       }
     });
-    return NextResponse.json(orders);
+
+    let nextCursor: typeof cursor | undefined = undefined;
+    if (orders.length > limit) {
+      const nextItem = orders.pop();
+      nextCursor = nextItem!.id;
+    }
+
+    return NextResponse.json({ orders, nextCursor });
   } catch (error) {
     console.error("Admin Orders GET Error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });

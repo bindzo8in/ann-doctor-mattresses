@@ -11,10 +11,23 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const { searchParams } = new URL(req.url);
+    const cursor = searchParams.get("cursor");
+    const limit = parseInt(searchParams.get("limit") || "100");
+
     const promotions = await prisma.promotion.findMany({
+      take: limit + 1,
+      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
       orderBy: { createdAt: "desc" },
     });
-    return NextResponse.json(promotions);
+
+    let nextCursor: typeof cursor | undefined = undefined;
+    if (promotions.length > limit) {
+      const nextItem = promotions.pop();
+      nextCursor = nextItem!.id;
+    }
+
+    return NextResponse.json({ promotions, nextCursor });
   } catch (error) {
     console.error("Admin Promotions GET Error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });

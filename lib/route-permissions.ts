@@ -16,7 +16,10 @@ export const roleRoutes: Record<UserRole, RouteConfig> = {
       routes.dashboard_products,
       routes.dashboard_orders,
       routes.dashboard_promotions,
+      routes.dashboard_settings,
       routes.checkout,
+      routes.profile,
+      routes.wishlist,
     ],
   },
 
@@ -24,6 +27,7 @@ export const roleRoutes: Record<UserRole, RouteConfig> = {
     exact: [],
     nested: [
       routes.profile,
+      routes.wishlist,
       routes.checkoutSuccess,
     ],
   },

@@ -101,6 +101,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
     }
 
+    if (quantity > 20) {
+      return NextResponse.json({ message: "Maximum quantity per item is 20" }, { status: 400 });
+    }
+
     // Upsert logic for merging quantities
     const existing = await prisma.cartItem.findFirst({
       where: {
@@ -112,9 +116,13 @@ export async function POST(req: NextRequest) {
 
     let cartItem;
     if (existing) {
+      const newQuantity = existing.quantity + quantity;
+      if (newQuantity > 20) {
+        return NextResponse.json({ message: "Maximum quantity per item is 20" }, { status: 400 });
+      }
       cartItem = await prisma.cartItem.update({
         where: { id: existing.id },
-        data: { quantity: existing.quantity + quantity },
+        data: { quantity: newQuantity },
       });
     } else {
       cartItem = await prisma.cartItem.create({
@@ -146,6 +154,10 @@ export async function PATCH(req: NextRequest) {
 
     if (!cartItemId || quantity === undefined || quantity < 1) {
       return NextResponse.json({ message: "Invalid parameters" }, { status: 400 });
+    }
+
+    if (quantity > 20) {
+      return NextResponse.json({ message: "Maximum quantity per item is 20" }, { status: 400 });
     }
 
     const updated = await prisma.cartItem.update({

@@ -12,6 +12,9 @@ import { cancelOrderAction } from "@/actions/checkout";
 import { toast } from "sonner";
 import Script from "next/script";
 
+import Image from "next/image";
+import { getCustomerOrders } from "@/actions/orders";
+
 interface OrderItem {
   id: string;
   orderNumber: string;
@@ -23,15 +26,23 @@ interface OrderItem {
     razorpayOrderId: string;
     status: string;
   }>;
+  items?: Array<{
+    product: {
+      thumbnailUrl: string;
+    };
+  }>;
 }
 
 interface OrdersClientProps {
   initialOrders: OrderItem[];
+  initialNextCursor: string | null;
 }
 
-export function OrdersClient({ initialOrders }: OrdersClientProps) {
+export function OrdersClient({ initialOrders, initialNextCursor }: OrdersClientProps) {
   const [orders, setOrders] = useState<OrderItem[]>(initialOrders);
+  const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const router = useRouter();
 
   const getStatusBadge = (status: string) => {
@@ -83,6 +94,21 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
       toast.error(err.message || "Failed to cancel order");
     } finally {
       setIsProcessing(null);
+    }
+  };
+
+  const handleLoadMore = async () => {
+    if (!nextCursor) return;
+    setIsLoadingMore(true);
+    try {
+      const result = await getCustomerOrders(nextCursor, 10);
+      setOrders(prev => [...prev, ...result.orders as any]);
+      setNextCursor(result.nextCursor);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load more orders");
+    } finally {
+      setIsLoadingMore(false);
     }
   };
 
@@ -179,6 +205,7 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
           <Table>
             <TableHeader className="bg-slate-50">
               <TableRow>
+                <TableHead className="font-semibold text-slate-700 w-16 text-center">Image</TableHead>
                 <TableHead className="font-semibold text-slate-700">Order ID</TableHead>
                 <TableHead className="font-semibold text-slate-700">Date</TableHead>
                 <TableHead className="font-semibold text-slate-700">Total Amount</TableHead>
@@ -189,6 +216,17 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
             <TableBody>
               {orders.map((order) => (
                 <TableRow key={order.id} className="hover:bg-slate-50/50">
+                  <TableCell>
+                    {order.items && order.items[0]?.product?.thumbnailUrl ? (
+                      <div className="relative w-12 h-12 rounded-md overflow-hidden border bg-slate-100 flex-shrink-0">
+                        <Image src={order.items[0].product.thumbnailUrl} alt="Product Thumbnail" fill className="object-cover" />
+                      </div>
+                    ) : (
+                      <div className="w-12 h-12 bg-slate-100 rounded-md border flex items-center justify-center">
+                        <ShoppingBag className="w-5 h-5 text-slate-300" />
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell className="font-bold text-slate-900">{order.orderNumber}</TableCell>
                   <TableCell className="text-slate-600 text-sm">
                     <span className="flex items-center gap-1.5">
@@ -241,6 +279,20 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
               ))}
             </TableBody>
           </Table>
+          
+          {nextCursor && (
+            <div className="p-4 flex justify-center border-t bg-slate-50/50">
+              <Button
+                variant="outline"
+                onClick={handleLoadMore}
+                disabled={isLoadingMore}
+                className="w-full sm:w-auto"
+              >
+                {isLoadingMore ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Load More Orders
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </>

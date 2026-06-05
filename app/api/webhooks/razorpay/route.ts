@@ -66,9 +66,11 @@ export async function POST(req: NextRequest) {
             });
 
             // Empty cart if needed (optional here since frontend verify does it, but safe to do again)
-            await prisma.cartItem.deleteMany({
-              where: { userId: order.customerId },
-            });
+            if (order.checkoutSource === "CART") {
+              await prisma.cartItem.deleteMany({
+                where: { userId: order.customerId },
+              });
+            }
             console.log(`Webhook: Order ${order.orderNumber} successfully paid.`);
           }
         }

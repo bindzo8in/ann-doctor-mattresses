@@ -8,7 +8,11 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
+import { auth } from "@/auth";
+
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
+  const session = await auth();
+
   return (
     <SidebarProvider
       style={
@@ -18,7 +22,7 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
+      <AppSidebar variant="inset" user={session?.user} />
 
       <SidebarInset>
         <SiteHeader />

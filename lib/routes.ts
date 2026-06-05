@@ -16,6 +16,7 @@ export const routes = {
     product_create: "/dashboard/products/create",
     dashboard_orders: "/dashboard/orders",
     dashboard_promotions: "/dashboard/promotions",
+    dashboard_settings: "/dashboard/settings",
 
     profile: "/profile",
     profileOrders: "/profile/orders",
@@ -41,7 +42,4 @@ export const publicRoutes = [
     routes.home,
     routes.products,
     routes.checkout, // Checkout entry page is public, login check is performed inline during action
-    routes.profileOrders,
-    routes.profile,
-    routes.wishlist
 ]

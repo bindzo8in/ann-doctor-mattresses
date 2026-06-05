@@ -4,6 +4,7 @@ import { createProductSchema } from "@/lib/schema/product-form-schema";
 import { getFieldErrors } from "@/lib/utils";
 import { v2 as cloudinary } from "cloudinary";
 import { env } from "@/env";
+import { auth } from "@/auth";
 
 cloudinary.config({
   cloud_name: env.CLOUDINARY_CLOUD_NAME,
@@ -20,6 +21,11 @@ export async function DELETE(
   { params }: RouteProps
 ) {
   try {
+    const session = await auth();
+    if (session?.user?.role !== "SUPER_ADMIN") {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     const { id } = await params;
     
     // Check if product exists
@@ -78,6 +84,11 @@ export async function PUT(
   { params }: RouteProps
 ) {
   try {
+    const session = await auth();
+    if (session?.user?.role !== "SUPER_ADMIN") {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     const { id } = await params;
     const body = await req.json();
     

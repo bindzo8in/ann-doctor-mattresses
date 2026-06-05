@@ -8,6 +8,9 @@ import { routes } from "@/lib/routes";
 import { Button } from "@/components/ui/button";
 import { signOut } from "next-auth/react";
 
+import NavBar from "@/components/layout/nav-bar";
+import NavMarquee from "@/components/layout/nav-marquee";
+
 export default function ProfileLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
@@ -30,25 +33,8 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
 
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col">
-      {/* Mini Profile Header */}
-      <header className="bg-slate-900 text-white py-6 px-4 md:px-8 shadow-sm">
-        <div className="container mx-auto max-w-6xl flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-bold text-lg text-slate-100">
-              C
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">Account Dashboard</h1>
-              <p className="text-xs text-slate-400">Manage your profile, shipping addresses, and track orders</p>
-            </div>
-          </div>
-          <Link href={routes.home}>
-            <Button variant="ghost" className="text-white hover:text-slate-200 hover:bg-slate-800 gap-2">
-              <Home className="w-4 h-4" /> Storefront
-            </Button>
-          </Link>
-        </div>
-      </header>
+      <NavMarquee />
+      <NavBar />
 
       {/* Main Grid Layout */}
       <div className="container mx-auto max-w-6xl py-10 px-4 md:px-8 flex-1">

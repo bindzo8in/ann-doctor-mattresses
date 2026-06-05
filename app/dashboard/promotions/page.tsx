@@ -26,6 +26,12 @@ import { PromotionType } from "@/app/generated/prisma/client";
 export default function PromotionsPage() {
   const [promotions, setPromotions] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | null>(null);
+
+  // Pagination State
+  const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   // Dialog State
   const [isOpen, setIsOpen] = useState(false);
@@ -49,20 +55,51 @@ export default function PromotionsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load promotions list
-  const fetchPromotions = () => {
+  const fetchPromotions = (cursor: string | null = null) => {
     setIsLoading(true);
-    fetch("/api/admin/promotions")
+    
+    const url = cursor 
+      ? `/api/admin/promotions?cursor=${cursor}&limit=10` 
+      : "/api/admin/promotions?limit=10";
+
+    fetch(url)
       .then(res => res.json())
-      .then(data => setPromotions(Array.isArray(data) ? data : []))
+      .then(data => {
+        if (data.promotions) {
+          setPromotions(data.promotions);
+          setNextCursor(data.nextCursor || null);
+        } else {
+          setPromotions(Array.isArray(data) ? data : []);
+          setNextCursor(null);
+        }
+      })
       .catch((err) => {
         console.error(err);
         toast.error("Failed to load promotions");
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        setIsLoading(false);
+        setIsLoadingMore(false);
+      });
+  };
+
+  const handleNextPage = () => {
+    if (!nextCursor) return;
+    const nextHistory = [...cursorHistory.slice(0, currentIndex + 1), nextCursor];
+    setCursorHistory(nextHistory);
+    setCurrentIndex(currentIndex + 1);
+    fetchPromotions(nextCursor);
+  };
+
+  const handlePrevPage = () => {
+    if (currentIndex <= 0) return;
+    const prevIndex = currentIndex - 1;
+    setCurrentIndex(prevIndex);
+    fetchPromotions(cursorHistory[prevIndex]);
   };
 
   useEffect(() => {
-    fetchPromotions();
+    fetchPromotions(null);
 
     // Fetch products/categories lists for selection options
     getPromotionsSelectionData()
@@ -237,6 +274,26 @@ export default function PromotionsPage() {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="flex items-center justify-end space-x-2 mt-4">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handlePrevPage}
+          disabled={currentIndex === 0 || isLoading}
+        >
+          Previous
+        </Button>
+        <div className="text-sm font-medium px-2">Page {currentIndex + 1}</div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleNextPage}
+          disabled={!nextCursor || isLoading}
+        >
+          Next
+        </Button>
       </div>
 
       {/* Promotion Form Dialog */}

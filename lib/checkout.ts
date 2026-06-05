@@ -14,15 +14,23 @@ import { roundPrice } from "@/lib/price";
  *  9     → Far regions                         → ₹350
  *  other → default (unknown)                   → ₹50
  */
-export function getShippingCharge(pincode?: string | null): number {
-  if (!pincode) return 50;
+export async function getShippingCharge(pincode?: string | null): Promise<number> {
+  const zones = await prisma.deliveryZone.findMany();
+  
+  if (!pincode) {
+    const defaultZone = zones.find(z => z.isDefault);
+    return defaultZone ? Number(defaultZone.charge) : 50;
+  }
+  
   const firstDigit = pincode.trim().charAt(0);
-  if (firstDigit === "5" || firstDigit === "6") return 50;
-  if (firstDigit === "1" || firstDigit === "2") return 150;
-  if (firstDigit === "3" || firstDigit === "4") return 150;
-  if (firstDigit === "7" || firstDigit === "8") return 250;
-  if (firstDigit === "9") return 350;
-  return 50; // fallback
+  const matchedZone = zones.find(z => z.pincodePrefixes.includes(firstDigit));
+  
+  if (matchedZone) {
+    return Number(matchedZone.charge);
+  }
+  
+  const defaultZone = zones.find(z => z.isDefault);
+  return defaultZone ? Number(defaultZone.charge) : 50;
 }
 
 export interface CartCalculationResult {
@@ -181,7 +189,7 @@ export async function calculateCartTotals(
   const afterDiscount = subTotal - discountTotal;
 
   // Always charge zone-based delivery — no free-delivery threshold
-  const shippingTotal = getShippingCharge(pincode); // already a whole number
+  const shippingTotal = await getShippingCharge(pincode); // already a whole number
 
   const totalAmount = roundPrice(afterDiscount + shippingTotal);
 

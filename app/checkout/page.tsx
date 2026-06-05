@@ -477,6 +477,16 @@ export default function CheckoutPage() {
                     </Button>
                   )}
 
+                  {step === 2 && totals.totalAmount > 100000 && (
+                    <div className="flex items-start gap-2 p-3 bg-amber-50 text-amber-800 rounded-xl border border-amber-200 text-xs shadow-sm">
+                      <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <span>
+                        <strong className="block mb-0.5">High Value Transaction</strong>
+                        Your total exceeds ₹1,00,000. Please note that standard UPI transfers typically have a limit of ₹1 Lakh per day. We recommend using Net Banking or Credit/Debit Cards for this payment.
+                      </span>
+                    </div>
+                  )}
+
                   {step === 2 && (
                     <Button 
                       className="w-full" 

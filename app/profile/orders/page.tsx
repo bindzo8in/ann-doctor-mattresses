@@ -12,7 +12,7 @@ export default async function OrdersPage() {
     redirect(routes.login);
   }
 
-  const orders = await getCustomerOrders();
+  const { orders, nextCursor } = await getCustomerOrders(null, 10);
 
-  return <OrdersClient initialOrders={orders as any} />;
+  return <OrdersClient initialOrders={orders as any} initialNextCursor={nextCursor} />;
 }

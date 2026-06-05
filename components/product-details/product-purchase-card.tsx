@@ -63,7 +63,7 @@ export function ProductPurchaseCard({ product }: Props) {
         toast.error("Please login to add items to cart");
         router.push(`${routes.login}?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
       } else {
-        toast.error("Failed to add to cart. Please ensure you are logged in.");
+        toast.error(error.message || "Failed to add to cart. Please ensure you are logged in.");
       }
     }
   };

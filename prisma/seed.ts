@@ -491,6 +491,24 @@ async function main() {
   }
   console.log("✅ Order items ready");
 
+  // Create Delivery Zones
+  const zones = [
+    { name: "South India (TN, KA, KL, AP, TS)", pincodePrefixes: ["5", "6"], charge: 50.00, isDefault: false },
+    { name: "North India (Delhi, UP, Rajasthan)", pincodePrefixes: ["1", "2"], charge: 150.00, isDefault: false },
+    { name: "West India (Gujarat, MH)", pincodePrefixes: ["3", "4"], charge: 150.00, isDefault: false },
+    { name: "East India (WB, Odisha, NE)", pincodePrefixes: ["7", "8"], charge: 250.00, isDefault: false },
+    { name: "Far Regions", pincodePrefixes: ["9"], charge: 350.00, isDefault: false },
+    { name: "Default (Rest of India)", pincodePrefixes: [], charge: 50.00, isDefault: true }
+  ];
+
+  await prisma.deliveryZone.deleteMany({});
+  for (const zone of zones) {
+    await prisma.deliveryZone.create({
+      data: zone
+    });
+  }
+  console.log("✅ Delivery Zones ready");
+
   console.log("🎉 Seed completed successfully");
   console.log("--------------------------------------");
   console.log(`Admin Email: ${adminSeed.email}`);
