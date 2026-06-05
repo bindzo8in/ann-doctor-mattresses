@@ -1,0 +1,6 @@
+-- AlterTable
+ALTER TABLE "OrderItem" ADD COLUMN     "offerType" TEXT,
+ADD COLUMN     "quantityFree" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "quantityPurchased" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "totalPaid" DECIMAL(10,2) NOT NULL DEFAULT 0,
+ADD COLUMN     "unitPrice" DECIMAL(10,2) NOT NULL DEFAULT 0;

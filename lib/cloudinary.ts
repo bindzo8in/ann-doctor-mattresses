@@ -8,7 +8,7 @@ cloudinary.config({
   api_secret: env.CLOUDINARY_API_SECRET,
 });
 
-const CLOUDINARY_FOLDER_PREFIX = "yash";
+const CLOUDINARY_FOLDER_PREFIX = "ann-doctor-mattressess";
 
 /**
  * Uploads a file to Cloudinary

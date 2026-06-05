@@ -2,6 +2,7 @@ import { CircleQuestionMark, Heart, Info, ShoppingBag } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
+import { CartDrawer } from "@/components/cart/cart-drawer";
 
 const NavBar = () => {
   const contactInfo = [
@@ -52,9 +53,7 @@ const NavBar = () => {
             <Link aria-label="Wishlist" href="/wishlist">
               <Heart />
             </Link>
-            <Link aria-label="Shopping Cart" href="/cart">
-              <ShoppingBag />
-            </Link>
+            <CartDrawer />
             <Link aria-label="Information" href="/info">
               <Info />
             </Link>

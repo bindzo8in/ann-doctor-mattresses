@@ -19,6 +19,16 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Trash2, Plus } from "lucide-react";
+
 interface Props {
   form: UseFormReturn<CreateProductInput>;
 }
@@ -78,56 +88,90 @@ export function FeaturesSectionForm({
         )}
       />
 
-      <Button
-        type="button"
-        onClick={() =>
-          append({
-            title: "",
-            description: "",
-          })
-        }
-      >
-        Add Feature
-      </Button>
-
-      {fields.map((item, index) => (
-        <div
-          key={item.id}
-          className="border rounded p-4 space-y-3"
+      <div className="flex items-center justify-between mt-6 mb-2">
+        <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Features List</h4>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() =>
+            append({
+              title: "",
+              description: "",
+            })
+          }
         >
-          <Controller
-            name={`sections.0.content.features.${index}.title`}
-            control={form.control}
-            render={({ field }) => (
-              <Input
-                {...field}
-                placeholder="Feature title"
-              />
-            )}
-          />
+          <Plus className="mr-2 h-4 w-4" />
+          Add Feature
+        </Button>
+      </div>
 
-          <Controller
-            name={`sections.0.content.features.${index}.description`}
-            control={form.control}
-            render={({ field }) => (
-              <Textarea
-                {...field}
-                placeholder="Feature description"
-              />
+      <div className="rounded-md border overflow-x-auto max-w-full w-full">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-1/3">Title</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead className="w-[100px] text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {fields.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                  No features added yet.
+                </TableCell>
+              </TableRow>
             )}
-          />
 
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={() =>
-              remove(index)
-            }
-          >
-            Remove
-          </Button>
-        </div>
-      ))}
+            {fields.map((item, index) => (
+              <TableRow key={item.id}>
+                <TableCell className="align-top pt-4">
+                  <Controller
+                    name={`sections.0.content.features.${index}.title`}
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <div className="space-y-1">
+                        <Input {...field} placeholder="Feature title" />
+                        <FieldError errors={[fieldState.error]} />
+                      </div>
+                    )}
+                  />
+                </TableCell>
+
+                <TableCell className="align-top pt-4">
+                  <Controller
+                    name={`sections.0.content.features.${index}.description`}
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <div className="space-y-1">
+                        <Textarea
+                          {...field}
+                          className="min-h-[80px]"
+                          placeholder="Feature description"
+                        />
+                        <FieldError errors={[fieldState.error]} />
+                      </div>
+                    )}
+                  />
+                </TableCell>
+
+                <TableCell className="align-top pt-4 text-right">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive/90"
+                    onClick={() => remove(index)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

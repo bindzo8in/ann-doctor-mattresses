@@ -4,10 +4,10 @@ import { z } from "zod";
 export const env = createEnv({
   server: {
     DATABASE_URL: z.url(),
-    AUTH_SECRET: z.string().min(1),
-    // RAZORPAY_KEY_ID: z.string().min(1),
-    // RAZORPAY_KEY_SECRET: z.string().min(1),
-    // RAZORPAY_WEBHOOK_SECRET: z.string().min(1),
+    AUTH_SECRET: z.string().nonempty(),
+    // RAZORPAY_KEY_ID: z.string().nonempty(),
+    RAZORPAY_KEY_SECRET: z.string().nonempty(),
+    RAZORPAY_WEBHOOK_SECRET: z.string().min(1),
     // RESEND_API_KEY: z.string().min(1),
     CLOUDINARY_CLOUD_NAME: z.string().min(1),
     CLOUDINARY_API_KEY: z.string().min(1),
@@ -17,8 +17,8 @@ export const env = createEnv({
     // AUTH_TRUST_HOST: z.coerce.boolean().default(true),
   },
   client: {
-    // NEXT_PUBLIC_RAZORPAY_KEY_ID: z.string().min(1),
-    NEXT_PUBLIC_SITE_URL: z.string().url(),
+    NEXT_PUBLIC_RAZORPAY_KEY_ID: z.string().nonempty(),
+    NEXT_PUBLIC_SITE_URL: z.url(),
     // NEXT_PUBLIC_SITE_NAME: z.string(),
     // NEXT_PUBLIC_EMAIL_ENGINE_MAIL: z.string().email(),
     // NEXT_PUBLIC_ADMIN_EMAIL: z.string().email(),
@@ -26,8 +26,9 @@ export const env = createEnv({
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     AUTH_SECRET: process.env.AUTH_SECRET,
-    // NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-    // RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
+    RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET,
+    NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+    RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
     // RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET,
     CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,

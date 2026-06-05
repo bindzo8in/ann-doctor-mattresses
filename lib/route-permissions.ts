@@ -11,11 +11,20 @@ type RouteConfig = {
 export const roleRoutes: Record<UserRole, RouteConfig> = {
   [UserRole.SUPER_ADMIN]: {
     exact: [routes.dashboard],
-    nested: [routes.product_create],
+    nested: [
+      routes.product_create,
+      routes.dashboard_products,
+      routes.dashboard_orders,
+      routes.dashboard_promotions,
+      routes.checkout,
+    ],
   },
 
   [UserRole.CUSTOMER]: {
     exact: [],
-    nested: [],
+    nested: [
+      routes.profile,
+      routes.checkoutSuccess,
+    ],
   },
 };

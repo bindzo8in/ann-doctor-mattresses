@@ -8,8 +8,6 @@ export const sofaVariantSchema = z.object({
   // color: z.string().optional(),
   shape: z.string().optional(),
 
-  sku: z.string().min(1),
-
   mrp: z.number().positive(),
 
   salePrice: z.number().positive(),

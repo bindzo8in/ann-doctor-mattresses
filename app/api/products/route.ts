@@ -35,6 +35,23 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       )
     }
+    const existingProduct = await prisma.product.findUnique({
+      where: { slug: data.slug },
+    });
+
+    if (existingProduct) {
+      return NextResponse.json(
+        {
+          success: false,
+          errors: {
+            slug: {
+              message: "A product with this slug already exists. Please choose a unique slug.",
+            }
+          },
+        },
+        { status: 400 },
+      );
+    }
           
     const product = await prisma.product.create({
       data: {
@@ -58,10 +75,18 @@ export async function POST(req: NextRequest) {
             data: data.specifications,
           },
         },
+        ...(data.type === "MATTRESS" ? {
+          firmness: data.firmness,
+          comfortLevel: data.comfortLevel,
+          healthBenefits: data.healthBenefits,
+          recommendedAgeGroups: data.recommendedAgeGroups,
+          recommendedWeightGroups: data.recommendedWeightGroups,
+          recommendedPositions: data.recommendedPositions,
+        } : {}),
         sections: {
           create: data.sections.map((section) => ({
             type: section.type,
-            content: section.content,
+            content: { ...(section.content as any), title: section.title },
             sortOrder: section.sortOrder,
           })),
         },
@@ -71,7 +96,6 @@ export async function POST(req: NextRequest) {
         },
         variants: {
           create: data.variants.map((variant) => ({
-            sku: variant.sku,
             mrp: variant.mrp,
             salePrice: variant.salePrice,
             isDefault: variant.isDefault,
@@ -84,12 +108,6 @@ export async function POST(req: NextRequest) {
                       width: variant.width,
                       length: variant.length,
                       thickness: variant.thickness,
-                      firmness: variant.firmness,
-                      recommendedAgeGroups: variant.recommendedAgeGroups,
-                      recommendedWeightGroups: variant.recommendedWeightGroups,
-                      recommendedPositions: variant.recommendedPositions,
-                      comfortLevel: variant.comfortLevel,
-                      healthBenefits: variant.healthBenefits,
                     },
                   },
                 }

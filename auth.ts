@@ -60,8 +60,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
 
-  ...authConfig.pages,
-  ...authConfig.session,
+  pages: authConfig.pages,
+  session: authConfig.session,
 
   callbacks: {
     ...authConfig.callbacks,

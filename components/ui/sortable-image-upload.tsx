@@ -275,7 +275,7 @@ export function SortableImageUpload({
         </label>
       )}
 
-      {value.length > 0 && (
+      {value.filter((img) => img && img.url).length > 0 && (
         <>
           <DndContext
             collisionDetection={closestCenter}
@@ -293,7 +293,9 @@ export function SortableImageUpload({
                   md:grid-cols-4
                 "
               >
-                {value.map((image) => (
+                {value
+                  .filter((image) => image && image.url)
+                  .map((image) => (
                   <SortableCard
                     key={image.publicId}
                     image={image}
@@ -304,7 +306,7 @@ export function SortableImageUpload({
             </SortableContext>
           </DndContext>
 
-          {value.length > 1 && (
+          {value.filter((img) => img && img.url).length > 1 && (
             <div className="flex justify-end">
               <Button
                 type="button"

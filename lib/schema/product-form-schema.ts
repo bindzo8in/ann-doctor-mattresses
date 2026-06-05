@@ -6,6 +6,14 @@ import { faqSchema as productFaqSchema } from "./faq-schema";
 import { specificationSchema as productSpecificationSchema } from "./specification-schema";
 import { productVariantSchema } from "./product-variant-schema";
 import { imageSchema } from "./image-schema";
+import {
+  firmnessEnum,
+  comfortLevelEnum,
+  healthBenefitEnum,
+  ageGroupEnum,
+  weightGroupEnum,
+  sleepingPositionEnum,
+} from "./mattress-variant-schema";
 
 export const tagSchema = z.object({
   id: z.string(),
@@ -14,19 +22,22 @@ export const tagSchema = z.object({
 
 export const createProductSchema = z
   .object({
-    name: z.string().min(3),
+    name: z.string().min(3, "Name must be at least 3 characters long"),
 
-    slug: z.string().min(3),
+    slug: z.string().min(3, "Slug must be at least 3 characters long"),
 
     type: z.enum(["MATTRESS", "SOFA"]),
 
-    shortDescription: z.array(tagSchema),
+    shortDescription: z.array(tagSchema).nonempty("Add at least one short description"),
 
     // description: z.string().optional(),
 
-    categoryId: z.string().nonempty(),
+    categoryId: z.string().nonempty("Please select a category"),
 
-    thumbnail: imageSchema.nullable(),
+    thumbnail: imageSchema.refine(
+      (data) => data.url !== null && data.publicId !== null,
+      { message: "Thumbnail is required" }
+    ),
     // thumbnailUrl: z.url(),
 
     // thumbnailPublicId: z.string(),
@@ -35,7 +46,7 @@ export const createProductSchema = z
 
     isActive: z.boolean(),
 
-    images: z.array(productImageSchema),
+    images: z.array(productImageSchema).refine((data) => data.length > 0, "At least one image is required"),
 
     specifications: z.array(productSpecificationSchema),
 
@@ -45,18 +56,19 @@ export const createProductSchema = z
 
     faqs: z.array(productFaqSchema),
 
+    firmness: firmnessEnum.optional(),
+    comfortLevel: comfortLevelEnum.optional(),
+    healthBenefits: z.array(healthBenefitEnum).optional(),
+    recommendedAgeGroups: z.array(ageGroupEnum).optional(),
+    recommendedWeightGroups: z.array(weightGroupEnum).optional(),
+    recommendedPositions: z.array(sleepingPositionEnum).optional(),
+
     variants: z
       .array(productVariantSchema)
       .min(1, "At least one variant is required"),
   })
   .superRefine((data, ctx) => {
-    if (data.thumbnail?.url === null || data.thumbnail?.publicId === null) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["thumbnail"],
-        message: "Thumbnail is required",
-      });
-    }
+
     if (
       data.type === "MATTRESS" &&
       data.variants.some((v) => v.variantType !== "MATTRESS")
@@ -66,6 +78,27 @@ export const createProductSchema = z
         path: ["variants"],
         message: "Only mattress variants are allowed",
       });
+    }
+
+    if (data.type === "MATTRESS") {
+      if (!data.firmness) {
+        ctx.addIssue({ code: "custom", path: ["firmness"], message: "Firmness is required for mattresses" });
+      }
+      if (!data.comfortLevel) {
+        ctx.addIssue({ code: "custom", path: ["comfortLevel"], message: "Comfort Level is required for mattresses" });
+      }
+      if (!data.healthBenefits || data.healthBenefits.length === 0) {
+        ctx.addIssue({ code: "custom", path: ["healthBenefits"], message: "At least one health benefit must be selected" });
+      }
+      if (!data.recommendedAgeGroups || data.recommendedAgeGroups.length === 0) {
+        ctx.addIssue({ code: "custom", path: ["recommendedAgeGroups"], message: "At least one age group must be selected" });
+      }
+      if (!data.recommendedWeightGroups || data.recommendedWeightGroups.length === 0) {
+        ctx.addIssue({ code: "custom", path: ["recommendedWeightGroups"], message: "At least one weight group must be selected" });
+      }
+      if (!data.recommendedPositions || data.recommendedPositions.length === 0) {
+        ctx.addIssue({ code: "custom", path: ["recommendedPositions"], message: "At least one sleeping position must be selected" });
+      }
     }
 
     if (

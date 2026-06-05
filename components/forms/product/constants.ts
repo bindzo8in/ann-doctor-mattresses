@@ -3,6 +3,7 @@ import { CreateProductInput } from "@/lib/schema/product-form-schema";
 export const PRODUCT_STEPS = [
   "Basic Info",
   "Media",
+  "Mattress Attributes",
   "Variants",
   "Specifications",
   "Sections",
@@ -10,10 +11,10 @@ export const PRODUCT_STEPS = [
 ] as const;
 
 export const MATTRESS_SIZES = [
-  { value: "Single", label: "Single" },
-  { value: "Double", label: "Double" },
-  { value: "Queen", label: "Queen" },
-  { value: "King", label: "King" },
+  { value: "SINGLE", label: "Single", width: 36, length: 72 },
+  { value: "DOUBLE", label: "Double", width: 48, length: 72 },
+  { value: "QUEEN", label: "Queen", width: 60, length: 72 },
+  { value: "KING", label: "King", width: 72, length: 72 },
 ] as const;
 
 export const FIRMNESS_OPTIONS = [
@@ -84,9 +85,19 @@ export const defaultValues: CreateProductInput = {
 
   // description: "",
 
+  firmness: "MEDIUM",
+  comfortLevel: "BALANCED",
+  healthBenefits: [],
+  recommendedAgeGroups: [],
+  recommendedWeightGroups: [],
+  recommendedPositions: [],
+
   categoryId: "",
 
-  thumbnail: null,
+  thumbnail: {
+    url: "",
+    publicId: "",
+  },
   // thumbnailUrl: "",
   // thumbnailPublicId: "",
 

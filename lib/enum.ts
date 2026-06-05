@@ -17,9 +17,10 @@ export const productSectionTypeSchema = z.enum([
 ]);
 
 export const MATTRESS_SIZE_NAMES = [
-  "Single",
-  "Double",
-  "Queen",
-  "King",
+  "SINGLE",
+  "DOUBLE",
+  "QUEEN",
+  "KING",
+  "CUSTOM",
 ] as const;
 

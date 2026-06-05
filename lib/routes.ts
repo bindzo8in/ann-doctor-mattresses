@@ -7,9 +7,19 @@ export const routes = {
     forgotPassword: "/forgot-password",
     resetPassword: "/reset-password",
     home: "/",
+    products: "/products",
+    checkout: "/checkout",
+    checkoutSuccess: "/checkout/success",
 
     dashboard: "/dashboard",
+    dashboard_products: "/dashboard/products",
     product_create: "/dashboard/products/create",
+    dashboard_orders: "/dashboard/orders",
+    dashboard_promotions: "/dashboard/promotions",
+
+    profile: "/profile",
+    profileOrders: "/profile/orders",
+    wishlist: "/wishlist",
 
     api_signup: "/api/auth/signup",
     api_signin: "/api/auth/signin",
@@ -19,4 +29,19 @@ export const routes = {
     api_upload: "/api/upload",
 }
 
-export const publicRoutes = [routes.login, routes.unauthorized, routes.authError, routes.signup, routes.verifyEmail, routes.forgotPassword, routes.resetPassword, routes.home]
+// Routes in this array do not require user authentication (accessible by anyone)
+export const publicRoutes = [
+    routes.login,
+    routes.unauthorized,
+    routes.authError,
+    routes.signup,
+    routes.verifyEmail,
+    routes.forgotPassword,
+    routes.resetPassword,
+    routes.home,
+    routes.products,
+    routes.checkout, // Checkout entry page is public, login check is performed inline during action
+    routes.profileOrders,
+    routes.profile,
+    routes.wishlist
+]

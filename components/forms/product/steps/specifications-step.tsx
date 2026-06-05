@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import {
   Controller,
   useFieldArray,
@@ -14,9 +15,17 @@ import { Input } from "@/components/ui/input";
 import {
   Field,
   FieldError,
-  FieldLabel,
-  FieldSeparator,
 } from "@/components/ui/field";
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Trash2, Plus } from "lucide-react";
 
 interface SpecificationsStepProps {
   form: UseFormReturn<CreateProductInput>;
@@ -38,96 +47,85 @@ export function SpecificationsStep({
     });
   }
 
+  useEffect(() => {
+    if (form.getValues("specifications").length === 0) {
+      addSpecification();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">
-          Specifications
-        </h3>
-
-        <Button
-          type="button"
-          onClick={addSpecification}
-        >
+        <h3 className="text-lg font-medium">Specifications</h3>
+        <Button type="button" onClick={addSpecification} size="sm" variant="outline">
+          <Plus className="mr-2 h-4 w-4" />
           Add Specification
         </Button>
       </div>
 
-      {fields.length === 0 && (
-        <div className="text-sm text-muted-foreground">
-          No specifications added yet.
-        </div>
-      )}
-
-      {fields.map((item, index) => (
-        <div
-          key={item.id}
-          className="rounded-lg border p-4 space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <h4 className="font-medium">
-              Specification #{index + 1}
-            </h4>
-
-            <Button
-              type="button"
-              variant="destructive"
-              size="sm"
-              onClick={() => remove(index)}
-            >
-              Remove
-            </Button>
-          </div>
-
-          <FieldSeparator />
-
-          <Controller
-            name={`specifications.${index}.label`}
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field
-                data-invalid={fieldState.invalid}
-              >
-                <FieldLabel>
-                  Label
-                </FieldLabel>
-
-                <Input
-                  {...field}
-                  placeholder="Warranty"
-                />
-
-                <FieldError
-                  errors={[fieldState.error]}
-                />
-              </Field>
+      <div className="rounded-md border overflow-x-auto max-w-full w-full">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Label</TableHead>
+              <TableHead>Value</TableHead>
+              <TableHead className="w-[100px] text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {fields.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
+                  No specifications added yet.
+                </TableCell>
+              </TableRow>
             )}
-          />
 
-          <Controller
-            name={`specifications.${index}.value`}
-            control={form.control}
-            render={({ field, fieldState }) => (
-              <Field
-                data-invalid={fieldState.invalid}
-              >
-                <FieldLabel>
-                  Value
-                </FieldLabel>
+            {fields.map((item, index) => (
+              <TableRow key={item.id}>
+                <TableCell className="align-top pt-4">
+                  <Controller
+                    name={`specifications.${index}.label`}
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <div className="space-y-1">
+                        <Input {...field} placeholder="Warranty" />
+                        <FieldError errors={[fieldState.error]} />
+                      </div>
+                    )}
+                  />
+                </TableCell>
 
-                <Input
-                  {...field}
-                  placeholder="10 Years"
-                />
+                <TableCell className="align-top pt-4">
+                  <Controller
+                    name={`specifications.${index}.value`}
+                    control={form.control}
+                    render={({ field, fieldState }) => (
+                      <div className="space-y-1">
+                        <Input {...field} placeholder="10 Years" />
+                        <FieldError errors={[fieldState.error]} />
+                      </div>
+                    )}
+                  />
+                </TableCell>
 
-                <FieldError
-                  errors={[fieldState.error]}
-                />
-              </Field>
-            )}
-          />
-        </div>
-      ))}
+                <TableCell className="align-top pt-4 text-right">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive/90"
+                    onClick={() => remove(index)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

@@ -9,7 +9,7 @@ export const productSectionSchema = z.discriminatedUnion(
     z.object({
       type: z.literal("FEATURES_WITH_IMAGE"),
 
-      title: z.string().min(1),
+      title: z.string().optional(),
 
       sortOrder: z.number(),
 
@@ -39,7 +39,7 @@ export const productSectionSchema = z.discriminatedUnion(
     z.object({
       type: z.literal("CUSTOM"),
 
-      title: z.string().min(1),
+      title: z.string().optional(),
 
       sortOrder: z.number(),
 

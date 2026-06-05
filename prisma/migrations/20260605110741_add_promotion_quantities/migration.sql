@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Promotion" ADD COLUMN     "buyQuantity" INTEGER NOT NULL DEFAULT 1,
+ADD COLUMN     "getQuantity" INTEGER NOT NULL DEFAULT 1;

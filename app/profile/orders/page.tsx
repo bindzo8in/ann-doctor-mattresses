@@ -1,0 +1,18 @@
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
+import { routes } from "@/lib/routes";
+import { getCustomerOrders } from "@/actions/orders";
+import { OrdersClient } from "./orders-client";
+
+export const dynamic = "force-dynamic";
+
+export default async function OrdersPage() {
+  const session = await auth();
+  if (!session?.user) {
+    redirect(routes.login);
+  }
+
+  const orders = await getCustomerOrders();
+
+  return <OrdersClient initialOrders={orders as any} />;
+}

@@ -62,11 +62,11 @@ export function ImageUpload({
   const [deleting, setDeleting] =
     useState(false);
 
-  const images = Array.isArray(value)
+  const images = (Array.isArray(value)
     ? value
     : value
       ? [value]
-      : [];
+      : []).filter((img) => img && img.url);
 
   async function handleUpload(
     event: React.ChangeEvent<HTMLInputElement>,
@@ -86,7 +86,8 @@ export function ImageUpload({
 
         if (
           value &&
-          !Array.isArray(value)
+          !Array.isArray(value) &&
+          value.publicId
         ) {
           await deleteImage(
             value.publicId,

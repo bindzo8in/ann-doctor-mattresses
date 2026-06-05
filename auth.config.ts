@@ -27,6 +27,10 @@ export default {
       if (isApiAuthRoute || isPublicRoute) {
         return true;
       }
+      console.log("isApiAuthRoute",isApiAuthRoute,)
+      console.log("isPublicRoute",isPublicRoute)
+      console.log("isLoggedIn",isLoggedIn)
+      
 
       if (!isLoggedIn) {
         const signInUrl = nextUrl.clone();

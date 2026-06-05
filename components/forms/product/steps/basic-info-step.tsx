@@ -36,6 +36,7 @@ import { CategoryCombobox } from "../category-combobox";
 
 interface BasicInfoStepProps {
   form: UseFormReturn<CreateProductInput>;
+  isEditMode?: boolean;
 }
 
 const PRODUCT_TYPES = [
@@ -49,7 +50,7 @@ const PRODUCT_TYPES = [
   },
 ];
 
-export function BasicInfoStep({ form }: BasicInfoStepProps) {
+export function BasicInfoStep({ form, isEditMode }: BasicInfoStepProps) {
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* NAME */}
@@ -93,20 +94,30 @@ export function BasicInfoStep({ form }: BasicInfoStepProps) {
             <FieldLabel>Product Type</FieldLabel>
 
             <RadioGroup
+              disabled={isEditMode}
               value={field.value}
               onValueChange={(newType) => {
                 if (newType === field.value) return;
 
                 const variants = form.getValues("variants");
 
+                const confirmed = window.confirm(
+                  "Changing the product type will reset all variants and type-specific attributes. Continue?"
+                );
+
+                if (!confirmed) return;
+
                 if (variants.length > 0) {
-                  const confirmed = window.confirm(
-                    "Changing the product type will remove all existing variants. Continue?",
-                  );
-
-                  if (!confirmed) return;
-
                   form.setValue("variants", []);
+                }
+
+                if (newType === "SOFA") {
+                  form.setValue("firmness", "" as any);
+                  form.setValue("comfortLevel", "" as any);
+                  form.setValue("healthBenefits", []);
+                  form.setValue("recommendedAgeGroups", []);
+                  form.setValue("recommendedWeightGroups", []);
+                  form.setValue("recommendedPositions", []);
                 }
 
                 field.onChange(newType);
@@ -176,24 +187,6 @@ export function BasicInfoStep({ form }: BasicInfoStepProps) {
 
             <TagInput tags={field.value} setTags={field.onChange} />
 
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
-        )}
-      />
-
-      {/* DESCRIPTION */}
-      <Controller
-        name="description"
-        control={form.control}
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid} className="gap-1 w-full">
-            <FieldLabel htmlFor="description">Description</FieldLabel>
-            <Textarea
-              {...field}
-              id="description"
-              placeholder="Enter the product description..."
-              className="resize-none"
-            />
             {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
           </Field>
         )}
