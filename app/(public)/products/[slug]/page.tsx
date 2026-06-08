@@ -2,12 +2,13 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProductBySlug, getRelatedProducts } from "@/actions/product-details";
 import { ProductGallery } from "@/components/product-details/product-gallery";
-import { ProductPurchaseCard } from "@/components/product-details/product-purchase-card";
-import { SpecificationTable } from "@/components/product-details/specification-table";
+import { ProductPurchaseCardV2 } from "@/components/product-details/product-purchase-card-v2";
+import { SpecificationTableV2 } from "@/components/product-details/specification-table-v2";
 import { ProductSectionsRenderer } from "@/components/product-details/product-sections-renderer";
-import { FaqAccordion } from "@/components/product-details/faq-accordion";
+import { FaqAccordionV2 } from "@/components/product-details/faq-accordion-v2";
+import { HelpCircle } from "lucide-react";
 import { RelatedProductsCarousel } from "@/components/product-details/related-products-carousel";
-import { MattressRecommendationSection } from "@/components/product-details/mattress-recommendation-section";
+import { ProductReviews } from "@/components/product-details/product-reviews";
 import { Separator } from "@/components/ui/separator";
 
 interface Props {
@@ -17,6 +18,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
+  console.log(product)
 
   if (!product) {
     return {
@@ -73,50 +75,59 @@ export default async function ProductDetailsPage({ params }: Props) {
       />
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Top Section: Gallery & Purchase Card */}
+        {/* Top Section: Purchase Card (Left) & Gallery (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:gap-16">
-          <div className="w-full">
-            <ProductGallery images={product.images} />
+          <div className="w-full order-2 lg:order-1">
+            <ProductPurchaseCardV2 product={product} />
           </div>
-          <div className="w-full">
-            <ProductPurchaseCard product={product} />
+          <div className="w-full order-1 lg:order-2">
+            <ProductGallery images={product.images} />
           </div>
         </div>
 
         <Separator className="my-12" />
 
         {/* Product Details Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Main Content Area (Sections & Specs) */}
-          <div className="lg:col-span-2 space-y-12">
-            <ProductSectionsRenderer sections={product.sections} />
-            
-            {product.specifications.length > 0 && (
-              <div id="specifications">
-                <h2 className="text-2xl font-bold tracking-tight mb-6">Specifications</h2>
-                <SpecificationTable specifications={product.specifications} />
-              </div>
-            )}
-          </div>
+        <div className="space-y-16">
+          {product.specifications.length > 0 && (
+            <div id="specifications" className="max-w-6xl mx-auto">
+              <SpecificationTableV2 specifications={product.specifications} />
+            </div>
+          )}
           
-          {/* Sidebar Area (Recommendations & Highlights) */}
-          <div className="space-y-8">
-            {product.type === "MATTRESS" && (
-              <MattressRecommendationSection product={product} />
-            )}
+          <div className="max-w-6xl mx-auto">
+            <ProductSectionsRenderer sections={product.sections} sectionHeading={product.sectionHeading} />
           </div>
         </div>
 
         {/* FAQs Section */}
         {product.faqs.length > 0 && (
-          <>
-            <Separator className="my-12" />
-            <div className="max-w-3xl mx-auto">
-              <h2 className="text-2xl font-bold tracking-tight mb-6 text-center">Frequently Asked Questions</h2>
-              <FaqAccordion faqs={product.faqs} />
+          <div className="py-16">
+            <h2 className="text-4xl font-extrabold tracking-tight mb-12 flex flex-col items-center justify-center">
+              FAQs
+              <div className="w-16 h-1 bg-red-600 mt-2 rounded-full"></div>
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
+              <div>
+                <FaqAccordionV2 faqs={product.faqs} />
+              </div>
+              <div className="hidden md:flex justify-center items-center">
+                <div className="relative w-80 h-80 flex items-center justify-center">
+                   <HelpCircle className="w-64 h-64 text-red-100 drop-shadow-xl" />
+                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                     <span className="text-6xl font-black text-red-600 opacity-80">?</span>
+                   </div>
+                </div>
+              </div>
             </div>
-          </>
+          </div>
         )}
+
+        {/* Product Reviews */}
+        <Separator className="my-12" />
+        <div className="max-w-4xl mx-auto">
+          <ProductReviews productId={product.id} />
+        </div>
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (

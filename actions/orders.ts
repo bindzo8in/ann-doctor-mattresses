@@ -110,3 +110,44 @@ export async function getOrderDetails(orderId: string) {
   }
 }
 
+export async function assignOrderToBranch(orderId: string, branchId: string | null) {
+  const session = await auth();
+  if (session?.user?.role !== "SUPER_ADMIN") {
+    throw new Error("Unauthorized: Only Super Admin can assign branches");
+  }
+
+  try {
+    const order = await prisma.order.update({
+      where: { id: orderId },
+      data: { branchId },
+      select: { id: true, orderNumber: true }
+    });
+
+    if (branchId) {
+      try {
+        const branchAdmins = await prisma.user.findMany({
+          where: { branchId, role: "BRANCH_ADMIN", isActive: true },
+          select: { id: true }
+        });
+
+        const { NotificationService } = await import("@/lib/notification-service");
+        for (const admin of branchAdmins) {
+          await NotificationService.notifyUser(
+            admin.id,
+            "New Order Assigned",
+            `Order #${order.orderNumber} has been assigned to your branch.`,
+            "ORDER",
+            "/dashboard/orders"
+          );
+        }
+      } catch (err) {
+        console.error("Failed to notify branch admin:", err);
+      }
+    }
+
+    return { success: true, orderId: order.id };
+  } catch (error) {
+    console.error("assignOrderToBranch Error:", error);
+    throw new Error("Failed to assign order to branch");
+  }
+}

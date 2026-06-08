@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   );
   const session = await auth();
   console.log("session:", session)
-  if (session?.user?.role !== "SUPER_ADMIN") {
+  if (session?.user?.role !== "SUPER_ADMIN" && session?.user?.role !== "BRANCH_ADMIN") {
     console.log("unauthorised access ", session?.user?.role)
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
@@ -32,7 +32,17 @@ export async function GET(req: NextRequest) {
     const cursor = searchParams.get("cursor");
     const limit = parseInt(searchParams.get("limit") || "100");
 
+    let whereClause = {};
+    if (session.user.role === "BRANCH_ADMIN") {
+      const dbUser = await prisma.user.findUnique({ where: { id: session.user.id } });
+      if (!dbUser || !dbUser.branchId) {
+        return NextResponse.json({ orders: [], nextCursor: undefined }); // No branch, no orders
+      }
+      whereClause = { branchId: dbUser.branchId };
+    }
+
     const orders = await prisma.order.findMany({
+      where: whereClause,
       take: limit + 1,
       ...(cursor && { cursor: { id: cursor }, skip: 1 }),
       orderBy: { createdAt: "desc" },

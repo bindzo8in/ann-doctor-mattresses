@@ -26,6 +26,10 @@ export async function getProductBySlug(slug: string): Promise<ProductDetails | n
         faqs: {
           orderBy: { sortOrder: "asc" },
         },
+        reviews: {
+          where: { isApproved: true },
+          select: { rating: true },
+        },
       },
     });
 

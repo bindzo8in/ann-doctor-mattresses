@@ -75,6 +75,26 @@ export function CartDrawer() {
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
                       <h4 className="font-medium text-sm line-clamp-1">{item.product.name}</h4>
+                      {(item as any).isCustom && (item as any).customData && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Custom: {((item as any).customData as any).width}" × {((item as any).customData as any).length}" × {((item as any).customData as any).thickness}"
+                        </p>
+                      )}
+                      {!(item as any).isCustom && (item.variant as any)?.mattressVariant && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {(item.variant as any).mattressVariant.sizeName} ({(item.variant as any).mattressVariant.width}"×{(item.variant as any).mattressVariant.length}") • {(item.variant as any).mattressVariant.thickness}"
+                        </p>
+                      )}
+                      {!(item as any).isCustom && (item.variant as any)?.sofaVariant && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {(item.variant as any).sofaVariant.seatingCapacity} Seater
+                        </p>
+                      )}
+                      {item.color && (
+                        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                          Colour: <span className="font-medium text-slate-700">{item.color}</span>
+                        </p>
+                      )}
                       {item.quantityFree > 0 && (
                         <div className="text-xs space-y-0.5 mt-1">
                           <div className="flex justify-between text-emerald-600 bg-emerald-50/50 px-2 py-0.5 rounded font-medium">

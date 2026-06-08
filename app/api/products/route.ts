@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
         thumbnailPublicId: data.thumbnail.publicId,
         isFeatured: data.isFeatured,
         isActive: data.isActive,
+        availableColors: data.availableColors || [],
         categoryId: data.categoryId,
         images: {
           createMany: {
@@ -88,6 +89,12 @@ export async function POST(req: NextRequest) {
           recommendedAgeGroups: data.recommendedAgeGroups,
           recommendedWeightGroups: data.recommendedWeightGroups,
           recommendedPositions: data.recommendedPositions,
+          allowCustomSize: data.allowCustomSize || false,
+          minWidth: data.minWidth,
+          maxWidth: data.maxWidth,
+          minLength: data.minLength,
+          maxLength: data.maxLength,
+          customSizePricing: data.customSizePricing ? data.customSizePricing : null,
         } : {}),
         sections: {
           create: data.sections.map((section) => ({

@@ -52,11 +52,24 @@ export async function POST(req: NextRequest) {
     // Update order status
     const order = await prisma.order.update({
       where: { id: payment.orderId },
-      data: { status: OrderStatus.PAID },
+      data: { status: OrderStatus.PENDING_ASSIGNMENT },
     });
 
     // Send order confirmation email
     await sendOrderConfirmationEmail(order.id);
+
+    // Notify Admins
+    try {
+      const { NotificationService } = await import("@/lib/notification-service");
+      await NotificationService.notifyAdmins(
+        "New Order Received",
+        `Order #${order.orderNumber} has been successfully paid and placed.`,
+        "ORDER",
+        "/dashboard/orders"
+      );
+    } catch (err) {
+      console.error("Failed to trigger admin notification", err);
+    }
 
     // Empty user's cart only if the order source is CART
     if (order.checkoutSource === CheckoutSource.CART) {

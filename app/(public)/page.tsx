@@ -2,8 +2,8 @@ import { Suspense } from "react";
 import HomeHeroSection from "@/components/home/hero-section";
 import { ProductGridSection } from "@/components/home/product-grid-section";
 import { CategoriesSection } from "@/components/home/categories-section";
-import { WhyChooseUsSection } from "@/components/home/why-choose-us-section";
-import { getFeaturedProducts, getNewLaunches, getCategories } from "@/lib/home";
+// import { WhyChooseUsSection } from "@/components/home/why-choose-us-section";
+import { getFeaturedProducts, getNewLaunches, getCategories, getHeroBanners } from "@/lib/home";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Loading skeleton for product grids
@@ -70,10 +70,12 @@ async function CategoriesData() {
 }
 
 export default async function Home() {
+  const heroBanners = await getHeroBanners();
+
   return (
     <main>
       {/* Hero */}
-      <HomeHeroSection />
+      <HomeHeroSection banners={heroBanners} />
 
       {/* Categories */}
       <Suspense
@@ -102,7 +104,7 @@ export default async function Home() {
       </Suspense>
 
       {/* Why Choose Us */}
-      <WhyChooseUsSection />
+      {/* <WhyChooseUsSection /> */}
 
       {/* New Launches */}
       <Suspense fallback={<ProductGridSkeleton />}>

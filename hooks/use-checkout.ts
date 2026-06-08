@@ -6,6 +6,9 @@ export interface BuyNowItem {
   productId: string;
   variantId: string | null;
   quantity: number;
+  isCustom: boolean;
+  customData?: any;
+  color?: string;
   product: {
     name: string;
     thumbnailUrl: string;

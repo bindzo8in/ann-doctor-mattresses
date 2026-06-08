@@ -10,6 +10,9 @@ import {
 import { useWishlist } from "@/hooks/use-wishlist";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/price";
+import { ShoppingCart, Zap } from "lucide-react";
+import { QuickBuyModal } from "./quick-buy-modal";
+import { ProductDetails } from "@/types/product-details";
 
 export interface ProductCardProps {
   id: string;
@@ -24,6 +27,7 @@ export interface ProductCardProps {
   isWishlisted?: boolean;
   onWishlistToggle?: () => void;
   slug?: string;
+  productData?: ProductDetails | any;
 }
 
 export function ProductCard({
@@ -39,6 +43,7 @@ export function ProductCard({
   isWishlisted,
   onWishlistToggle,
   slug,
+  productData,
 }: ProductCardProps) {
   const { wishlistItems, toggleWishlist, isAuthenticated } = useWishlist();
 
@@ -167,26 +172,56 @@ export function ProductCard({
     </>
   );
 
-  return (
-    <Card className="relative overflow-hidden rounded-2xl border p-0 flex flex-col h-full hover:shadow-md transition">
+  const innerCard = (
+    <Card className="relative overflow-hidden rounded-2xl border p-0 flex flex-col h-full hover:shadow-md transition min-w-[280px]">
+      {/* OVERLAY LINK */}
+      {slug && (
+        <Link href={`/products/${slug}`} className="absolute inset-0 z-10" aria-hidden="true">
+          <span className="sr-only">View Details</span>
+        </Link>
+      )}
+
       <div className="flex flex-col flex-1">
         {innerContent}
       </div>
 
-      {/* FOOTER — always pinned to bottom */}
-      <CardFooter className="p-4 sm:p-5 pt-0">
-        <Button
-          asChild
-          className="w-full rounded-lg text-xs sm:text-sm h-9 sm:h-10 font-semibold"
-        >
-          <Link 
-            href={slug ? `/products/${slug}` : "/products"}
-            className={slug ? "after:absolute after:inset-0 after:content-[''] after:z-10" : ""}
+      {/* FOOTER — Quick Buy Actions */}
+      <CardFooter className="relative z-20 p-4 sm:p-5 pt-0 gap-2">
+        {productData ? (
+          <>
+            <QuickBuyModal
+              product={productData}
+              trigger={
+                <Button 
+                  size="icon" 
+                  variant="outline" 
+                  className="h-10 w-10 shrink-0 text-slate-700"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                </Button>
+              }
+            />
+            <QuickBuyModal
+              product={productData}
+              trigger={
+                <Button 
+                  className="flex-1 h-10 bg-[#E53935] hover:bg-red-700 font-bold"
+                >
+                  Buy Now
+                </Button>
+              }
+            />
+          </>
+        ) : (
+          <Button
+            className="w-full rounded-lg text-xs sm:text-sm h-9 sm:h-10 font-semibold"
           >
             View Details
-          </Link>
-        </Button>
+          </Button>
+        )}
       </CardFooter>
     </Card>
   );
+
+  return innerCard;
 }

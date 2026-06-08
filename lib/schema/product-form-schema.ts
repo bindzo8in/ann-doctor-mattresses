@@ -62,6 +62,14 @@ export const createProductSchema = z
     recommendedAgeGroups: z.array(ageGroupEnum).optional(),
     recommendedWeightGroups: z.array(weightGroupEnum).optional(),
     recommendedPositions: z.array(sleepingPositionEnum).optional(),
+    availableColors: z.array(z.string()).optional(),
+
+    allowCustomSize: z.boolean().optional(),
+    minWidth: z.coerce.number().min(1).nullable().optional(),
+    maxWidth: z.coerce.number().min(1).nullable().optional(),
+    minLength: z.coerce.number().min(1).nullable().optional(),
+    maxLength: z.coerce.number().min(1).nullable().optional(),
+    customSizePricing: z.any().optional(),
 
     variants: z
       .array(productVariantSchema)
@@ -128,6 +136,28 @@ export const createProductSchema = z
         path: ["variants"],
         message: "Exactly one default variant is required",
       });
+    }
+
+    if (data.allowCustomSize) {
+      if (data.minWidth !== null && data.minWidth !== undefined && data.minWidth <= 0) {
+        ctx.addIssue({ code: "custom", path: ["minWidth"], message: "Width must be a positive number" });
+      }
+      if (data.maxWidth !== null && data.maxWidth !== undefined && data.maxWidth <= 0) {
+        ctx.addIssue({ code: "custom", path: ["maxWidth"], message: "Width must be a positive number" });
+      }
+      if (data.minLength !== null && data.minLength !== undefined && data.minLength <= 0) {
+        ctx.addIssue({ code: "custom", path: ["minLength"], message: "Length must be a positive number" });
+      }
+      if (data.maxLength !== null && data.maxLength !== undefined && data.maxLength <= 0) {
+        ctx.addIssue({ code: "custom", path: ["maxLength"], message: "Length must be a positive number" });
+      }
+
+      if (data.minWidth && data.maxWidth && data.minWidth >= data.maxWidth) {
+        ctx.addIssue({ code: "custom", path: ["minWidth"], message: "Min Width must be less than Max Width" });
+      }
+      if (data.minLength && data.maxLength && data.minLength >= data.maxLength) {
+        ctx.addIssue({ code: "custom", path: ["minLength"], message: "Min Length must be less than Max Length" });
+      }
     }
   });
 

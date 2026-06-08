@@ -18,9 +18,13 @@ export type ProductDetails = Prisma.ProductGetPayload<{
       };
       orderBy: { salePrice: "asc" };
     };
-    specifications: true;
+    specifications: true,
     sections: { orderBy: { sortOrder: "asc" } };
     faqs: { orderBy: { sortOrder: "asc" } };
+    reviews: {
+      where: { isApproved: true };
+      select: { rating: true };
+    };
   };
 }>;
 

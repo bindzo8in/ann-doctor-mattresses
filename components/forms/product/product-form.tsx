@@ -41,7 +41,7 @@ interface ProductFormProps {
 
 export function ProductForm({ initialData, productId }: ProductFormProps = {}) {
   const form = useForm<CreateProductInput>({
-    resolver: zodResolver(createProductSchema),
+    resolver: zodResolver(createProductSchema) as any,
     defaultValues: initialData || defaultValues,
     mode: "onChange"
   });
@@ -106,12 +106,12 @@ export function ProductForm({ initialData, productId }: ProductFormProps = {}) {
           "isFeatured",
           "isActive",
         ],
-        component: <BasicInfoStep form={form} isEditMode={!!productId} />,
+        component: <BasicInfoStep form={form as any} isEditMode={!!productId} />,
       },
 
       {
         fields: ["thumbnail", "images"],
-        component: <MediaStep form={form} />,
+        component: <MediaStep form={form as any} />,
       },
 
       // Conditionally include Mattress Attributes if type is MATTRESS
@@ -124,32 +124,32 @@ export function ProductForm({ initialData, productId }: ProductFormProps = {}) {
           "recommendedWeightGroups",
           "recommendedPositions"
         ],
-        component: <MattressAttributesStep form={form} />,
+        component: <MattressAttributesStep form={form as any} />,
       }] : []),
 
       {
         fields: ["variants"],
-        component: <VariantsStep form={form} />,
+        component: <VariantsStep form={form as any} />,
       },
 
       {
         fields: ["specifications"],
-        component: <SpecificationsStep form={form} />,
+        component: <SpecificationsStep form={form as any} />,
       },
 
       {
         fields: ["sections"],
-        component: <SectionsStep form={form} />,
+        component: <SectionsStep form={form as any} />,
       },
 
       {
         fields: ["faqs"],
-        component: <FaqsStep form={form} />,
+        component: <FaqsStep form={form as any} />,
       },
 
       {
         fields: [], // No fields to validate for preview
-        component: <PreviewStep form={form} />,
+        component: <PreviewStep form={form as any} />,
       },
     ],
     [form, productType],
@@ -165,7 +165,7 @@ export function ProductForm({ initialData, productId }: ProductFormProps = {}) {
       }}
     >
       <form
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(onSubmit as any)}
         className="w-full mx-auto p-4 sm:p-6 md:p-8 bg-white rounded-lg shadow-sm"
       >
         <MultiStepFormContent>
@@ -178,7 +178,7 @@ export function ProductForm({ initialData, productId }: ProductFormProps = {}) {
 
             <NextButton className="w-full sm:w-auto">Next</NextButton>
 
-            <SubmitButton onClick={form.handleSubmit(onSubmit)} className="w-full sm:w-auto">
+            <SubmitButton onClick={form.handleSubmit(onSubmit as any)} className="w-full sm:w-auto">
               {productId ? "Update Product" : "Create Product"}
             </SubmitButton>
           </FormFooter>

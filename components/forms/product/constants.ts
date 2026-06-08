@@ -105,6 +105,13 @@ export const defaultValues: CreateProductInput = {
 
   variants: [],
 
+  allowCustomSize: false,
+  minWidth: null,
+  maxWidth: null,
+  minLength: null,
+  maxLength: null,
+  customSizePricing: null,
+
   specifications: [],
 
   sectionsHeading: "",

@@ -3,6 +3,7 @@ ignoredBuiltDependencies:
   - unrs-resolver
 onlyBuiltDependencies:
   - '@prisma/engines'
+  - core-js
   - esbuild
   - msw
   - prisma

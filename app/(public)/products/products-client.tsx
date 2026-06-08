@@ -89,46 +89,6 @@ export function ProductsPageClient({ dynamicFacets }: ProductsPageClientProps) {
 
   return (
     <div className="flex flex-col">
-      {/* Top Navigation Tabs */}
-      <div className="bg-background border-b border-border sticky top-16 z-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-6 overflow-x-auto py-3 no-scrollbar">
-            <Link
-              href="/products"
-              className={cn(
-                "text-sm font-semibold whitespace-nowrap border-b-2 pb-3 -mb-[13px] transition-colors hover:text-primary",
-                !currentType
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground"
-              )}
-            >
-              All Products
-            </Link>
-            <Link
-              href="/products?type=MATTRESS"
-              className={cn(
-                "text-sm font-semibold whitespace-nowrap border-b-2 pb-3 -mb-[13px] transition-colors hover:text-primary",
-                currentType === "MATTRESS"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground"
-              )}
-            >
-              Mattresses
-            </Link>
-            <Link
-              href="/products?type=SOFA"
-              className={cn(
-                "text-sm font-semibold whitespace-nowrap border-b-2 pb-3 -mb-[13px] transition-colors hover:text-primary",
-                currentType === "SOFA"
-                  ? "border-primary text-primary"
-                  : "border-transparent text-muted-foreground"
-              )}
-            >
-              Sofas
-            </Link>
-          </div>
-        </div>
-      </div>
 
       <ActiveFiltersBar dictionaries={dictionaries} />
 
@@ -184,13 +144,14 @@ export function ProductsPageClient({ dynamicFacets }: ProductsPageClientProps) {
                               id={product.id}
                               name={product.name}
                               image={product.images[0]?.url || "/products/mattress.webp"}
-                              badge={product.isFeatured ? "Featured" : undefined}
+                              badge="Buy 1 Get 1 Free"
                               price={price}
                               compareAtPrice={compareAtPrice}
                               rating={5}
                               reviewCount={0}
                               features={product.shortDescription}
                               slug={product.slug}
+                              productData={product as any}
                             />
                           );
                         })}

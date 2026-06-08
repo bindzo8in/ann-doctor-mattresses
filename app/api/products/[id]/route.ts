@@ -197,6 +197,7 @@ export async function PUT(
           thumbnailPublicId: data.thumbnail.publicId,
           isFeatured: data.isFeatured,
           isActive: data.isActive,
+          availableColors: data.availableColors || [],
           categoryId: data.categoryId,
           firmness: data.firmness,
           comfortLevel: data.comfortLevel,
@@ -204,6 +205,12 @@ export async function PUT(
           recommendedAgeGroups: data.recommendedAgeGroups || [],
           recommendedWeightGroups: data.recommendedWeightGroups || [],
           recommendedPositions: data.recommendedPositions || [],
+          allowCustomSize: data.allowCustomSize || false,
+          minWidth: data.minWidth,
+          maxWidth: data.maxWidth,
+          minLength: data.minLength,
+          maxLength: data.maxLength,
+          customSizePricing: data.customSizePricing ? data.customSizePricing : null,
           images: {
             createMany: {
               data: data.images.map((img) => ({

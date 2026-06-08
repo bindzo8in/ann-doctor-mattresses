@@ -10,8 +10,10 @@ export const routes = {
     products: "/products",
     checkout: "/checkout",
     checkoutSuccess: "/checkout/success",
+    help: "/help",
 
     dashboard: "/dashboard",
+    dashboard_hero: "/dashboard/hero",
     dashboard_products: "/dashboard/products",
     product_create: "/dashboard/products/create",
     dashboard_orders: "/dashboard/orders",
@@ -42,4 +44,5 @@ export const publicRoutes = [
     routes.home,
     routes.products,
     routes.checkout, // Checkout entry page is public, login check is performed inline during action
+    routes.help,
 ]

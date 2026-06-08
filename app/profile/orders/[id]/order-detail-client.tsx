@@ -136,7 +136,7 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
 
           if (verifyRes.ok) {
             toast.success("Payment successful!");
-            window.location.href = `${routes.checkoutSuccess}?orderId=${order.id}`;
+            window.location.href = `${routes.checkoutSuccess}?orderNumber=${order.orderNumber}`;
           } else {
             toast.error("Payment verification failed");
             setIsProcessing(false);

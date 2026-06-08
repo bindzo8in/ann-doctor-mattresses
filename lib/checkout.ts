@@ -59,10 +59,10 @@ export interface CartCalculationResult {
 }
 
 export async function calculateCartTotals(
-  cartItems: { productId: string; variantId: string | null; quantity: number }[],
+  cartItems: { productId: string; variantId: string | null; quantity: number; isCustom?: boolean; customData?: any }[],
   pincode?: string
 ): Promise<CartCalculationResult> {
-  // Fetch variants to get real prices
+  // Fetch variants to get real prices for non-custom items
   const variantIds = cartItems.map((item) => item.variantId).filter(Boolean) as string[];
   const variants = await prisma.productVariant.findMany({
     where: { id: { in: variantIds } },
@@ -72,9 +72,30 @@ export async function calculateCartTotals(
     variants.map((v) => [v.id, Number(v.salePrice)])
   );
 
+  // Fetch products first to get customSizePricing for secure server-side calculation
+  const productIds = cartItems.map((item) => item.productId);
+  const products = await prisma.product.findMany({
+    where: { id: { in: productIds } },
+    select: { id: true, categoryId: true, customSizePricing: true, allowCustomSize: true },
+  });
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
   const processedItems = cartItems.map((item) => {
     let rawPrice = 0;
-    if (item.variantId && variantPriceMap.has(item.variantId)) {
+    
+    // SERVER-SIDE Custom Price Calculation
+    if (item.isCustom && item.customData) {
+      const product = productMap.get(item.productId);
+      if (product && product.allowCustomSize && product.customSizePricing) {
+        const pricing = product.customSizePricing as Record<string, any>;
+        const thickness = String(item.customData.thickness);
+        
+        if (pricing[thickness]) {
+          const area = (Number(item.customData.width) * Number(item.customData.length)) / 144;
+          rawPrice = area * Number(pricing[thickness]);
+        }
+      }
+    } else if (item.variantId && variantPriceMap.has(item.variantId)) {
       rawPrice = variantPriceMap.get(item.variantId)!;
     }
     const price = roundPrice(rawPrice);
@@ -97,13 +118,9 @@ export async function calculateCartTotals(
     };
   });
 
-  // Fetch product category mapping
-  const productIds = cartItems.map((item) => item.productId);
-  const products = await prisma.product.findMany({
-    where: { id: { in: productIds } },
-    select: { id: true, categoryId: true },
-  });
-  const productCategoryMap = new Map(products.map((p) => [p.id, p.categoryId]));
+  const productCategoryMap = new Map(
+    Array.from(productMap.entries()).map(([id, p]) => [id, p.categoryId])
+  );
 
   // Calculate Discounts using Promotion Engine
   const activePromotions = await prisma.promotion.findMany({

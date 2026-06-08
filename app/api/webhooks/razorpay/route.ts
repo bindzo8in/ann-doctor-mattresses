@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
             // Update Order Status
             const order = await prisma.order.update({
               where: { id: payment.orderId },
-              data: { status: OrderStatus.PAID },
+              data: { status: OrderStatus.PENDING_ASSIGNMENT },
             });
 
             // Empty cart if needed (optional here since frontend verify does it, but safe to do again)

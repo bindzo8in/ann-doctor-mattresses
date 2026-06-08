@@ -15,7 +15,19 @@ interface CartItem {
     id: string;
     salePrice: number;
     mrp: number;
+    mattressVariant?: {
+      sizeName: string;
+      width: number;
+      length: number;
+      thickness: number;
+    } | null;
+    sofaVariant?: {
+      seatingCapacity: string;
+    } | null;
   } | null;
+  isCustom?: boolean;
+  customData?: any;
+  color?: string | null;
   quantityPurchased: number;
   quantityFree: number;
   totalDelivered: number;
@@ -41,7 +53,7 @@ interface CartStore {
   hasLoaded: boolean;
   
   fetchCart: () => Promise<void>;
-  addToCart: (params: { productId: string; variantId: string | null; quantity: number }) => Promise<void>;
+  addToCart: (params: { productId: string; variantId: string | null; quantity: number; isCustom?: boolean; customData?: any; color?: string }) => Promise<void>;
   updateQuantity: (params: { cartItemId: string; quantity: number }) => Promise<void>;
   removeFromCart: (cartItemId: string) => Promise<void>;
 }
@@ -89,13 +101,13 @@ const useCartStore = create<CartStore>((set, get) => ({
     }
   },
 
-  addToCart: async ({ productId, variantId, quantity }) => {
+  addToCart: async ({ productId, variantId, quantity, isCustom, customData, color }) => {
     set({ isAddingToCart: true });
     try {
       const res = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId, variantId, quantity }),
+        body: JSON.stringify({ productId, variantId, quantity, isCustom, customData, color }),
       });
       if (res.status === 401) throw new Error("UNAUTHORIZED");
       if (!res.ok) {

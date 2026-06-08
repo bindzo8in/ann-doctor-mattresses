@@ -34,6 +34,21 @@ export async function PATCH(req: NextRequest, { params }: RouteProps) {
       await sendDeliveryStatusEmail(id);
     }
 
+    if (status && order.customerId) {
+      try {
+        const { NotificationService } = await import("@/lib/notification-service");
+        await NotificationService.notifyUser(
+          order.customerId,
+          "Order Status Updated",
+          `Your order #${order.orderNumber} is now ${status.replace(/_/g, " ")}.`,
+          "ORDER",
+          "/profile/orders"
+        );
+      } catch (err) {
+        console.error("Notification Error:", err);
+      }
+    }
+
     return NextResponse.json(order);
   } catch (error) {
     console.error("Admin Order PATCH Error:", error);

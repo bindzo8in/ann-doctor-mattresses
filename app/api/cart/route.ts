@@ -49,23 +49,23 @@ export async function GET(req: NextRequest) {
       productId: item.productId,
       variantId: item.variantId,
       quantity: item.quantity,
+      isCustom: item.isCustom,
+      customData: item.customData,
     }));
 
     const calculation = await calculateCartTotals(itemsForTotals, pincode);
 
     // Enrich cart items with backend calculation details
-    const enrichedItems = cartItems.map((cartItem) => {
-      const calc = calculation.items.find(
-        (ci) => ci.productId === cartItem.productId && ci.variantId === cartItem.variantId
-      );
+    const enrichedItems = cartItems.map((cartItem, index) => {
+      const calc = calculation.items[index];
 
       return {
         ...cartItem,
         quantityPurchased: calc?.quantityPurchased ?? cartItem.quantity,
         quantityFree: calc?.quantityFree ?? 0,
         totalDelivered: calc?.totalDelivered ?? cartItem.quantity,
-        unitPrice: calc?.unitPrice ?? Number(cartItem.variant?.salePrice || 0),
-        totalPaid: calc?.totalPaid ?? (Number(cartItem.variant?.salePrice || 0) * cartItem.quantity),
+        unitPrice: calc?.unitPrice ?? (cartItem.isCustom && cartItem.customData ? Number((cartItem.customData as any).calculatedPrice) : Number(cartItem.variant?.salePrice || 0)),
+        totalPaid: calc?.totalPaid ?? ((cartItem.isCustom && cartItem.customData ? Number((cartItem.customData as any).calculatedPrice) : Number(cartItem.variant?.salePrice || 0)) * cartItem.quantity),
         saved: calc?.saved ?? 0,
         offerType: calc?.offerType ?? null,
         offerName: calc?.offerName ?? null,
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { productId, variantId, quantity } = body;
+    const { productId, variantId, quantity, isCustom, customData, color } = body;
 
     if (!productId || !quantity) {
       return NextResponse.json({ message: "Missing required fields" }, { status: 400 });
@@ -105,14 +105,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Maximum quantity per item is 20" }, { status: 400 });
     }
 
-    // Upsert logic for merging quantities
-    const existing = await prisma.cartItem.findFirst({
-      where: {
-        userId: session.user.id,
-        productId,
-        variantId: variantId || null,
-      }
-    });
+    let existing;
+    if (isCustom) {
+      const items = await prisma.cartItem.findMany({
+        where: {
+          userId: session.user.id,
+          productId,
+          isCustom: true,
+          color: color || null,
+        }
+      });
+      existing = items.find(item => JSON.stringify(item.customData) === JSON.stringify(customData));
+    } else {
+      existing = await prisma.cartItem.findFirst({
+        where: {
+          userId: session.user.id,
+          productId,
+          variantId: variantId || null,
+          isCustom: false,
+          color: color || null,
+        }
+      });
+    }
 
     let cartItem;
     if (existing) {
@@ -131,6 +145,9 @@ export async function POST(req: NextRequest) {
           productId,
           variantId: variantId || null,
           quantity,
+          isCustom: isCustom || false,
+          customData: customData || null,
+          color: color || null,
         },
       });
     }

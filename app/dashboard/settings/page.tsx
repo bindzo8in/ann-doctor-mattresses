@@ -111,9 +111,14 @@ export default function SettingsPage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Settings</h1>
-        <p className="text-slate-500 mt-1">Manage global store configurations and delivery rules.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Settings</h1>
+          <p className="text-slate-500 mt-1">Manage global store configurations and delivery rules.</p>
+        </div>
+        <Button variant="outline" onClick={() => window.location.href = '/dashboard/settings/branches'}>
+          Manage Branches
+        </Button>
       </div>
 
       <div className="bg-white border rounded-2xl overflow-hidden shadow-sm">

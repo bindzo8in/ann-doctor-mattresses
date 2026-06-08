@@ -14,7 +14,7 @@ datasource db {
 
 enum UserRole {
   SUPER_ADMIN
-  // BRANCH_ADMIN
+  BRANCH_ADMIN
   CUSTOMER
 }
 
@@ -28,6 +28,8 @@ model User {
   role          UserRole  @default(CUSTOMER)
 
   isActive Boolean @default(true)
+  branchId String?
+  branch   Branch? @relation(fields: [branchId], references: [id])
 
   orders        Order[]
   accounts      Account[]
@@ -35,6 +37,23 @@ model User {
   addresses     Address[]
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
+  reviews       Review[]
+  notifications Notification[]
+  pushSubscriptions PushSubscription[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Branch {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  phone     String?
+  isActive  Boolean  @default(true)
+  
+  users     User[]
+  orders    Order[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -119,7 +138,18 @@ model Product {
   thumbnailPublicId String
 
   isFeatured Boolean @default(false)
+  featuredOrder Int @default(0)
   isActive   Boolean @default(true)
+
+  availableColors String[] @default([])
+
+  // Custom Size Settings
+  allowCustomSize      Boolean @default(false)
+  minWidth             Int?
+  maxWidth             Int?
+  minLength            Int?
+  maxLength            Int?
+  customSizePricing    Json?    
 
   category Category @relation(fields: [categoryId], references: [id])
 
@@ -143,6 +173,7 @@ model Product {
   orderItems    OrderItem[]
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
+  reviews       Review[]
 }
 
 model ProductImage {
@@ -355,6 +386,9 @@ model Order {
   status OrderStatus @default(PENDING_PAYMENT)
   checkoutSource CheckoutSource @default(CART)
 
+  branchId String?
+  branch   Branch? @relation(fields: [branchId], references: [id])
+
   subTotal      Decimal @db.Decimal(10, 2)
   discountTotal Decimal @db.Decimal(10, 2)
   shippingTotal Decimal @db.Decimal(10, 2)
@@ -401,6 +435,7 @@ model OrderItem {
   unitPrice         Decimal  @db.Decimal(10, 2) @default(0)
   totalPaid         Decimal  @db.Decimal(10, 2) @default(0)
   offerType         String?
+  color             String?
 
   @@index([orderId])
   @@index([productId])
@@ -435,10 +470,14 @@ model CartItem {
   variantId String?
   variant   ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
   quantity  Int
+
+  isCustom   Boolean @default(false)
+  customData Json?
+  color      String?
+
   createdAt DateTime        @default(now())
   updatedAt DateTime        @updatedAt
 
-  @@unique([userId, productId, variantId])
   @@index([productId])
   @@index([variantId])
 }
@@ -497,4 +536,105 @@ model DeliveryZone {
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  productId  String
+  userId     String
+  rating     Int
+  title      String?
+  comment    String   @db.Text
+  isApproved Boolean  @default(false)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([userId])
+}
+
+model HeroBanner {
+  id                 String   @id @default(cuid())
+  title              String
+  subtitle           String?
+  buttonText         String?
+  buttonLink         String?
+  
+  backgroundImageUrl       String
+  backgroundPublicId       String
+  
+  mobileBackgroundImageUrl String?
+  mobileBackgroundPublicId String?
+  
+  foregroundImageUrl       String?
+  foregroundPublicId String?
+  
+  order              Int      @default(0)
+  isActive           Boolean  @default(true)
+  
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Complaint {
+  id            String   @id @default(cuid())
+  userId        String?
+  name          String
+  email         String
+  subject       String?
+  message       String   @db.Text
+  imageUrl      String?
+  imagePublicId String?
+  status        String   @default("OPEN")
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  message   String   @db.Text
+  
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String?
+  title       String
+  message     String
+  type        String
+  isRead      Boolean  @default(false)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model PushSubscription {
+  id         String   @id @default(cuid())
+
+  userId     String
+
+  endpoint   String   @db.Text
+  p256dh     String   @db.Text
+  auth       String   @db.Text
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }

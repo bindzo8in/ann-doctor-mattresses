@@ -14,6 +14,7 @@ import Script from "next/script";
 
 import Image from "next/image";
 import { getCustomerOrders } from "@/actions/orders";
+import { env } from "@/env";
 
 interface OrderItem {
   id: string;
@@ -122,7 +123,7 @@ export function OrdersClient({ initialOrders, initialNextCursor }: OrdersClientP
     setIsProcessing(order.id);
 
     const options = {
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+      key: env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
       amount: Math.round(order.totalAmount * 100),
       currency: "INR",
       name: "Ann Doctor Mattresses",
@@ -143,7 +144,7 @@ export function OrdersClient({ initialOrders, initialNextCursor }: OrdersClientP
 
           if (verifyRes.ok) {
             toast.success("Payment successful!");
-            window.location.href = `${routes.checkoutSuccess}?orderId=${order.id}`;
+            window.location.href = `${routes.checkoutSuccess}?orderNumber=${order.orderNumber}`;
           } else {
             toast.error("Payment verification failed");
             setIsProcessing(null);

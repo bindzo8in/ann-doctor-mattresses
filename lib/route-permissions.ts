@@ -12,11 +12,23 @@ export const roleRoutes: Record<UserRole, RouteConfig> = {
   [UserRole.SUPER_ADMIN]: {
     exact: [routes.dashboard],
     nested: [
+      routes.dashboard_hero,
       routes.product_create,
       routes.dashboard_products,
       routes.dashboard_orders,
       routes.dashboard_promotions,
       routes.dashboard_settings,
+      routes.checkout,
+      routes.profile,
+      routes.wishlist,
+    ],
+  },
+
+  [UserRole.BRANCH_ADMIN]: {
+    exact: [routes.dashboard],
+    nested: [
+      routes.dashboard_hero,
+      routes.dashboard_orders,
       routes.checkout,
       routes.profile,
       routes.wishlist,
@@ -29,6 +41,7 @@ export const roleRoutes: Record<UserRole, RouteConfig> = {
       routes.profile,
       routes.wishlist,
       routes.checkoutSuccess,
+      routes.help,
     ],
   },
 };

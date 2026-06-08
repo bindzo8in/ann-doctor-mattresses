@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { ProductCard } from "@/components/products/product-card";
 import { Button } from "@/components/ui/button";
@@ -92,11 +91,13 @@ export default function WishlistPage() {
               id={product.id}
               name={product.name}
               image={product.thumbnailUrl || "/products/mattress.webp"}
+              badge="Buy 1 Get 1 Free"
               price={price}
               compareAtPrice={compareAtPrice}
               rating={5}
               features={[]}
               slug={product.slug}
+              productData={product as any}
             />
           );
         })}

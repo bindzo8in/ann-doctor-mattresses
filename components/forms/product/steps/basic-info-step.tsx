@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Field,
   FieldContent,
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 
-import { ChevronsUpDown, Check } from "lucide-react";
+import { ChevronsUpDown, Check, RefreshCw, AlertTriangle } from "lucide-react";
 import {
   CommandEmpty,
   CommandGroup,
@@ -39,6 +40,7 @@ interface BasicInfoStepProps {
   isEditMode?: boolean;
 }
 
+import { STANDARD_COLORS } from "@/lib/colors";
 const PRODUCT_TYPES = [
   {
     value: "MATTRESS",
@@ -51,6 +53,28 @@ const PRODUCT_TYPES = [
 ];
 
 export function BasicInfoStep({ form, isEditMode }: BasicInfoStepProps) {
+  const [isSlugUnlocked, setIsSlugUnlocked] = useState(!isEditMode);
+  
+  const nameValue = form.watch("name");
+  const { dirtyFields } = form.formState;
+
+  // Auto-generate slug from name in Create Mode (if user hasn't typed in slug manually)
+  useEffect(() => {
+    if (!isEditMode && !dirtyFields.slug && nameValue) {
+      const generated = nameValue
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+      form.setValue("slug", generated, { shouldValidate: true });
+    }
+  }, [nameValue, isEditMode, dirtyFields.slug, form]);
+
+  const handleManualRegenerate = () => {
+    const n = form.getValues("name") || "";
+    const generated = n.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    form.setValue("slug", generated, { shouldValidate: true, shouldDirty: true });
+  };
+
   return (
     <div className="flex flex-col gap-4 w-full">
       {/* NAME */}
@@ -76,7 +100,49 @@ export function BasicInfoStep({ form, isEditMode }: BasicInfoStepProps) {
           <Field data-invalid={fieldState.invalid}>
             <FieldLabel htmlFor="slug">Slug *</FieldLabel>
 
-            <Input {...field} id="slug" placeholder="royal-top-mattress" />
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <Input 
+                {...field} 
+                id="slug" 
+                placeholder="royal-top-mattress" 
+                disabled={!isSlugUnlocked}
+                className="flex-1"
+              />
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleManualRegenerate}
+                  disabled={!isSlugUnlocked}
+                  title="Auto-generate from Name"
+                  className="shrink-0"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Regenerate
+                </Button>
+                
+                {isEditMode && !isSlugUnlocked && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setIsSlugUnlocked(true)}
+                    className="shrink-0"
+                  >
+                    Edit Slug
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {isEditMode && isSlugUnlocked && (
+              <div className="flex items-start gap-2 mt-2 p-3 bg-amber-50 text-amber-800 border border-amber-200 rounded-md">
+                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0 text-amber-600" />
+                <p className="text-sm">
+                  <strong>Warning:</strong> Changing the slug of an existing product will break all current links and affect SEO. Proceed with caution.
+                </p>
+              </div>
+            )}
 
             {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
           </Field>
@@ -190,6 +256,72 @@ export function BasicInfoStep({ form, isEditMode }: BasicInfoStepProps) {
             {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
           </Field>
         )}
+      />
+
+      <FieldSeparator />
+
+      {/* AVAILABLE COLORS */}
+      <Controller
+        name="availableColors"
+        control={form.control}
+        render={({ field, fieldState }) => {
+          const selected = field.value || [];
+          const allSelected = selected.length === STANDARD_COLORS.length;
+
+          const toggleAll = () => {
+            if (allSelected) {
+              field.onChange([]);
+            } else {
+              field.onChange(STANDARD_COLORS.map(c => c.value));
+            }
+          };
+
+          const toggleColor = (colorValue: string) => {
+            if (selected.includes(colorValue)) {
+              field.onChange(selected.filter(c => c !== colorValue));
+            } else {
+              field.onChange([...selected, colorValue]);
+            }
+          };
+
+          return (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel>Available Colors</FieldLabel>
+              <FieldDescription>Select the colors this product is available in.</FieldDescription>
+              
+              <div className="space-y-4 mt-2">
+                <div className="flex items-center gap-2">
+                  <Checkbox 
+                    id="select-all-colors" 
+                    checked={allSelected} 
+                    onCheckedChange={toggleAll} 
+                  />
+                  <label htmlFor="select-all-colors" className="text-sm font-medium cursor-pointer">
+                    Select All Colors
+                  </label>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-4 border rounded-md bg-slate-50">
+                  {STANDARD_COLORS.map(color => (
+                    <div key={color.value} className="flex items-center gap-2">
+                      <Checkbox 
+                        id={`color-${color.value}`} 
+                        checked={selected.includes(color.value)} 
+                        onCheckedChange={() => toggleColor(color.value)} 
+                      />
+                      <label htmlFor={`color-${color.value}`} className="flex items-center gap-2 text-sm cursor-pointer">
+                        <div className={cn("w-4 h-4 rounded-full", color.tailwindClass)} />
+                        {color.label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          );
+        }}
       />
 
       <FieldSeparator />

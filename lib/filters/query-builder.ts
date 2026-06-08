@@ -21,19 +21,20 @@ export function buildProductWhereClause(filters: ProductFilterParams): Prisma.Pr
     };
   }
 
+  const hasSizeFilter = filters.size && filters.size.length > 0;
+  const hasCustomSize = filters.size?.includes("CUSTOM");
+
   // Mattress Filters
-  if (filters.type === "MATTRESS" || !filters.type) {
-    const mattressConditions: Prisma.MattressVariantWhereInput = {};
+  const isMattress = filters.type === "MATTRESS" || !filters.type;
+  if (isMattress) {
+    const baseMattressConditions: Prisma.MattressVariantWhereInput = {};
 
-    if (filters.size && filters.size.length > 0) {
-      mattressConditions.sizeName = { in: filters.size };
-    }
     if (filters.thickness && filters.thickness.length > 0) {
-      mattressConditions.thickness = { in: filters.thickness };
+      baseMattressConditions.thickness = { in: filters.thickness };
     }
 
-    if (Object.keys(mattressConditions).length > 0) {
-      variantConditions.mattressVariant = mattressConditions;
+    if (Object.keys(baseMattressConditions).length > 0) {
+      variantConditions.mattressVariant = baseMattressConditions;
     }
   }
 
@@ -76,10 +77,38 @@ export function buildProductWhereClause(filters: ProductFilterParams): Prisma.Pr
     }
   }
 
-  if (Object.keys(variantConditions).length > 0) {
-    where.variants = {
-      some: variantConditions,
+  // Apply Variant Conditions
+  if (hasSizeFilter && isMattress) {
+    const orConditions: Prisma.ProductWhereInput[] = [];
+
+    // Condition 1: Has a variant that matches the requested exact sizes
+    const exactSizeVariantConditions: Prisma.ProductVariantWhereInput = {
+      ...variantConditions,
+      mattressVariant: {
+        ...(variantConditions.mattressVariant as Prisma.MattressVariantWhereInput || {}),
+        sizeName: { in: filters.size },
+      }
     };
+    orConditions.push({
+      variants: { some: exactSizeVariantConditions }
+    });
+
+    // Condition 2: If CUSTOM is requested, match products with allowCustomSize=true
+    if (hasCustomSize) {
+      orConditions.push({
+        allowCustomSize: true,
+        ...(Object.keys(variantConditions).length > 0 ? { variants: { some: variantConditions } } : {})
+      });
+    }
+
+    where.OR = orConditions;
+  } else {
+    // No size filter, just apply base variant conditions
+    if (Object.keys(variantConditions).length > 0) {
+      where.variants = {
+        some: variantConditions,
+      };
+    }
   }
 
   return where;

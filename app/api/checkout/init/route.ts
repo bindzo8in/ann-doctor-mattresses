@@ -38,10 +38,10 @@ export async function POST(req: NextRequest) {
       variantData: any;
       price: number;
       quantityPurchased: number;
-      quantityFree: number;
       unitPrice: number;
       totalPaid: number;
       offerType: string | null;
+      color: string | null;
     }> = [];
 
     const checkoutSource = source === "BUY_NOW" ? CheckoutSource.BUY_NOW : CheckoutSource.CART;
@@ -83,13 +83,15 @@ export async function POST(req: NextRequest) {
         variantId: item.variantId,
         quantity: item.totalDelivered,
         productName: product.name,
-        variantData: variant || {},
+        variantData: buyNowItem.isCustom 
+          ? { isCustom: true, customData: buyNowItem.customData } 
+          : (variant || {}),
         price: item.unitPrice,
         quantityPurchased: item.quantityPurchased,
-        quantityFree: item.quantityFree,
         unitPrice: item.unitPrice,
         totalPaid: item.totalPaid,
         offerType: item.offerType,
+        color: buyNowItem.color || null,
       }));
     } else {
       // Fetch cart
@@ -108,20 +110,23 @@ export async function POST(req: NextRequest) {
       // Calculate totals
       calculation = await calculateCartTotals(cartItems, address.postalCode);
 
-      orderItemsData = calculation.items.map(item => {
-        const originalItem = cartItems.find(c => c.productId === item.productId && c.variantId === item.variantId);
+      orderItemsData = calculation.items.map((item, index) => {
+        const originalItem = cartItems[index];
         return {
           productId: item.productId,
           variantId: item.variantId,
           quantity: item.totalDelivered,
           productName: originalItem?.product.name || "Unknown Product",
-          variantData: originalItem?.variant || {},
+          variantData: originalItem?.isCustom
+            ? { isCustom: true, customData: originalItem.customData }
+            : (originalItem?.variant || {}),
           price: item.unitPrice,
           quantityPurchased: item.quantityPurchased,
           quantityFree: item.quantityFree,
           unitPrice: item.unitPrice,
           totalPaid: item.totalPaid,
           offerType: item.offerType,
+          color: originalItem?.color || null,
         };
       });
     }

@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, Settings2Icon, CircleHelpIcon, SearchIcon, CommandIcon } from "lucide-react"
+import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, Settings2Icon, CircleHelpIcon, SearchIcon, CommandIcon, MessageSquareIcon, MonitorPlay } from "lucide-react"
 
 const navMain = [
   {
@@ -39,10 +39,24 @@ const navMain = [
     ),
   },
   {
+    title: "Hero Section",
+    url: "/dashboard/hero",
+    icon: (
+      <MonitorPlay />
+    ),
+  },
+  {
     title: "Products",
     url: "/dashboard/products",
     icon: (
       <FolderIcon />
+    ),
+  },
+  {
+    title: "Reviews",
+    url: "/dashboard/reviews",
+    icon: (
+      <MessageSquareIcon />
     ),
   },
 ]
@@ -95,8 +109,18 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navMain} />
-        <NavSecondary items={navSecondary} className="mt-auto" />
+        <NavMain items={navMain.filter(item => {
+          if (user?.role === "BRANCH_ADMIN") {
+            return item.title === "Dashboard" || item.title === "Orders" || item.title === "Hero Section";
+          }
+          return true;
+        })} />
+        <NavSecondary items={navSecondary.filter(item => {
+          if (user?.role === "BRANCH_ADMIN") {
+            return item.title === "Get Help" || item.title === "Search";
+          }
+          return true;
+        })} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={userData} />

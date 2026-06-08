@@ -8,6 +8,8 @@ import { FilterSection } from "./filter-section";
 import { CheckboxFilterGroup } from "./checkbox-filter-group";
 import { PriceRangeSlider } from "./price-range-slider";
 import { useProductFilters } from "@/lib/filters/use-product-filters";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 import {
   FIRMNESS_OPTIONS,
@@ -41,6 +43,43 @@ export function ProductFiltersSidebar({ dynamicFacets }: ProductFiltersSidebarPr
 
   const filterContent = (
     <div className="space-y-2 pb-12">
+      <FilterSection title="Product Type" defaultOpen>
+        <div className="flex flex-col gap-1">
+          <Link
+            href="/products"
+            className={cn(
+              "text-sm font-medium px-2 py-1.5 rounded-md transition-colors",
+              !currentType
+                ? "bg-primary/10 text-primary"
+                : "hover:bg-muted text-muted-foreground"
+            )}
+          >
+            All Products
+          </Link>
+          <Link
+            href="/products?type=MATTRESS"
+            className={cn(
+              "text-sm font-medium px-2 py-1.5 rounded-md transition-colors",
+              currentType === "MATTRESS"
+                ? "bg-primary/10 text-primary"
+                : "hover:bg-muted text-muted-foreground"
+            )}
+          >
+            Mattresses
+          </Link>
+          <Link
+            href="/products?type=SOFA"
+            className={cn(
+              "text-sm font-medium px-2 py-1.5 rounded-md transition-colors",
+              currentType === "SOFA"
+                ? "bg-primary/10 text-primary"
+                : "hover:bg-muted text-muted-foreground"
+            )}
+          >
+            Sofas
+          </Link>
+        </div>
+      </FilterSection>
       <FilterSection title="Price Range" defaultOpen>
         <PriceRangeSlider minPrice={0} maxPrice={100000} step={500} />
       </FilterSection>

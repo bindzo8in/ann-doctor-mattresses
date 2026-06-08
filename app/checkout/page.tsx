@@ -57,32 +57,33 @@ export default function CheckoutPage() {
   } | null>(null);
   const [paymentFailed, setPaymentFailed] = useState(false);
 
-  // Load totals when selected address or step changes
+  // Load totals when selected address or step changes, or on mount
   useEffect(() => {
-    if (step === 2 && selectedAddress) {
-      const fetchTotals = async () => {
-        setIsCalculating(true);
-        try {
-          const res = await getCheckoutTotals({
-            source: source === CheckoutSource.BUY_NOW ? "BUY_NOW" : "CART",
-            pincode: selectedAddress.postalCode,
-            buyNowItem: source === CheckoutSource.BUY_NOW && buyNowItem ? {
-              productId: buyNowItem.productId,
-              variantId: buyNowItem.variantId,
-              quantity: buyNowItem.quantity
-            } : undefined
-          });
-          setTotals(res);
-        } catch (err) {
-          console.error("Calculation error:", err);
-          toast.error("Failed to calculate order totals");
-        } finally {
-          setIsCalculating(false);
-        }
-      };
-      fetchTotals();
-    }
-  }, [step, selectedAddress, source, buyNowItem]);
+    const hasAnyItems = source === CheckoutSource.BUY_NOW ? !!buyNowItem : (cartItems && cartItems.length > 0);
+    if (!hasAnyItems) return;
+
+    const fetchTotals = async () => {
+      setIsCalculating(true);
+      try {
+        const res = await getCheckoutTotals({
+          source: source === CheckoutSource.BUY_NOW ? "BUY_NOW" : "CART",
+          pincode: selectedAddress?.postalCode,
+          buyNowItem: source === CheckoutSource.BUY_NOW && buyNowItem ? {
+            productId: buyNowItem.productId,
+            variantId: buyNowItem.variantId,
+            quantity: buyNowItem.quantity
+          } : undefined
+        });
+        setTotals(res);
+      } catch (err) {
+        console.error("Calculation error:", err);
+        toast.error("Failed to calculate order totals");
+      } finally {
+        setIsCalculating(false);
+      }
+    };
+    fetchTotals();
+  }, [step, selectedAddress, source, buyNowItem, cartItems]);
 
   if (isCartLoading) {
     return (
@@ -177,7 +178,7 @@ export default function CheckoutPage() {
 
           if (verifyRes.ok) {
             toast.success("Payment successful!");
-            window.location.href = `${routes.checkoutSuccess}?orderId=${orderData.orderId}`;
+            window.location.href = `${routes.checkoutSuccess}?orderNumber=${orderData.orderNumber}`;
           } else {
             toast.error("Payment verification failed");
             setPaymentFailed(true);
@@ -402,6 +403,22 @@ export default function CheckoutPage() {
                           <div className="flex-1 text-sm space-y-1">
                             <div className="font-semibold text-slate-800 line-clamp-1">{item.product.name}</div>
                             
+                            {(item as any).isCustom && (item as any).customData && (
+                              <div className="text-xs text-slate-500">
+                                Custom: {((item as any).customData as any).width}" × {((item as any).customData as any).length}" × {((item as any).customData as any).thickness}"
+                              </div>
+                            )}
+                            {!(item as any).isCustom && (item.variant as any)?.mattressVariant && (
+                              <div className="text-xs text-slate-500">
+                                {(item.variant as any).mattressVariant.sizeName} ({(item.variant as any).mattressVariant.width}"×{(item.variant as any).mattressVariant.length}") • {(item.variant as any).mattressVariant.thickness}"
+                              </div>
+                            )}
+                            {!(item as any).isCustom && (item.variant as any)?.sofaVariant && (
+                              <div className="text-xs text-slate-500">
+                                {(item.variant as any).sofaVariant.seatingCapacity} Seater
+                              </div>
+                            )}
+                            
                             {isBogo ? (
                               <div className="space-y-1">
                                 <div className="flex justify-between text-xs text-slate-600">
@@ -420,7 +437,7 @@ export default function CheckoutPage() {
                               <div className="flex justify-between text-slate-500">
                                 <span>Qty: {item.quantity}</span>
                                 <span className="font-semibold text-slate-700">
-                                  ₹{formatPrice(Number(item.variant?.salePrice || 0))}
+                                  ₹{formatPrice(Number((item as any).isCustom && (item as any).customData ? (item as any).customData.calculatedPrice : (item.variant?.salePrice || 0)))}
                                 </span>
                               </div>
                             )}
@@ -442,9 +459,9 @@ export default function CheckoutPage() {
                       <div className="border-t pt-4 space-y-2 text-sm text-slate-600">
                         <div className="flex justify-between">
                           <span>Subtotal</span>
-                          <span className="font-medium text-slate-800">₹{formatPrice(step === 2 ? totals.subTotal : checkoutItems.reduce((t, i) => t + Number(i.variant?.salePrice || 0) * i.quantity, 0))}</span>
+                          <span className="font-medium text-slate-800">₹{formatPrice(totals.subTotal > 0 ? totals.subTotal : checkoutItems.reduce((t, i) => t + Number((i as any).isCustom && (i as any).customData ? (i as any).customData.calculatedPrice : (i.variant?.salePrice || 0)) * i.quantity, 0))}</span>
                         </div>
-                        {step === 2 && totals.discountTotal > 0 && (
+                        {totals.discountTotal > 0 && (
                           <div className="flex justify-between text-emerald-600 font-medium">
                             <span>Discount (BOGO)</span>
                             <span>-₹{formatPrice(totals.discountTotal)}</span>
@@ -453,7 +470,7 @@ export default function CheckoutPage() {
                         <div className="flex justify-between">
                           <span>Shipping</span>
                           <span className="font-medium text-slate-800">
-                            {step === 2 
+                            {step >= 2 
                               ? totals.shippingTotal === 0 ? "Free" : `₹${totals.shippingTotal}` 
                               : "Calculated next"}
                           </span>
@@ -462,7 +479,7 @@ export default function CheckoutPage() {
 
                       <div className="border-t pt-4 flex justify-between font-bold text-lg text-slate-900">
                         <span>Total</span>
-                        <span>₹{formatPrice(step === 2 ? totals.totalAmount : checkoutItems.reduce((t, i) => t + Number(i.variant?.salePrice || 0) * i.quantity, 0))}</span>
+                        <span>₹{formatPrice(step >= 2 ? totals.totalAmount : Math.max(0, totals.subTotal - totals.discountTotal))}</span>
                       </div>
                     </>
                   )}

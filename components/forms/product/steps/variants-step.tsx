@@ -4,7 +4,7 @@ import { useWatch, type UseFormReturn } from "react-hook-form";
 
 import type { CreateProductInput } from "@/lib/schema/product-form-schema";
 
-import { MattressVariantArray } from "../variants/mattress-variant-form";
+import { MatrixVariantForm } from "../variants/matrix-variant-form";
 import { SofaVariantArray } from "../variants/sofa-variant-form";
 import { useEffect } from "react";
 
@@ -37,7 +37,7 @@ export function VariantsStep({ form }: VariantsStepProps) {
       )}
 
       {productType === "MATTRESS" ? (
-        <MattressVariantArray form={form} />
+        <MatrixVariantForm form={form as any} />
       ) : (
         <SofaVariantArray form={form} />
       )}

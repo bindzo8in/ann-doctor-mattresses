@@ -36,8 +36,25 @@ export default function OrdersPage() {
   const [trackingUrl, setTrackingUrl] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
 
+  // Branch Assignment state
+  const [branches, setBranches] = useState<any[]>([]);
+  const [canAssignBranch, setCanAssignBranch] = useState(false);
+  const [selectedBranchId, setSelectedBranchId] = useState<string | null>(null);
+
+  useEffect(() => {
+    import("@/actions/branches").then(module => {
+      module.getBranches().then(res => {
+        setBranches(res);
+        setCanAssignBranch(true);
+      }).catch(() => {
+        setCanAssignBranch(false); // Likely not a SUPER_ADMIN
+      });
+    });
+  }, []);
+
   // Print Shipping Label State
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [isAssignBranchModalOpen, setIsAssignBranchModalOpen] = useState(false);
   const [printFromName, setPrintFromName] = useState("Ann Doctor Mattresses");
   const [printFromPhone, setPrintFromPhone] = useState("+91 98765 43210");
   const [printFromAddress1, setPrintFromAddress1] = useState("Geographic Hub: South India");
@@ -401,6 +418,7 @@ export default function OrdersPage() {
     setCourierName(order.courierName || "");
     setTrackingNumber(order.trackingNumber || "");
     setTrackingUrl(order.trackingUrl || "");
+    setSelectedBranchId(order.branchId || null);
 
     // Default print label setup
     const addr = order.shippingAddress || {};
@@ -415,37 +433,73 @@ export default function OrdersPage() {
     setPrintLabelType("PREPAID");
   };
 
-  const handleUpdateOrder = async (e?: React.FormEvent, overrideStatus?: string) => {
+  const handleUpdateOrder = async (e?: React.FormEvent, directStatus?: string) => {
     if (e) e.preventDefault();
     if (!selectedOrder) return;
 
-    setIsUpdating(true);
-    const finalStatus = overrideStatus || status;
+    const targetStatus = directStatus || status;
+
+    // Validate that order has a branch before moving to assigned or later statuses
+    const requiresBranch = ["ASSIGNED", "PROCESSING", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"].includes(targetStatus);
+    if (requiresBranch && !selectedOrder.branchId) {
+      toast.error(`You must assign a branch before changing status to ${targetStatus}`);
+      return;
+    }
+
     try {
+      setIsUpdating(true);
       const res = await fetch(`/api/admin/orders/${selectedOrder.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          status: finalStatus,
-          courierName: courierName || null,
-          trackingNumber: trackingNumber || null,
-          trackingUrl: trackingUrl || null,
+          status: directStatus || status,
+          courierName,
+          trackingNumber,
+          trackingUrl,
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to update order");
+      if (res.ok) {
+        toast.success("Order updated successfully");
+        fetchOrders(cursorHistory[currentIndex]);
+        if (directStatus) {
+          setStatus(directStatus);
+          setSelectedOrder({ ...selectedOrder, status: directStatus });
+        }
+      } else {
+        toast.error("Failed to update order");
       }
-
-      const updated = await res.json();
-      toast.success("Order updated successfully!");
-      
-      // Update local state list
-      setOrders(prev => prev.map(o => o.id === selectedOrder.id ? { ...o, ...updated } : o));
       setSelectedOrder(null);
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to update order");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleAssignBranch = async () => {
+    if (!selectedOrder) return;
+    try {
+      setIsUpdating(true);
+      import("@/actions/orders").then(async (module) => {
+        await module.assignOrderToBranch(selectedOrder.id, selectedBranchId || null);
+        
+        // Also automatically update status to ASSIGNED
+        if (selectedOrder.status === "PENDING_ASSIGNMENT" && selectedBranchId) {
+          await fetch(`/api/admin/orders/${selectedOrder.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "ASSIGNED" }),
+          });
+        }
+        
+        toast.success("Branch assigned successfully");
+        fetchOrders(cursorHistory[currentIndex]);
+        setSelectedOrder(null);
+      });
+    } catch (error: any) {
+      toast.error(error.message || "Failed to assign branch");
     } finally {
       setIsUpdating(false);
     }
@@ -505,7 +559,7 @@ export default function OrdersPage() {
         ];
       case "PENDING_ASSIGNMENT":
         return [
-          { value: "ASSIGNED", label: "Assign Branch", variant: "default" },
+          { value: "OPEN_ASSIGN_MODAL", label: "Assign Branch", variant: "default" },
           { value: "CANCELLED", label: "Cancel Order", variant: "destructive" }
         ];
       case "ASSIGNED":
@@ -716,7 +770,13 @@ export default function OrdersPage() {
                           type="button"
                           variant={opt.variant as any || "outline"}
                           size="sm"
-                          onClick={() => handleUpdateOrder(undefined, opt.value)}
+                          onClick={() => {
+                            if (opt.value === "OPEN_ASSIGN_MODAL") {
+                              setIsAssignBranchModalOpen(true);
+                            } else {
+                              handleUpdateOrder(undefined, opt.value);
+                            }
+                          }}
                           disabled={isUpdating}
                           className={status === opt.value ? "ring-2 ring-primary ring-offset-1" : ""}
                         >
@@ -736,11 +796,15 @@ export default function OrdersPage() {
                     onChange={(e) => setStatus(e.target.value)}
                     className="flex h-8 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-xs shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
-                    {statusOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
+                    {statusOptions.map((opt) => {
+                      const reqBranch = ["ASSIGNED", "PROCESSING", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"].includes(opt.value);
+                      const disabled = reqBranch && !selectedOrder.branchId;
+                      return (
+                        <option key={opt.value} value={opt.value} disabled={disabled}>
+                          {opt.label} {disabled ? "(Requires Branch)" : ""}
+                        </option>
+                      );
+                    })}
                   </select>
                 </div>
               </div>
@@ -792,6 +856,34 @@ export default function OrdersPage() {
                 </div>
               )}
 
+              {/* Branch Assignment */}
+              {canAssignBranch && (
+                <div className="border-t pt-4 space-y-3">
+                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                    Branch Assignment
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={selectedBranchId || selectedOrder.branchId || ""}
+                      onChange={(e) => setSelectedBranchId(e.target.value)}
+                      className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="">Unassigned</option>
+                      {branches.map(b => (
+                        <option key={b.id} value={b.id}>{b.name}</option>
+                      ))}
+                    </select>
+                    <Button 
+                      type="button" 
+                      onClick={handleAssignBranch} 
+                      disabled={isUpdating || (selectedBranchId || "") === (selectedOrder.branchId || "")}
+                    >
+                      Assign
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Actions Button Panel */}
               <div className="sticky bottom-0 bg-white space-y-2 border-t pt-4 pb-2 z-10 mt-6">
                 {["PAID", "PENDING_ASSIGNMENT", "ASSIGNED", "PROCESSING", "SHIPPED", "OUT_FOR_DELIVERY", "DELIVERED"].includes(selectedOrder.status) && (
@@ -814,6 +906,48 @@ export default function OrdersPage() {
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Assign Branch Modal */}
+      <Dialog open={isAssignBranchModalOpen} onOpenChange={setIsAssignBranchModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900">Assign to Branch</DialogTitle>
+            <DialogDescription className="text-slate-500">
+              Select a branch to handle this order. The status will automatically move to Assigned.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Select Branch</label>
+              <select
+                value={selectedBranchId || ""}
+                onChange={(e) => setSelectedBranchId(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+              >
+                <option value="">-- Choose a branch --</option>
+                {branches.map(b => (
+                  <option key={b.id} value={b.id}>{b.name}</option>
+                ))}
+              </select>
+            </div>
+            <Button 
+              className="w-full" 
+              onClick={() => {
+                if (!selectedBranchId) {
+                  toast.error("Please select a branch first");
+                  return;
+                }
+                handleAssignBranch();
+                setIsAssignBranchModalOpen(false);
+              }}
+              disabled={isUpdating || !selectedBranchId}
+            >
+              {isUpdating ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Confirm Assignment
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Print Shipping Label Modal */}
       <Dialog open={isPrintModalOpen} onOpenChange={setIsPrintModalOpen}>

@@ -8,20 +8,22 @@ import Link from "next/link";
 
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
-  const orderId = searchParams.get("orderId");
+  const orderNumber = searchParams.get("orderNumber");
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    if (!orderNumber) {
+      router.push("/");
+    }
+  }, [orderNumber, router]);
 
   if (!mounted) {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary w-10 h-10" /></div>;
   }
 
-  if (!orderId) {
-    router.push("/");
+  if (!orderNumber) {
     return null;
   }
 
@@ -30,7 +32,7 @@ function CheckoutSuccessContent() {
       <CheckCircle2 className="w-20 h-20 text-green-500 mb-6" />
       <h1 className="text-3xl font-bold mb-2">Order Placed Successfully!</h1>
       <p className="text-muted-foreground mb-8 text-lg max-w-md">
-        Thank you for your purchase. Your order ID is <span className="font-semibold text-foreground">{orderId}</span>. We've sent a confirmation email with your order details.
+        Thank you for your purchase. Your order ID is <span className="font-semibold text-foreground">{orderNumber}</span>. We've sent a confirmation email with your order details.
       </p>
       
       <div className="flex gap-4">

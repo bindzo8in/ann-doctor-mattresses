@@ -43,6 +43,14 @@ function serializeProduct(p: any): HomeProduct {
   };
 }
 
+export async function getHeroBanners() {
+  const banners = await prisma.heroBanner.findMany({
+    where: { isActive: true },
+    orderBy: { order: "asc" },
+  });
+  return banners;
+}
+
 export async function getFeaturedProducts(limit = 8): Promise<HomeProduct[]> {
   const products = await prisma.product.findMany({
     where: { isFeatured: true, isActive: true },
@@ -51,7 +59,7 @@ export async function getFeaturedProducts(limit = 8): Promise<HomeProduct[]> {
       category: true,
       variants: { orderBy: { salePrice: "asc" }, take: 1 },
     },
-    orderBy: { updatedAt: "desc" },
+    orderBy: { featuredOrder: "asc" },
   });
   return products.map(serializeProduct);
 }
