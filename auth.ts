@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 
 import prisma from "./lib/prisma";
 import authConfig from "./auth.config";
+import { auditLogger } from "./lib/audit";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   debug: process.env.NODE_ENV === "development",
@@ -65,5 +66,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   callbacks: {
     ...authConfig.callbacks,
+  },
+
+  events: {
+    async signIn({ user }) {
+      if (user?.id) {
+        await auditLogger.log({
+          action: "USER_LOGIN",
+          entityType: "Auth",
+          entityId: user.id,
+          description: `User ${user.email} logged in`,
+          actorUserId: user.id,
+          actorRole: (user as any).role,
+        });
+      }
+    },
   },
 });

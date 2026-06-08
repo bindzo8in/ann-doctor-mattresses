@@ -74,6 +74,8 @@ export async function POST(req: NextRequest) {
         productId: buyNowItem.productId,
         variantId: buyNowItem.variantId,
         quantity: buyNowItem.quantity,
+        isCustom: buyNowItem.isCustom,
+        customData: buyNowItem.customData,
       }];
 
       calculation = await calculateCartTotals(itemsForTotals, address.postalCode);

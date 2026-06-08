@@ -12,6 +12,8 @@ export async function getCheckoutTotals(params: {
     productId: string;
     variantId: string | null;
     quantity: number;
+    isCustom?: boolean;
+    customData?: any;
   };
 }) {
   const session = await auth();
@@ -19,7 +21,7 @@ export async function getCheckoutTotals(params: {
     throw new Error("Unauthorized");
   }
 
-  let itemsToCalculate: Array<{ productId: string; variantId: string | null; quantity: number }> = [];
+  let itemsToCalculate: Array<{ productId: string; variantId: string | null; quantity: number; isCustom?: boolean; customData?: any }> = [];
 
   if (params.source === "BUY_NOW") {
     if (!params.buyNowItem) {
@@ -34,6 +36,8 @@ export async function getCheckoutTotals(params: {
       productId: item.productId,
       variantId: item.variantId,
       quantity: item.quantity,
+      isCustom: item.isCustom,
+      customData: item.customData,
     }));
   }
 
@@ -60,7 +64,7 @@ export async function getCheckoutTotals(params: {
   };
 }
 
-export async function cancelOrderAction(orderId: string) {
+export async function cancelOrderAction(orderId: string, cancelReason?: string) {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Unauthorized");
@@ -81,15 +85,18 @@ export async function cancelOrderAction(orderId: string) {
 
   await prisma.order.update({
     where: { id: orderId },
-    data: { status: "CANCELLED" },
+    data: { 
+      status: "CANCELLED",
+      ...(cancelReason && { cancelReason }),
+    },
   });
 
   await auditLogger.log({
     action: "ORDER_CANCELLED",
     entityType: "Order",
     entityId: order.id,
-    description: `Order ${order.orderNumber} cancelled by customer`,
-    newValues: { status: "CANCELLED" },
+    description: `Order ${order.orderNumber} cancelled by customer${cancelReason ? ` - Reason: ${cancelReason}` : ''}`,
+    newValues: { status: "CANCELLED", cancelReason },
     actorUserId: session.user.id,
     actorRole: session.user.role,
   });

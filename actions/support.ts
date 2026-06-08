@@ -2,6 +2,12 @@
 
 import prisma from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import * as React from "react";
+import ContactMessageEmail from "@/emails/ContactMessageEmail";
+import ContactAutoReplyEmail from "@/emails/ContactAutoReplyEmail";
+import ComplaintLoggedEmail from "@/emails/ComplaintLoggedEmail";
+import ComplaintAutoReplyEmail from "@/emails/ComplaintAutoReplyEmail";
+import { uploadImage } from "@/lib/cloudinary";
 
 export async function submitContactMessage(data: { name: string; email: string; message: string }) {
   try {
@@ -17,24 +23,21 @@ export async function submitContactMessage(data: { name: string; email: string; 
     await sendEmail({
       to: process.env.EMAIL_FROM || "admin@anndoctor.in",
       subject: `New Contact Request from ${data.name}`,
-      html: `
-        <h3>New Contact Message</h3>
-        <p><strong>Name:</strong> ${data.name}</p>
-        <p><strong>Email:</strong> ${data.email}</p>
-        <p><strong>Message:</strong><br/>${data.message}</p>
-      `,
+      react: ContactMessageEmail({
+        name: data.name,
+        email: data.email,
+        message: data.message,
+      }),
     });
 
     // Auto-reply to Customer
     await sendEmail({
       to: data.email,
       subject: `We received your message - Ann Doctor Mattresses`,
-      html: `
-        <h3>Thank you for reaching out, ${data.name}!</h3>
-        <p>We have received your message and our team will get back to you shortly.</p>
-        <hr/>
-        <p><em>Your message:</em><br/>${data.message}</p>
-      `,
+      react: ContactAutoReplyEmail({
+        name: data.name,
+        message: data.message,
+      }),
     });
 
     return { success: true, contact };
@@ -43,8 +46,6 @@ export async function submitContactMessage(data: { name: string; email: string; 
     throw new Error("Failed to submit contact message");
   }
 }
-
-import { uploadImage } from "@/lib/cloudinary";
 
 export async function submitComplaint(formData: FormData) {
   try {
@@ -78,27 +79,26 @@ export async function submitComplaint(formData: FormData) {
     await sendEmail({
       to: process.env.EMAIL_FROM || "admin@anndoctor.in",
       subject: `New Complaint Logged: ${subject || "General"}`,
-      html: `
-        <h3>New Complaint (#${complaint.id})</h3>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Subject:</strong> ${subject || "N/A"}</p>
-        <p><strong>Message:</strong><br/>${message}</p>
-        ${imageUrl ? `<p><strong>Attachment:</strong> <a href="${imageUrl}">View Image</a></p>` : ""}
-      `,
+      react: ComplaintLoggedEmail({
+        id: complaint.id,
+        name,
+        email,
+        subject,
+        message,
+        imageUrl,
+      }),
     });
 
     // Auto-reply to Customer
     await sendEmail({
       to: email,
       subject: `Complaint Received (#${complaint.id}) - Ann Doctor Mattresses`,
-      html: `
-        <h3>Hi ${name},</h3>
-        <p>We have successfully logged your complaint (Ticket #${complaint.id}). Our support team will investigate and respond to you as soon as possible.</p>
-        <p><strong>Subject:</strong> ${subject || "N/A"}</p>
-        <p><strong>Details:</strong><br/>${message}</p>
-        <p>Thank you for your patience.</p>
-      `,
+      react: ComplaintAutoReplyEmail({
+        id: complaint.id,
+        name,
+        subject,
+        message,
+      }),
     });
 
     return { success: true, complaintId: complaint.id };

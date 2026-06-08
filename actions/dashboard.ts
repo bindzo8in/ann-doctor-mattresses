@@ -2,6 +2,8 @@
 
 import prisma from "@/lib/prisma";
 import { OrderStatus, PaymentStatus } from "@/app/generated/prisma/client";
+import { auth } from "@/auth";
+import { userHasPermission } from "@/lib/rbac";
 
 export type PeriodFilter = "today" | "this_week" | "last_month" | "this_year" | "all_time";
 
@@ -38,6 +40,11 @@ function getDateRange(period: PeriodFilter): { start: Date | undefined; end: Dat
 }
 
 export async function getDashboardStats(period: PeriodFilter = "all_time") {
+  const session = await auth();
+  if (!userHasPermission(session?.user, "dashboard.read")) {
+    throw new Error("Unauthorized");
+  }
+
   const { start, end } = getDateRange(period);
   
   const dateFilter = start && end ? {
@@ -49,7 +56,7 @@ export async function getDashboardStats(period: PeriodFilter = "all_time") {
 
   try {
     // Total Revenue (only paid orders)
-    const paidOrders = await prisma.order.findMany({
+    const revenueAggregation = await prisma.order.aggregate({
       where: {
         status: {
           in: [
@@ -64,12 +71,12 @@ export async function getDashboardStats(period: PeriodFilter = "all_time") {
         },
         ...dateFilter
       },
-      select: {
+      _sum: {
         totalAmount: true
       }
     });
     
-    const totalRevenue = paidOrders.reduce((sum, order) => sum + Number(order.totalAmount), 0);
+    const totalRevenue = Number(revenueAggregation._sum.totalAmount || 0);
     
     // Daily Orders (Total orders count for the period)
     const totalOrdersCount = await prisma.order.count({
@@ -109,6 +116,11 @@ export async function getDashboardStats(period: PeriodFilter = "all_time") {
 }
 
 export async function getRecentOrders(limit: number = 5) {
+  const session = await auth();
+  if (!userHasPermission(session?.user, "dashboard.read")) {
+    throw new Error("Unauthorized");
+  }
+
   try {
     const orders = await prisma.order.findMany({
       take: limit,
@@ -124,7 +136,13 @@ export async function getRecentOrders(limit: number = 5) {
         }
       }
     });
-    return orders;
+    return orders.map(order => ({
+      ...order,
+      subTotal: Number(order.subTotal),
+      discountTotal: Number(order.discountTotal),
+      shippingTotal: Number(order.shippingTotal),
+      totalAmount: Number(order.totalAmount),
+    }));
   } catch (error) {
     console.error("Error fetching recent orders:", error);
     throw new Error("Failed to fetch recent orders");
@@ -132,6 +150,11 @@ export async function getRecentOrders(limit: number = 5) {
 }
 
 export async function getChartData(period: PeriodFilter = "all_time") {
+  const session = await auth();
+  if (!userHasPermission(session?.user, "dashboard.read")) {
+    throw new Error("Unauthorized");
+  }
+
   const { start, end } = getDateRange(period);
   
   const dateFilter = start && end ? {

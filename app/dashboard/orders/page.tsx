@@ -11,6 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
 import { formatPrice } from "@/lib/price";
 import {
   Dialog,
@@ -36,6 +37,7 @@ export default function OrdersPage() {
   const [courierName, setCourierName] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [trackingUrl, setTrackingUrl] = useState("");
+  const [cancelReason, setCancelReason] = useState("");
 
   // Branch Assignment state
   const [branches, setBranches] = useState<any[]>([]);
@@ -401,6 +403,7 @@ export default function OrdersPage() {
     setCourierName(order.courierName || "");
     setTrackingNumber(order.trackingNumber || "");
     setTrackingUrl(order.trackingUrl || "");
+    setCancelReason(order.cancelReason || "");
     setSelectedBranchId(order.branchId || null);
 
     // Default print label setup
@@ -460,6 +463,7 @@ export default function OrdersPage() {
         courierName,
         trackingNumber,
         trackingUrl,
+        cancelReason,
       }
     });
   };
@@ -854,6 +858,7 @@ export default function OrdersPage() {
                     value={courierName}
                     onChange={(e) => setCourierName(e.target.value)}
                     placeholder="E.g. Delhivery, BlueDart"
+                    disabled={selectedOrder.status === 'CANCELLED' || selectedOrder.status === 'REFUNDED'}
                   />
                 </div>
 
@@ -863,6 +868,7 @@ export default function OrdersPage() {
                     value={trackingNumber}
                     onChange={(e) => setTrackingNumber(e.target.value)}
                     placeholder="E.g. 1234567890"
+                    disabled={selectedOrder.status === 'CANCELLED' || selectedOrder.status === 'REFUNDED'}
                   />
                 </div>
 
@@ -873,9 +879,28 @@ export default function OrdersPage() {
                     value={trackingUrl}
                     onChange={(e) => setTrackingUrl(e.target.value)}
                     placeholder="https://track.delhivery.com/..."
+                    disabled={selectedOrder.status === 'CANCELLED' || selectedOrder.status === 'REFUNDED'}
                   />
                 </div>
               </div>
+
+              {/* Cancellation Reason (if applicable) */}
+              {status === "CANCELLED" && (
+                <div className="space-y-4 border-t pt-4">
+                  <h3 className="text-sm font-bold text-red-600 flex items-center gap-1.5">
+                    Cancellation Details
+                  </h3>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-700">Cancellation Reason (Optional)</label>
+                    <Textarea
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      placeholder="Reason for cancellation..."
+                      className="resize-none"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Shipping Address Summary */}
               {selectedOrder.shippingAddress && (

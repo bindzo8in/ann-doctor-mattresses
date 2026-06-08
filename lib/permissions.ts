@@ -40,6 +40,9 @@ export const permissions = [
   "settings.read",
   "settings.update",
 
+  // dashboard
+  "dashboard.read",
+
   // audit
   "audit.read",
 ] as const;

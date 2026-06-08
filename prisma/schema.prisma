@@ -403,6 +403,7 @@ model Order {
 
   shippingAddress Json
   notes           String?
+  cancelReason    String?
 
   courierName    String?
   trackingNumber String?

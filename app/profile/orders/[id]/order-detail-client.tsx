@@ -13,6 +13,8 @@ import Script from "next/script";
 import { jsPDF } from "jspdf";
 import Image from "next/image";
 import { formatPrice } from "@/lib/price";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 interface OrderDetailClientProps {
   order: {
@@ -27,6 +29,7 @@ interface OrderDetailClientProps {
     totalAmount: number;
     shippingAddress: any;
     notes?: string | null;
+    cancelReason?: string | null;
     courierName?: string | null;
     trackingNumber?: string | null;
     trackingUrl?: string | null;
@@ -55,6 +58,8 @@ interface OrderDetailClientProps {
 export function OrderDetailClient({ order }: OrderDetailClientProps) {
   const [status, setStatus] = useState(order.status);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancelReasonInput, setCancelReasonInput] = useState("");
   const router = useRouter();
   console.log(order)
   const getStatusBadge = (orderStatus: string) => {
@@ -88,15 +93,13 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
     }
   };
 
-  const handleCancel = async () => {
-    const confirmCancel = window.confirm("Are you sure you want to cancel this pending order?");
-    if (!confirmCancel) return;
-
+  const handleCancelSubmit = async () => {
     setIsProcessing(true);
     try {
-      await cancelOrderAction(order.id);
+      await cancelOrderAction(order.id, cancelReasonInput);
       toast.success("Order cancelled successfully");
       setStatus("CANCELLED");
+      setIsCancelModalOpen(false);
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to cancel order");
@@ -429,7 +432,7 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
 
             {/* Cancel Order */}
             {["PENDING", "PENDING_PAYMENT", "PAID", "PENDING_ASSIGNMENT"].includes(status) && (
-              <Button size="sm" variant="outline" onClick={handleCancel} disabled={isProcessing} className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+              <Button size="sm" variant="outline" onClick={() => setIsCancelModalOpen(true)} disabled={isProcessing} className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
                 Cancel Order
               </Button>
             )}
@@ -681,9 +684,52 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
                 </CardContent>
               </Card>
             )}
+
+            {/* Cancellation Reason */}
+            {status === "CANCELLED" && order.cancelReason && (
+              <Card className="border border-red-100 shadow-sm rounded-2xl bg-red-50">
+                <CardHeader>
+                  <CardTitle className="text-base font-bold text-red-800">Cancellation Reason</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-red-700">
+                  {order.cancelReason}
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </div>
+
+      <Dialog open={isCancelModalOpen} onOpenChange={setIsCancelModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-red-600">Cancel Order</DialogTitle>
+            <DialogDescription className="text-slate-500">
+              Are you sure you want to cancel order #{order.orderNumber}? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Reason for cancellation (optional)</label>
+              <Textarea
+                placeholder="Tell us why you are cancelling this order..."
+                value={cancelReasonInput}
+                onChange={(e) => setCancelReasonInput(e.target.value)}
+                className="resize-none h-24"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsCancelModalOpen(false)} disabled={isProcessing}>
+              Keep Order
+            </Button>
+            <Button variant="destructive" onClick={handleCancelSubmit} disabled={isProcessing}>
+              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Confirm Cancellation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

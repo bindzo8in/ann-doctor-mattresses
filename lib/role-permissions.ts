@@ -37,6 +37,8 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "settings.read",
     "settings.update",
 
+    "dashboard.read",
+
     "audit.read",
   ],
 
@@ -46,6 +48,7 @@ export const rolePermissions: Record<UserRole, Permission[]> = {
     "products.read",
     "reviews.read",
     "settings.read",
+    "dashboard.read",
   ],
 
   [UserRole.CUSTOMER]: [],

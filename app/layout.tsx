@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { PushManager } from "@/components/notifications/push-manager";
+import { AppSessionProvider } from "@/components/providers/session-provider";
 
 const fontSans = Inter({
   subsets: ["latin"],
@@ -37,9 +38,11 @@ export default function RootLayout({
     <html lang="en" className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} antialiased`}>
       <body>
         <QueryProvider>
-          <TooltipProvider>
-            {children}
-          </TooltipProvider>
+          <AppSessionProvider>
+            <TooltipProvider>
+              {children}
+            </TooltipProvider>
+          </AppSessionProvider>
           <Toaster />
           <PushManager />
         </QueryProvider>

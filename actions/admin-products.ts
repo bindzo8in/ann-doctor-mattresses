@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { MattressSize } from "@/app/generated/prisma/client";
+import { auditLogger } from "@/lib/audit";
+import { userHasPermission } from "@/lib/rbac";
 
 export interface MatrixVariantInput {
   sizeName: MattressSize;
@@ -29,7 +31,7 @@ export async function upsertProductMatrix(
   customSettings: CustomSizeSettingsInput
 ) {
   const session = await auth();
-  if (!session?.user?.id) {
+  if (!userHasPermission(session?.user, "products.update")) {
     throw new Error("Unauthorized");
   }
 
@@ -112,6 +114,15 @@ export async function upsertProductMatrix(
         where: { id: { in: variantsToDelete } },
       });
     }
+
+    await auditLogger.log({
+      action: "PRODUCT_MATRIX_UPDATED",
+      entityType: "Product",
+      entityId: productId,
+      description: `Product matrix and custom settings updated for product ${productId}`,
+      actorUserId: session!.user.id,
+      actorRole: session!.user.role,
+    });
 
     revalidatePath("/dashboard/products");
     revalidatePath(`/products`);

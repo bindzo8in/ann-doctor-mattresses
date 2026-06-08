@@ -11,6 +11,8 @@ import { routes } from "@/lib/routes";
 import { cancelOrderAction } from "@/actions/checkout";
 import { toast } from "sonner";
 import Script from "next/script";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 
 import Image from "next/image";
 import { getCustomerOrders } from "@/actions/orders";
@@ -44,6 +46,8 @@ export function OrdersClient({ initialOrders, initialNextCursor }: OrdersClientP
   const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [cancelModalOrderId, setCancelModalOrderId] = useState<string | null>(null);
+  const [cancelReasonInput, setCancelReasonInput] = useState("");
   const router = useRouter();
 
   const getStatusBadge = (status: string) => {
@@ -77,19 +81,20 @@ export function OrdersClient({ initialOrders, initialNextCursor }: OrdersClientP
     }
   };
 
-  const handleCancelOrder = async (orderId: string) => {
-    const confirmCancel = window.confirm("Are you sure you want to cancel this pending order?");
-    if (!confirmCancel) return;
-
-    setIsProcessing(orderId);
+  const handleCancelSubmit = async () => {
+    if (!cancelModalOrderId) return;
+    
+    setIsProcessing(cancelModalOrderId);
     try {
-      await cancelOrderAction(orderId);
+      await cancelOrderAction(cancelModalOrderId, cancelReasonInput);
       toast.success("Order cancelled successfully");
       
       // Update local state
       setOrders(prev =>
-        prev.map(o => (o.id === orderId ? { ...o, status: "CANCELLED" } : o))
+        prev.map(o => (o.id === cancelModalOrderId ? { ...o, status: "CANCELLED" } : o))
       );
+      setCancelModalOrderId(null);
+      setCancelReasonInput("");
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Failed to cancel order");
@@ -267,7 +272,10 @@ export function OrdersClient({ initialOrders, initialNextCursor }: OrdersClientP
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => handleCancelOrder(order.id)}
+                          onClick={() => {
+                            setCancelModalOrderId(order.id);
+                            setCancelReasonInput("");
+                          }}
                           disabled={isProcessing !== null}
                           className="text-red-600 hover:bg-red-50 hover:text-red-700"
                         >
@@ -296,6 +304,37 @@ export function OrdersClient({ initialOrders, initialNextCursor }: OrdersClientP
           )}
         </div>
       </div>
+
+      <Dialog open={cancelModalOrderId !== null} onOpenChange={(open) => !open && setCancelModalOrderId(null)}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-red-600">Cancel Order</DialogTitle>
+            <DialogDescription className="text-slate-500">
+              Are you sure you want to cancel this order? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Reason for cancellation (optional)</label>
+              <Textarea
+                placeholder="Tell us why you are cancelling this order..."
+                value={cancelReasonInput}
+                onChange={(e) => setCancelReasonInput(e.target.value)}
+                className="resize-none h-24"
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setCancelModalOrderId(null)} disabled={isProcessing !== null}>
+              Keep Order
+            </Button>
+            <Button variant="destructive" onClick={handleCancelSubmit} disabled={isProcessing !== null}>
+              {isProcessing !== null ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+              Confirm Cancellation
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
