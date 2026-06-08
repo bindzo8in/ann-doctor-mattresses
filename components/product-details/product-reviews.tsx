@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getApprovedReviews, canUserReviewProduct, createReview } from "@/actions/reviews";
 import { Star, User, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,59 +14,57 @@ interface ProductReviewsProps {
 }
 
 export function ProductReviews({ productId }: ProductReviewsProps) {
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [canReview, setCanReview] = useState(false);
+  const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
 
   // Form state
   const [rating, setRating] = useState(5);
   const [title, setTitle] = useState("");
   const [comment, setComment] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      setIsLoading(true);
-      try {
-        const [reviewsRes, canReviewRes] = await Promise.all([
-          getApprovedReviews(productId),
-          canUserReviewProduct(productId)
-        ]);
+  const { data, isLoading } = useQuery({
+    queryKey: ["product_reviews", productId],
+    queryFn: async () => {
+      const [reviewsRes, canReviewRes] = await Promise.all([
+        getApprovedReviews(productId),
+        canUserReviewProduct(productId)
+      ]);
+      return {
+        reviews: reviewsRes.success && reviewsRes.reviews ? reviewsRes.reviews : [],
+        canReview: canReviewRes
+      };
+    }
+  });
 
-        if (reviewsRes.success && reviewsRes.reviews) {
-          setReviews(reviewsRes.reviews);
-        }
-        setCanReview(canReviewRes);
-      } catch (error) {
-        console.error("Failed to load reviews data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const reviews = data?.reviews || [];
+  const canReview = data?.canReview || false;
 
-    fetchInitialData();
-  }, [productId]);
+  const submitMutation = useMutation({
+    mutationFn: async (payload: { productId: string, rating: number, title: string, comment: string }) => {
+      const res = await createReview(payload.productId, payload.rating, payload.title, payload.comment);
+      if (!res.success) throw new Error(res.error || "Failed to submit review");
+      return res;
+    },
+    onSuccess: () => {
+      toast.success("Review submitted successfully! It will be visible after admin approval.");
+      setShowForm(false);
+      queryClient.invalidateQueries({ queryKey: ["product_reviews", productId] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to submit review.");
+    }
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!comment.trim()) {
       toast.error("Please enter a review comment.");
       return;
     }
-
-    setIsSubmitting(true);
-    const res = await createReview(productId, rating, title, comment);
-    
-    if (res.success) {
-      toast.success("Review submitted successfully! It will be visible after admin approval.");
-      setShowForm(false);
-      setCanReview(false); // Can only review once
-    } else {
-      toast.error(res.error || "Failed to submit review.");
-    }
-    setIsSubmitting(false);
+    submitMutation.mutate({ productId, rating, title, comment });
   };
+
+  const isSubmitting = submitMutation.isPending;
 
   if (isLoading) {
     return (

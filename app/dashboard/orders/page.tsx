@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { userHasPermission } from "@/lib/rbac";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Edit3, Truck, Calendar, DollarSign, User, Printer } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -19,10 +22,9 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: session } = useSession();
+  const queryClient = useQueryClient();
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
   
   // Pagination State
   const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
@@ -34,7 +36,6 @@ export default function OrdersPage() {
   const [courierName, setCourierName] = useState("");
   const [trackingNumber, setTrackingNumber] = useState("");
   const [trackingUrl, setTrackingUrl] = useState("");
-  const [isUpdating, setIsUpdating] = useState(false);
 
   // Branch Assignment state
   const [branches, setBranches] = useState<any[]>([]);
@@ -365,52 +366,34 @@ export default function OrdersPage() {
     setIsPrintModalOpen(false);
   };
 
-  const fetchOrders = (cursor: string | null = null) => {
-    setIsLoading(true);
-    
-    const url = cursor 
-      ? `/api/admin/orders?cursor=${cursor}&limit=10` 
-      : "/api/admin/orders?limit=10";
+  const { data: fetchResult, isLoading } = useQuery({
+    queryKey: ["orders", cursorHistory[currentIndex]],
+    queryFn: async () => {
+      const cursor = cursorHistory[currentIndex];
+      const url = cursor 
+        ? `/api/admin/orders?cursor=${cursor}&limit=10` 
+        : "/api/admin/orders?limit=10";
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    }
+  });
 
-    fetch(url, { credentials: "include" })
-      .then(res => res.json())
-      .then(data => {
-        if (data.orders) {
-          setOrders(data.orders);
-          setNextCursor(data.nextCursor || null);
-        } else {
-          setOrders(Array.isArray(data) ? data : []);
-          setNextCursor(null);
-        }
-      })
-      .catch(err => {
-        console.error(err);
-        toast.error("Failed to load orders");
-      })
-      .finally(() => {
-        setIsLoading(false);
-        setIsLoadingMore(false);
-      });
-  };
+  const orders = fetchResult?.orders || (Array.isArray(fetchResult) ? fetchResult : []);
+  const nextCursor = fetchResult?.nextCursor || null;
 
   const handleNextPage = () => {
     if (!nextCursor) return;
     const nextHistory = [...cursorHistory.slice(0, currentIndex + 1), nextCursor];
     setCursorHistory(nextHistory);
     setCurrentIndex(currentIndex + 1);
-    fetchOrders(nextCursor);
   };
 
   const handlePrevPage = () => {
     if (currentIndex <= 0) return;
     const prevIndex = currentIndex - 1;
     setCurrentIndex(prevIndex);
-    fetchOrders(cursorHistory[prevIndex]);
   };
-
-  useEffect(() => {
-    fetchOrders(null);
-  }, []);
 
   const handleOpenSheet = (order: any) => {
     setSelectedOrder(order);
@@ -433,7 +416,31 @@ export default function OrdersPage() {
     setPrintLabelType("PREPAID");
   };
 
-  const handleUpdateOrder = async (e?: React.FormEvent, directStatus?: string) => {
+  const updateOrderMutation = useMutation({
+    mutationFn: async ({ orderId, payload }: { orderId: string; payload: any }) => {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error("Failed to update order");
+      return res.json();
+    },
+    onSuccess: (data, variables) => {
+      toast.success("Order updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      if (variables.payload.status) {
+        setStatus(variables.payload.status);
+      }
+      setSelectedOrder(null);
+    },
+    onError: (err: any) => {
+      console.error(err);
+      toast.error(err.message || "Failed to update order");
+    }
+  });
+
+  const handleUpdateOrder = (e?: React.FormEvent, directStatus?: string) => {
     if (e) e.preventDefault();
     if (!selectedOrder) return;
 
@@ -446,64 +453,76 @@ export default function OrdersPage() {
       return;
     }
 
-    try {
-      setIsUpdating(true);
-      const res = await fetch(`/api/admin/orders/${selectedOrder.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: directStatus || status,
-          courierName,
-          trackingNumber,
-          trackingUrl,
-        }),
-      });
-
-      if (res.ok) {
-        toast.success("Order updated successfully");
-        fetchOrders(cursorHistory[currentIndex]);
-        if (directStatus) {
-          setStatus(directStatus);
-          setSelectedOrder({ ...selectedOrder, status: directStatus });
-        }
-      } else {
-        toast.error("Failed to update order");
+    updateOrderMutation.mutate({
+      orderId: selectedOrder.id,
+      payload: {
+        status: targetStatus,
+        courierName,
+        trackingNumber,
+        trackingUrl,
       }
-      setSelectedOrder(null);
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Failed to update order");
-    } finally {
-      setIsUpdating(false);
-    }
+    });
   };
 
-  const handleAssignBranch = async () => {
-    if (!selectedOrder) return;
-    try {
-      setIsUpdating(true);
-      import("@/actions/orders").then(async (module) => {
-        await module.assignOrderToBranch(selectedOrder.id, selectedBranchId || null);
-        
-        // Also automatically update status to ASSIGNED
-        if (selectedOrder.status === "PENDING_ASSIGNMENT" && selectedBranchId) {
-          await fetch(`/api/admin/orders/${selectedOrder.id}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ status: "ASSIGNED" }),
-          });
-        }
-        
-        toast.success("Branch assigned successfully");
-        fetchOrders(cursorHistory[currentIndex]);
-        setSelectedOrder(null);
-      });
-    } catch (error: any) {
-      toast.error(error.message || "Failed to assign branch");
-    } finally {
-      setIsUpdating(false);
+  const refundMutation = useMutation({
+    mutationFn: async (orderId: string) => {
+      const ordersModule = await import("@/actions/orders");
+      const res = await ordersModule.initiateRazorpayRefund(orderId);
+      if (!res.success) throw new Error("Failed to initiate refund");
+      return res;
+    },
+    onSuccess: (res) => {
+      toast.success(`Refund initiated successfully! Refund ID: ${res.refundId}`);
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      setSelectedOrder(null);
+    },
+    onError: (err: any) => {
+      console.error(err);
+      toast.error(err.message || "Failed to initiate refund");
     }
+  });
+
+  const handleInitiateRefund = () => {
+    if (!selectedOrder) return;
+    const confirmRefund = window.confirm(`Are you sure you want to refund this order via Razorpay? This cannot be undone.`);
+    if (!confirmRefund) return;
+    refundMutation.mutate(selectedOrder.id);
   };
+
+  const assignBranchMutation = useMutation({
+    mutationFn: async ({ orderId, branchId, currentStatus }: { orderId: string, branchId: string | null, currentStatus: string }) => {
+      const module = await import("@/actions/orders");
+      await module.assignOrderToBranch(orderId, branchId);
+      
+      // Also automatically update status to ASSIGNED
+      if (currentStatus === "PENDING_ASSIGNMENT" && branchId) {
+        await fetch(`/api/admin/orders/${orderId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "ASSIGNED" }),
+        });
+      }
+    },
+    onSuccess: () => {
+      toast.success("Branch assigned successfully");
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+      setSelectedOrder(null);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to assign branch");
+    }
+  });
+
+  const handleAssignBranch = () => {
+    if (!selectedOrder) return;
+    assignBranchMutation.mutate({ 
+      orderId: selectedOrder.id, 
+      branchId: selectedBranchId || null, 
+      currentStatus: selectedOrder.status 
+    });
+  };
+
+  const isUpdating = updateOrderMutation.isPending || refundMutation.isPending || assignBranchMutation.isPending;
 
   const getStatusBadge = (orderStatus: string) => {
     switch (orderStatus) {
@@ -525,8 +544,6 @@ export default function OrdersPage() {
         return <Badge className="bg-slate-900 text-white">Delivered</Badge>;
       case "CANCELLED":
         return <Badge variant="destructive">Cancelled</Badge>;
-      case "REFUNDED":
-        return <Badge className="bg-rose-100 text-rose-800 border-rose-200">Refunded</Badge>;
       default:
         return <Badge variant="outline">{orderStatus}</Badge>;
     }
@@ -542,7 +559,6 @@ export default function OrdersPage() {
     { label: "Out for Delivery", value: "OUT_FOR_DELIVERY" },
     { label: "Delivered", value: "DELIVERED" },
     { label: "Cancelled", value: "CANCELLED" },
-    { label: "Refunded", value: "REFUNDED" },
   ];
 
   const getNextStatusOptions = (currentStatus: string) => {
@@ -555,11 +571,11 @@ export default function OrdersPage() {
       case "PAID":
         return [
           { value: "PENDING_ASSIGNMENT", label: "Pending Assignment", variant: "default" },
-          { value: "REFUNDED", label: "Refund Order", variant: "destructive" }
+          { value: "CANCELLED", label: "Cancel Order", variant: "destructive" }
         ];
       case "PENDING_ASSIGNMENT":
         return [
-          { value: "OPEN_ASSIGN_MODAL", label: "Assign Branch", variant: "default" },
+          ...(userHasPermission(session?.user, "orders.update") ? [{ value: "OPEN_ASSIGN_MODAL", label: "Assign Branch", variant: "default" }] : []),
           { value: "CANCELLED", label: "Cancel Order", variant: "destructive" }
         ];
       case "ASSIGNED":
@@ -581,12 +597,12 @@ export default function OrdersPage() {
           { value: "DELIVERED", label: "Mark as Delivered", variant: "default" }
         ];
       case "DELIVERED":
-        return [
-          { value: "REFUNDED", label: "Refund Order", variant: "destructive" }
-        ];
-      case "CANCELLED":
-      case "REFUNDED":
         return [];
+      case "CANCELLED":
+        // Logic will hide this if already refunded
+        return userHasPermission(session?.user, "orders.refund") ? [
+          { value: "INITIATE_REFUND", label: "Initiate Refund (Razorpay)", variant: "destructive" }
+        ] : [];
       default:
         return [];
     }
@@ -607,7 +623,7 @@ export default function OrdersPage() {
           <h1 className="text-2xl font-bold text-slate-900">Orders Management</h1>
           <p className="text-sm text-slate-500">Track user payments, assign shipping details, and modify status.</p>
         </div>
-        <Button onClick={() => fetchOrders(null)} variant="outline" size="sm">
+        <Button onClick={() => queryClient.invalidateQueries({ queryKey: ["orders"] })} variant="outline" size="sm">
           Refresh List
         </Button>
       </div>
@@ -632,7 +648,7 @@ export default function OrdersPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              orders.map((order) => (
+              orders.map((order: any) => (
                 <TableRow key={order.id} className="hover:bg-slate-50/50 cursor-pointer" onClick={() => handleOpenSheet(order)}>
                   <TableCell className="font-bold text-slate-900">{order.orderNumber}</TableCell>
                   <TableCell className="text-sm">
@@ -763,8 +779,23 @@ export default function OrdersPage() {
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-slate-700">Quick Actions (Next Steps)</label>
                   <div className="flex flex-wrap gap-2">
-                    {getNextStatusOptions(selectedOrder.status).length > 0 ? (
-                      getNextStatusOptions(selectedOrder.status).map(opt => (
+                    {getNextStatusOptions(selectedOrder.status).filter(opt => {
+                        if (opt.value === "INITIATE_REFUND") {
+                          // Only show if there's a PAID payment and no completed refunds
+                          const hasPaidPayment = selectedOrder?.payments?.some((p: any) => p.status === "PAID");
+                          const isFullyRefunded = selectedOrder?.payments?.some((p: any) => p.status === "REFUNDED");
+                          return hasPaidPayment && !isFullyRefunded;
+                        }
+                        return true;
+                      }).length > 0 ? (
+                      getNextStatusOptions(selectedOrder.status).filter(opt => {
+                        if (opt.value === "INITIATE_REFUND") {
+                          const hasPaidPayment = selectedOrder?.payments?.some((p: any) => p.status === "PAID");
+                          const isFullyRefunded = selectedOrder?.payments?.some((p: any) => p.status === "REFUNDED");
+                          return hasPaidPayment && !isFullyRefunded;
+                        }
+                        return true;
+                      }).map(opt => (
                         <Button
                           key={opt.value}
                           type="button"
@@ -773,6 +804,8 @@ export default function OrdersPage() {
                           onClick={() => {
                             if (opt.value === "OPEN_ASSIGN_MODAL") {
                               setIsAssignBranchModalOpen(true);
+                            } else if (opt.value === "INITIATE_REFUND") {
+                              handleInitiateRefund();
                             } else {
                               handleUpdateOrder(undefined, opt.value);
                             }

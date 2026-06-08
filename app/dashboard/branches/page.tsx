@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,12 +20,15 @@ import { DashboardContent } from "../dashboard-content";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function BranchesPage() {
-  const [branches, setBranches] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const { data: branches = [], isLoading } = useQuery({
+    queryKey: ["branches"],
+    queryFn: () => getBranches(),
+  });
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingBranch, setEditingBranch] = useState<any | null>(null);
 
   // Form state
@@ -33,22 +37,31 @@ export default function BranchesPage() {
   const [phone, setPhone] = useState("");
   const [isActive, setIsActive] = useState(true);
 
-  useEffect(() => {
-    fetchBranches();
-  }, []);
-
-  const fetchBranches = async () => {
-    setIsLoading(true);
-    try {
-      const data = await getBranches();
-      setBranches(data);
-    } catch (error) {
+  const createMutation = useMutation({
+    mutationFn: (data: any) => createBranch(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["branches"] });
+      toast.success("Branch created");
+      setIsModalOpen(false);
+    },
+    onError: (error) => {
       console.error(error);
-      toast.error("Failed to load branches");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      toast.error("Failed to create branch");
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (variables: { id: string; data: any }) => updateBranch(variables.id, variables.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["branches"] });
+      toast.success("Branch updated");
+      setIsModalOpen(false);
+    },
+    onError: (error) => {
+      console.error(error);
+      toast.error("Failed to update branch");
+    },
+  });
 
   const openCreateModal = () => {
     setEditingBranch(null);
@@ -68,28 +81,18 @@ export default function BranchesPage() {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return toast.error("Branch name is required");
 
-    setIsSubmitting(true);
-    try {
-      if (editingBranch) {
-        await updateBranch(editingBranch.id, { name, address, phone, isActive });
-        toast.success("Branch updated");
-      } else {
-        await createBranch({ name, address, phone, isActive });
-        toast.success("Branch created");
-      }
-      setIsModalOpen(false);
-      fetchBranches();
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to save branch");
-    } finally {
-      setIsSubmitting(false);
+    if (editingBranch) {
+      updateMutation.mutate({ id: editingBranch.id, data: { name, address, phone, isActive } });
+    } else {
+      createMutation.mutate({ name, address, phone, isActive });
     }
   };
+
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
   return (
     <DashboardContent>
@@ -136,7 +139,7 @@ export default function BranchesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>{branch.phone || "-"}</TableCell>
-                    <TableCell className="max-w-[200px] truncate" title={branch.address}>
+                    <TableCell className="max-w-[200px] truncate" title={branch.address || undefined}>
                       {branch.address || "-"}
                     </TableCell>
                     <TableCell className="text-right">

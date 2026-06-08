@@ -29,6 +29,9 @@ export const roleRoutes: Record<UserRole, RouteConfig> = {
     nested: [
       routes.dashboard_hero,
       routes.dashboard_orders,
+      routes.dashboard_products,
+      routes.dashboard_reviews,
+      routes.dashboard_settings,
       routes.checkout,
       routes.profile,
       routes.wishlist,

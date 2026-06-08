@@ -359,15 +359,22 @@ enum OrderStatus {
   OUT_FOR_DELIVERY
   DELIVERED
   CANCELLED
-  REFUND_INITIATED
-  REFUNDED
 }
 
 enum PaymentStatus {
   PENDING
   PAID
   FAILED
+  PARTIALLY_REFUNDED
   REFUNDED
+}
+
+enum RefundStatus {
+  NONE
+  INITIATED
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 enum CheckoutSource {
@@ -512,6 +519,7 @@ model Payment {
   status            PaymentStatus @default(PENDING)
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt
+  refunds           Refund[]
 
   @@index([orderId])
 }
@@ -637,4 +645,61 @@ model PushSubscription {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Refund {
+  id String @id @default(cuid())
+
+  paymentId String
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  razorpayRefundId String? @unique
+
+  amount Decimal @db.Decimal(10,2)
+
+  status RefundStatus
+
+  reason String?
+
+  initiatedByUserId String?
+
+  initiatedAt DateTime @default(now())
+
+  processedAt DateTime?
+
+  failedAt DateTime?
+
+  failureReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  actorUserId String?
+  actorRole String?
+
+  action String
+
+  entityType String
+  entityId String?
+
+  description String?
+
+  oldValues Json?
+  newValues Json?
+  metadata Json?
+
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([actorUserId])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([action])
 }

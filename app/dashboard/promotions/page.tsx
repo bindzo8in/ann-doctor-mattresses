@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,10 +25,9 @@ import { toast } from "sonner";
 import { PromotionType } from "@/app/generated/prisma/client";
 
 export default function PromotionsPage() {
-  const [promotions, setPromotions] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
 
   // Pagination State
   const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
@@ -52,55 +52,38 @@ export default function PromotionsPage() {
   // Dropdown list options
   const [productOptions, setProductOptions] = useState<{ label: string; value: string }[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<{ label: string; value: string }[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load promotions list
-  const fetchPromotions = (cursor: string | null = null) => {
-    setIsLoading(true);
-    
-    const url = cursor 
-      ? `/api/admin/promotions?cursor=${cursor}&limit=10` 
-      : "/api/admin/promotions?limit=10";
+  const { data: fetchResult, isLoading } = useQuery({
+    queryKey: ["promotions", cursorHistory[currentIndex]],
+    queryFn: async () => {
+      const cursor = cursorHistory[currentIndex];
+      const url = cursor 
+        ? `/api/admin/promotions?cursor=${cursor}&limit=10` 
+        : "/api/admin/promotions?limit=10";
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch");
+      return res.json();
+    }
+  });
 
-    fetch(url)
-      .then(res => res.json())
-      .then(data => {
-        if (data.promotions) {
-          setPromotions(data.promotions);
-          setNextCursor(data.nextCursor || null);
-        } else {
-          setPromotions(Array.isArray(data) ? data : []);
-          setNextCursor(null);
-        }
-      })
-      .catch((err) => {
-        console.error(err);
-        toast.error("Failed to load promotions");
-      })
-      .finally(() => {
-        setIsLoading(false);
-        setIsLoadingMore(false);
-      });
-  };
+  const promotions = fetchResult?.promotions || (Array.isArray(fetchResult) ? fetchResult : []);
+  const nextCursor = fetchResult?.nextCursor || null;
 
   const handleNextPage = () => {
     if (!nextCursor) return;
     const nextHistory = [...cursorHistory.slice(0, currentIndex + 1), nextCursor];
     setCursorHistory(nextHistory);
     setCurrentIndex(currentIndex + 1);
-    fetchPromotions(nextCursor);
   };
 
   const handlePrevPage = () => {
     if (currentIndex <= 0) return;
     const prevIndex = currentIndex - 1;
     setCurrentIndex(prevIndex);
-    fetchPromotions(cursorHistory[prevIndex]);
   };
 
   useEffect(() => {
-    fetchPromotions(null);
-
     // Fetch products/categories lists for selection options
     getPromotionsSelectionData()
       .then(data => {
@@ -148,14 +131,56 @@ export default function PromotionsPage() {
     setIsOpen(true);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
+  const saveMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const url = selectedPromo 
+        ? `/api/admin/promotions/${selectedPromo.id}` 
+        : "/api/admin/promotions";
+      const method = selectedPromo ? "PUT" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) throw new Error("Failed to save promotion");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success(selectedPromo ? "Promotion updated" : "Promotion created");
+      setIsOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["promotions"] });
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error("An error occurred while saving the promotion");
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/admin/promotions/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete promotion");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast.success("Promotion deleted");
+      queryClient.invalidateQueries({ queryKey: ["promotions"] });
+    },
+    onError: (err) => {
+      console.error(err);
+      toast.error("An error occurred while deleting the promotion");
+    }
+  });
+
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
       toast.error("Promotion name is required");
       return;
     }
 
-    setIsSubmitting(true);
     const payload = {
       name: name.trim(),
       description: description.trim() || null,
@@ -169,49 +194,16 @@ export default function PromotionsPage() {
       categoryIds,
     };
 
-    try {
-      const url = selectedPromo 
-        ? `/api/admin/promotions/${selectedPromo.id}` 
-        : "/api/admin/promotions";
-      const method = selectedPromo ? "PUT" : "POST";
-
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) throw new Error("Failed to save promotion");
-
-      toast.success(selectedPromo ? "Promotion updated" : "Promotion created");
-      setIsOpen(false);
-      fetchPromotions();
-    } catch (err) {
-      console.error(err);
-      toast.error("An error occurred while saving the promotion");
-    } finally {
-      setIsSubmitting(false);
-    }
+    saveMutation.mutate(payload);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this promotion?");
     if (!confirmDelete) return;
-
-    try {
-      const res = await fetch(`/api/admin/promotions/${id}`, {
-        method: "DELETE"
-      });
-
-      if (!res.ok) throw new Error("Failed to delete promotion");
-
-      toast.success("Promotion deleted");
-      fetchPromotions();
-    } catch (err) {
-      console.error(err);
-      toast.error("An error occurred while deleting the promotion");
-    }
+    deleteMutation.mutate(id);
   };
+
+  const isSubmitting = saveMutation.isPending;
 
   if (isLoading) return <div className="p-8 flex justify-center"><Loader2 className="animate-spin w-8 h-8 text-primary" /></div>;
 
@@ -242,7 +234,7 @@ export default function PromotionsPage() {
                 <TableCell colSpan={6} className="text-center">No promotions found.</TableCell>
               </TableRow>
             ) : (
-              promotions.map(promo => (
+              promotions.map((promo: any) => (
                 <TableRow key={promo.id}>
                   <TableCell className="font-medium">
                     <div>{promo.name}</div>

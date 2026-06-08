@@ -6,7 +6,6 @@ import bcrypt from "bcryptjs";
 
 export async function updateCustomerProfile(data: {
   name: string;
-  email: string;
   currentPassword?: string;
   newPassword?: string;
 }) {
@@ -15,23 +14,13 @@ export async function updateCustomerProfile(data: {
     throw new Error("Unauthorized");
   }
 
-  const { name, email, currentPassword, newPassword } = data;
+  const { name, currentPassword, newPassword } = data;
 
-  if (!name || !email) {
-    throw new Error("Name and Email are required");
+  if (!name) {
+    throw new Error("Name is required");
   }
 
-  // Check if email is taken by another user
-  const existingUser = await prisma.user.findFirst({
-    where: {
-      email: email.toLowerCase(),
-      NOT: { id: session.user.id },
-    },
-  });
 
-  if (existingUser) {
-    throw new Error("Email is already in use");
-  }
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -61,7 +50,6 @@ export async function updateCustomerProfile(data: {
     where: { id: session.user.id },
     data: {
       name,
-      email: email.toLowerCase(),
       password: hashedPassword,
     },
   });

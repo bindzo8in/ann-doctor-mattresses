@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, CheckCircle2, XCircle, Trash2, Star } from "lucide-react";
@@ -10,49 +11,49 @@ import { getAdminReviews, toggleReviewApproval, deleteReview } from "@/actions/r
 import Image from "next/image";
 
 export default function ReviewsPage() {
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isUpdating, setIsUpdating] = useState<string | null>(null);
+  const queryClient = useQueryClient();
 
-  const fetchReviews = async () => {
-    setIsLoading(true);
-    const res = await getAdminReviews();
-    if (res.success && res.reviews) {
-      setReviews(res.reviews);
-    } else {
-      toast.error(res.error || "Failed to load reviews");
+  const { data: reviews = [], isLoading, refetch } = useQuery({
+    queryKey: ["admin_reviews"],
+    queryFn: async () => {
+      const res = await getAdminReviews();
+      if (!res.success) throw new Error(res.error);
+      return res.reviews || [];
     }
-    setIsLoading(false);
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ reviewId, currentStatus }: { reviewId: string, currentStatus: boolean }) => 
+      toggleReviewApproval(reviewId, !currentStatus),
+    onSuccess: (res, variables) => {
+      if (res.success) {
+        toast.success(`Review ${!variables.currentStatus ? 'approved' : 'rejected'}`);
+        queryClient.invalidateQueries({ queryKey: ["admin_reviews"] });
+      } else {
+        toast.error(res.error || "Failed to update review status");
+      }
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteReview,
+    onSuccess: (res) => {
+      if (res.success) {
+        toast.success("Review deleted");
+        queryClient.invalidateQueries({ queryKey: ["admin_reviews"] });
+      } else {
+        toast.error(res.error || "Failed to delete review");
+      }
+    }
+  });
+
+  const handleToggleApproval = (reviewId: string, currentStatus: boolean) => {
+    toggleMutation.mutate({ reviewId, currentStatus });
   };
 
-  useEffect(() => {
-    fetchReviews();
-  }, []);
-
-  const handleToggleApproval = async (reviewId: string, currentStatus: boolean) => {
-    setIsUpdating(reviewId);
-    const res = await toggleReviewApproval(reviewId, !currentStatus);
-    if (res.success) {
-      toast.success(`Review ${!currentStatus ? 'approved' : 'rejected'}`);
-      setReviews(prev => prev.map(r => r.id === reviewId ? { ...r, isApproved: !currentStatus } : r));
-    } else {
-      toast.error(res.error || "Failed to update review status");
-    }
-    setIsUpdating(null);
-  };
-
-  const handleDelete = async (reviewId: string) => {
+  const handleDelete = (reviewId: string) => {
     if (!confirm("Are you sure you want to delete this review?")) return;
-    
-    setIsUpdating(reviewId);
-    const res = await deleteReview(reviewId);
-    if (res.success) {
-      toast.success("Review deleted");
-      setReviews(prev => prev.filter(r => r.id !== reviewId));
-    } else {
-      toast.error(res.error || "Failed to delete review");
-    }
-    setIsUpdating(null);
+    deleteMutation.mutate(reviewId);
   };
 
   if (isLoading) {
@@ -70,7 +71,7 @@ export default function ReviewsPage() {
           <h1 className="text-2xl font-bold text-slate-900">Product Reviews</h1>
           <p className="text-sm text-slate-500">Manage customer reviews and approve them for public display.</p>
         </div>
-        <Button onClick={fetchReviews} variant="outline" size="sm">
+        <Button onClick={() => refetch()} variant="outline" size="sm">
           Refresh List
         </Button>
       </div>
@@ -145,10 +146,10 @@ export default function ReviewsPage() {
                       variant="outline" 
                       size="sm" 
                       onClick={() => handleToggleApproval(review.id, review.isApproved)}
-                      disabled={isUpdating === review.id}
+                      disabled={toggleMutation.isPending && toggleMutation.variables?.reviewId === review.id}
                       className={review.isApproved ? "text-amber-600 hover:text-amber-700 hover:bg-amber-50" : "text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"}
                     >
-                      {isUpdating === review.id ? (
+                      {toggleMutation.isPending && toggleMutation.variables?.reviewId === review.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : review.isApproved ? (
                         <>Reject</>
@@ -161,7 +162,7 @@ export default function ReviewsPage() {
                       size="icon"
                       className="text-rose-500 hover:bg-rose-50 hover:text-rose-600"
                       onClick={() => handleDelete(review.id)}
-                      disabled={isUpdating === review.id}
+                      disabled={deleteMutation.isPending && deleteMutation.variables === review.id}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

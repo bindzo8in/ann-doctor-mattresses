@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { cookies } from "next/headers";
 import { getToken } from "next-auth/jwt";
+import { userHasPermission } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
@@ -21,9 +22,7 @@ export async function GET(req: NextRequest) {
     cookieStore.getAll().map(c => c.name)
   );
   const session = await auth();
-  console.log("session:", session)
-  if (session?.user?.role !== "SUPER_ADMIN" && session?.user?.role !== "BRANCH_ADMIN") {
-    console.log("unauthorised access ", session?.user?.role)
+  if (!userHasPermission(session?.user, "orders.read")) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
@@ -33,8 +32,8 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "100");
 
     let whereClause = {};
-    if (session.user.role === "BRANCH_ADMIN") {
-      const dbUser = await prisma.user.findUnique({ where: { id: session.user.id } });
+    if (session!.user.role === "BRANCH_ADMIN") {
+      const dbUser = await prisma.user.findUnique({ where: { id: session!.user.id } });
       if (!dbUser || !dbUser.branchId) {
         return NextResponse.json({ orders: [], nextCursor: undefined }); // No branch, no orders
       }
@@ -48,7 +47,9 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: "desc" },
       include: {
         customer: { select: { name: true, email: true } },
-        payments: true,
+        payments: {
+          include: { refunds: true }
+        },
         items: true,
       }
     });

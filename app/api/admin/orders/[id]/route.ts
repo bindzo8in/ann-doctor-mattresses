@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { sendDeliveryStatusEmail } from "@/lib/email";
+import { auditLogger } from "@/lib/audit";
+import { userHasPermission } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +13,7 @@ interface RouteProps {
 
 export async function PATCH(req: NextRequest, { params }: RouteProps) {
   const session = await auth();
-  if (session?.user?.role !== "SUPER_ADMIN") {
+  if (!userHasPermission(session?.user, "orders.update")) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
@@ -28,6 +30,16 @@ export async function PATCH(req: NextRequest, { params }: RouteProps) {
         ...(trackingNumber && { trackingNumber }),
         ...(trackingUrl !== undefined && { trackingUrl }),
       }
+    });
+
+    await auditLogger.log({
+      action: "ORDER_STATUS_UPDATED",
+      entityType: "Order",
+      entityId: order.id,
+      description: `Order ${order.orderNumber} updated via admin panel`,
+      newValues: { status, courierName, trackingNumber },
+      actorUserId: session!.user.id,
+      actorRole: session!.user.role,
     });
 
     if (status === "DELIVERED") {

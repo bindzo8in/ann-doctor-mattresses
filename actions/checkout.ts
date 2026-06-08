@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { calculateCartTotals } from "@/lib/checkout";
+import { auditLogger } from "@/lib/audit";
 
 export async function getCheckoutTotals(params: {
   source: "CART" | "BUY_NOW";
@@ -73,13 +74,24 @@ export async function cancelOrderAction(orderId: string) {
     throw new Error("Order not found");
   }
 
-  if (order.status !== "PENDING_PAYMENT") {
-    throw new Error("Only pending orders can be cancelled");
+  const cancellableStatuses = ["PENDING", "PENDING_PAYMENT", "PAID", "PENDING_ASSIGNMENT"];
+  if (!cancellableStatuses.includes(order.status)) {
+    throw new Error("Only unassigned orders can be cancelled");
   }
 
   await prisma.order.update({
     where: { id: orderId },
     data: { status: "CANCELLED" },
+  });
+
+  await auditLogger.log({
+    action: "ORDER_CANCELLED",
+    entityType: "Order",
+    entityId: order.id,
+    description: `Order ${order.orderNumber} cancelled by customer`,
+    newValues: { status: "CANCELLED" },
+    actorUserId: session.user.id,
+    actorRole: session.user.role,
   });
 
   return { success: true };

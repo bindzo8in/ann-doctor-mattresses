@@ -14,7 +14,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, Settings2Icon, CircleHelpIcon, SearchIcon, CommandIcon, MessageSquareIcon, MonitorPlay } from "lucide-react"
+import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, Settings2Icon, CircleHelpIcon, SearchIcon, CommandIcon, MessageSquareIcon, MonitorPlay, ShieldIcon } from "lucide-react"
+import { userHasPermission } from "@/lib/rbac"
+import { Permission } from "@/lib/permissions"
 
 const navMain = [
   {
@@ -63,6 +65,13 @@ const navMain = [
 
 const navSecondary = [
   {
+    title: "Audit Logs",
+    url: "/dashboard/audit",
+    icon: (
+      <ShieldIcon />
+    ),
+  },
+  {
     title: "Settings",
     url: "/dashboard/settings",
     icon: (
@@ -110,15 +119,17 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain.filter(item => {
-          if (user?.role === "BRANCH_ADMIN") {
-            return item.title === "Dashboard" || item.title === "Orders" || item.title === "Hero Section";
-          }
+          if (item.title === "Dashboard") return true;
+          if (item.title === "Orders") return userHasPermission(user, "orders.read");
+          if (item.title === "Promotions") return userHasPermission(user, "promotions.read");
+          if (item.title === "Hero Section") return userHasPermission(user, "settings.read");
+          if (item.title === "Products") return userHasPermission(user, "products.read");
+          if (item.title === "Reviews") return userHasPermission(user, "reviews.read");
           return true;
         })} />
         <NavSecondary items={navSecondary.filter(item => {
-          if (user?.role === "BRANCH_ADMIN") {
-            return item.title === "Get Help" || item.title === "Search";
-          }
+          if (item.title === "Audit Logs") return userHasPermission(user, "audit.read");
+          if (item.title === "Settings") return userHasPermission(user, "settings.read");
           return true;
         })} className="mt-auto" />
       </SidebarContent>

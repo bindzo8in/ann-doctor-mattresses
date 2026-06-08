@@ -1,6 +1,7 @@
 import { DefaultSession } from "next-auth";
 import { JWT as DefaultJWT } from "next-auth/jwt";
 import { UserRole } from "@/app/generated/prisma/enums";
+import { Permission } from "@/lib/permissions";
 
 declare module "next-auth" {
   interface Session {
@@ -9,6 +10,7 @@ declare module "next-auth" {
       role: UserRole;
       isActive: boolean;
       isEmailVerified: boolean;
+      permissions: Permission[];
     } & DefaultSession["user"];
   }
 
@@ -28,5 +30,6 @@ declare module "next-auth/jwt" {
     isActive: boolean;
     email: string;
     isEmailVerified: boolean;
+    permissions: Permission[];
   }
 }

@@ -77,7 +77,7 @@ export function ProductCard({
   const innerContent = (
     <>
       {/* IMAGE */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-muted shrink-0">
+      <div className="relative aspect-4/3 overflow-hidden bg-muted shrink-0">
         <Image src={image} alt={name} fill className="object-cover" />
         {badge && (
           <div className="absolute right-3 top-3 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
@@ -212,6 +212,13 @@ export function ProductCard({
               }
             />
           </>
+        ) : slug ? (
+          <Button
+            asChild
+            className="w-full rounded-lg text-xs sm:text-sm h-9 sm:h-10 font-semibold"
+          >
+            <Link href={`/products/${slug}`}>View Details</Link>
+          </Button>
         ) : (
           <Button
             className="w-full rounded-lg text-xs sm:text-sm h-9 sm:h-10 font-semibold"

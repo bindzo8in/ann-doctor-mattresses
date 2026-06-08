@@ -28,7 +28,6 @@ export function ProfileForm({ initialUser }: ProfileFormProps) {
     try {
       await updateCustomerProfile({
         name,
-        email,
         currentPassword: currentPassword || undefined,
         newPassword: newPassword || undefined,
       });
@@ -70,13 +69,18 @@ export function ProfileForm({ initialUser }: ProfileFormProps) {
           <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
             <Mail className="w-4 h-4 text-slate-400" /> Email Address
           </label>
-          <Input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            placeholder="john@example.com"
-          />
+          <div className="space-y-1">
+            <Input
+              type="email"
+              value={email}
+              disabled
+              readOnly
+              className="bg-slate-50 text-slate-500 cursor-not-allowed"
+            />
+            <p className="text-xs text-slate-500">
+              Your email address cannot be changed.
+            </p>
+          </div>
         </div>
 
         <hr className="my-6 border-slate-100" />

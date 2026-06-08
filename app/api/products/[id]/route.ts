@@ -3,8 +3,10 @@ import prisma from "@/lib/prisma";
 import { createProductSchema } from "@/lib/schema/product-form-schema";
 import { getFieldErrors } from "@/lib/utils";
 import { v2 as cloudinary } from "cloudinary";
-import { env } from "@/env";
+import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { userHasPermission } from "@/lib/rbac";
+import { env } from "@/env";
 
 cloudinary.config({
   cloud_name: env.CLOUDINARY_CLOUD_NAME,
@@ -22,7 +24,7 @@ export async function DELETE(
 ) {
   try {
     const session = await auth();
-    if (session?.user?.role !== "SUPER_ADMIN") {
+    if (!userHasPermission(session?.user, "products.delete")) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
@@ -85,7 +87,7 @@ export async function PUT(
 ) {
   try {
     const session = await auth();
-    if (session?.user?.role !== "SUPER_ADMIN") {
+    if (!userHasPermission(session?.user, "products.update")) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 

@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import { rolePermissions } from "./lib/role-permissions";
 import { roleRoutes } from "./lib/route-permissions";
 import { matchesExactRoute, matchesRoute } from "./lib/route-matcher";
 import { publicRoutes, routes } from "./lib/routes";
@@ -95,6 +96,7 @@ export default {
         token.role = user.role;
         token.isActive = user.isActive;
         token.isEmailVerified = !!user.emailVerified;
+        token.permissions = rolePermissions[user.role] ?? [];
 
         token.name = user.name;
         token.email = user.email;
@@ -109,6 +111,7 @@ export default {
         session.user.role = token.role;
         session.user.isActive = token.isActive;
         session.user.isEmailVerified = token.isEmailVerified;
+        session.user.permissions = token.permissions;
 
         session.user.name = token.name ?? "";
         session.user.email = token.email ?? "";

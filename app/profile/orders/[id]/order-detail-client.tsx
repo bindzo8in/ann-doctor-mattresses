@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowLeft, Calendar, FileText, CheckCircle2, ChevronRight, Truck, ClipboardList, Info, HelpCircle, ExternalLink } from "lucide-react";
+import { Loader2, ArrowLeft, Calendar, FileText, CheckCircle2, XCircle, ChevronRight, Truck, ClipboardList, Info, HelpCircle, ExternalLink } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { routes } from "@/lib/routes";
 import { cancelOrderAction } from "@/actions/checkout";
@@ -338,6 +338,19 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
   };
 
   const getTimelineSteps = () => {
+    if (status === "CANCELLED") {
+      const hasPaid = order.payments?.some((p: any) => ["PAID", "PARTIALLY_REFUNDED", "REFUNDED"].includes(p.status));
+      if (hasPaid) {
+        return [
+          { label: "Created", status: "PENDING_PAYMENT" },
+          { label: "Paid", status: "PAID" },
+          { label: "Cancelled", status: "CANCELLED" },
+          { label: "Refund Initiated", status: "REFUND_INITIATED" },
+          { label: "Refunded", status: "REFUNDED" }
+        ];
+      }
+    }
+
     // Standard Option B Lifecycle
     return [
       { label: "Created", status: "PENDING_PAYMENT" },
@@ -358,8 +371,20 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
     if (status === "PENDING_ASSIGNMENT") normStatus = "PAID";
     if (status === "CONFIRMED") normStatus = "ASSIGNED";
     if (status === "SHIPPED") normStatus = "OUT_FOR_DELIVERY";
-    if (status === "REFUND_INITIATED" || status === "REFUNDED") normStatus = "PAID";
-    if (status === "CANCELLED") return -1;
+
+    const isRefundTimeline = steps.some(s => s.status === "REFUNDED");
+    if (isRefundTimeline) {
+      const isFullyRefunded = order.payments?.some((p: any) => p.status === "REFUNDED");
+      const hasRefundInitiated = order.payments?.some((p: any) => 
+        p.status === "PARTIALLY_REFUNDED" || p.refunds?.some((r: any) => ["INITIATED", "PROCESSING", "COMPLETED"].includes(r.status))
+      );
+      
+      if (isFullyRefunded) normStatus = "REFUNDED";
+      else if (hasRefundInitiated) normStatus = "REFUND_INITIATED";
+      else normStatus = "CANCELLED";
+    } else {
+      if (status === "CANCELLED") return -1;
+    }
 
     return steps.findIndex(s => s.status === normStatus);
   };
@@ -395,16 +420,26 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
           
           <div className="flex flex-wrap gap-3">
             {/* Retry Payment */}
-            {status === "PENDING_PAYMENT" && (
-              <>
-                <Button size="sm" onClick={handleRetryPayment} disabled={isProcessing} className="bg-amber-500 text-white hover:bg-amber-600">
-                  {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                  Complete Payment
-                </Button>
-                <Button size="sm" variant="outline" onClick={handleCancel} disabled={isProcessing} className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
-                  Cancel Order
-                </Button>
-              </>
+            {(status === "PENDING_PAYMENT" || status === "PENDING") && (
+              <Button size="sm" onClick={handleRetryPayment} disabled={isProcessing} className="bg-amber-500 text-white hover:bg-amber-600">
+                {isProcessing ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Complete Payment
+              </Button>
+            )}
+
+            {/* Cancel Order */}
+            {["PENDING", "PENDING_PAYMENT", "PAID", "PENDING_ASSIGNMENT"].includes(status) && (
+              <Button size="sm" variant="outline" onClick={handleCancel} disabled={isProcessing} className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+                Cancel Order
+              </Button>
+            )}
+
+            {/* Past Cancellation Notice */}
+            {["ASSIGNED", "CONFIRMED", "PROCESSING", "SHIPPED", "OUT_FOR_DELIVERY"].includes(status) && (
+              <div className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 px-2 py-1.5 rounded-md border border-amber-100">
+                <HelpCircle className="w-3.5 h-3.5" />
+                <span>To cancel, please contact support.</span>
+              </div>
             )}
 
             {/* Invoice Download */}
@@ -424,7 +459,7 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="py-6 overflow-x-auto">
-            {status === "CANCELLED" ? (
+            {status === "CANCELLED" && statusIndex === -1 ? (
               <div className="flex items-center gap-3 p-4 bg-red-50 text-red-800 rounded-xl border border-red-100 text-sm">
                 <Info className="w-5 h-5 text-red-600" />
                 <span>This order was cancelled. Payment was not successfully processed or order was retracted.</span>
@@ -434,19 +469,25 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
                 {timelineSteps.map((stepItem, index) => {
                   const isCompleted = index <= statusIndex;
                   const isActive = index === statusIndex;
+                  const isCancelledStep = stepItem.status === "CANCELLED";
+                  
                   return (
                     <React.Fragment key={stepItem.status}>
                       <div className="flex flex-col items-center space-y-2 relative">
                         <div
                           className={`w-9 h-9 rounded-full flex items-center justify-center border-2 transition-all ${
-                            isActive
+                            isCancelledStep && isCompleted
+                              ? "bg-red-50 border-red-500 text-red-600"
+                              : isActive
                               ? "bg-slate-900 border-slate-900 text-white shadow-md scale-110"
                               : isCompleted
                               ? "bg-emerald-100 border-emerald-500 text-emerald-800"
                               : "bg-slate-50 border-slate-200 text-slate-400"
                           }`}
                         >
-                          {isCompleted && !isActive ? (
+                          {isCancelledStep && isCompleted ? (
+                            <XCircle className="w-5 h-5 text-red-600" />
+                          ) : isCompleted && !isActive ? (
                             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
                           ) : (
                             <span className="text-xs font-bold">{index + 1}</span>
@@ -472,7 +513,11 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
                       {index < timelineSteps.length - 1 && (
                         <div
                           className={`flex-1 h-0.5 mx-2 transition-all ${
-                            index < statusIndex ? "bg-emerald-400" : "bg-slate-100"
+                            index < statusIndex 
+                              ? timelineSteps[index + 1]?.status === "CANCELLED" 
+                                ? "bg-red-400" 
+                                : "bg-emerald-400" 
+                              : "bg-slate-100"
                           }`}
                         />
                       )}
