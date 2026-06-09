@@ -21,6 +21,7 @@ export type HomeCategory = {
   id: string;
   name: string;
   slug: string;
+  thumbnailUrl: string | null;
   productCount: number;
 };
 
@@ -86,6 +87,45 @@ export async function getCategories(): Promise<HomeCategory[]> {
     id: c.id,
     name: c.name,
     slug: c.slug,
+    thumbnailUrl: c.thumbnailUrl,
     productCount: c._count.products,
+  }));
+}
+
+export type HomeBranchGroup = {
+  state: string;
+  branches: Array<{
+    id: string;
+    city: string;
+    address: string;
+    phone: string | null;
+    googleMapUrl: string | null;
+  }>;
+};
+
+export async function getActiveBranchesGroupedByState(): Promise<HomeBranchGroup[]> {
+  const branches = await prisma.branch.findMany({
+    where: { isActive: true },
+    orderBy: [{ state: "asc" }, { city: "asc" }],
+  });
+
+  const grouped = branches.reduce((acc, branch) => {
+    const state = (branch.state || "Other").toUpperCase() + " BRANCHES:";
+    if (!acc[state]) {
+      acc[state] = [];
+    }
+    acc[state].push({
+      id: branch.id,
+      city: (branch.city || branch.name).toUpperCase() + ":",
+      address: branch.address || "",
+      phone: branch.phone,
+      googleMapUrl: branch.googleMapUrl,
+    });
+    return acc;
+  }, {} as Record<string, any[]>);
+
+  return Object.keys(grouped).map(state => ({
+    state,
+    branches: grouped[state]
   }));
 }

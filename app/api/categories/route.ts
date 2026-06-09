@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import slugify from "slugify";
+import { auth } from "@/auth";
+import { auditLogger } from "@/lib/audit";
 
 export async function GET(req: NextRequest) {
   const search = req.nextUrl.searchParams.get("search") ?? "";
@@ -42,6 +44,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
 
   const name = body.name?.trim();
+  const thumbnailUrl = body.thumbnailUrl;
+  const thumbnailPublicId = body.thumbnailPublicId;
 
   if (!name) {
     return NextResponse.json(
@@ -72,8 +76,23 @@ export async function POST(req: NextRequest) {
     data: {
       name,
       slug,
+      thumbnailUrl,
+      thumbnailPublicId,
     },
   });
+
+  const session = await auth();
+  if (session?.user) {
+    await auditLogger.log({
+      action: "CREATE",
+      entityType: "Category",
+      entityId: category.id,
+      description: `Created category: ${category.name}`,
+      actorUserId: session.user.id,
+      actorRole: session.user.role,
+      newValues: category,
+    });
+  }
 
   return NextResponse.json(category);
 }

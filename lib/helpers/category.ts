@@ -2,6 +2,8 @@ export interface Category {
   id: string;
   name: string;
   slug: string;
+  thumbnailUrl?: string | null;
+  thumbnailPublicId?: string | null;
 }
 
 export async function getCategories({
@@ -31,14 +33,14 @@ export async function getCategories({
 }
 
 export async function createCategory(
-  name: string
+  data: { name: string; thumbnailUrl?: string | null; thumbnailPublicId?: string | null }
 ): Promise<Category> {
   const res = await fetch("/api/categories", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(data),
   });
 
   if (!res.ok) {
@@ -62,14 +64,14 @@ export async function getCategory(
 
 export async function updateCategory(
   id: string,
-  name: string
+  data: { name?: string; thumbnailUrl?: string | null; thumbnailPublicId?: string | null }
 ): Promise<Category> {
   const res = await fetch(`/api/categories/${id}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify(data),
   });
 
   if (!res.ok) {

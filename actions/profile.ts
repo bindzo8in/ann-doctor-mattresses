@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import bcrypt from "bcryptjs";
+import { auditLogger } from "@/lib/audit";
 
 export async function updateCustomerProfile(data: {
   name: string;
@@ -46,12 +47,22 @@ export async function updateCustomerProfile(data: {
     hashedPassword = await bcrypt.hash(newPassword, 10);
   }
 
-  await prisma.user.update({
+  const updatedUser = await prisma.user.update({
     where: { id: session.user.id },
     data: {
       name,
       password: hashedPassword,
     },
+  });
+
+  await auditLogger.log({
+    action: "UPDATE",
+    entityType: "User",
+    entityId: updatedUser.id,
+    description: `User updated their profile`,
+    actorUserId: session.user.id,
+    actorRole: session.user.role,
+    newValues: { name: updatedUser.name, passwordChanged: !!newPassword },
   });
 
   return { success: true };

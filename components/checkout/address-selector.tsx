@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { addressSchema } from "@/lib/schema/checkout-schema";
 
+import { PhoneInput } from "@/components/ui/phone-input";
+
 interface Address {
   id: string;
   fullName: string;
@@ -141,7 +143,14 @@ export function AddressSelector({
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" required value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+                  <PhoneInput 
+                    id="phone" 
+                    defaultCountry="IN"
+                    required 
+                    value={formData.phone} 
+                    onChange={(value) => setFormData({...formData, phone: value ? value.toString() : ""})} 
+                    prefix="+"
+                  />
                 </div>
               </div>
               <div className="space-y-2">

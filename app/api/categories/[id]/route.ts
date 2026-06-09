@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import slugify from "slugify";
+import { auth } from "@/auth";
+import { auditLogger } from "@/lib/audit";
 
 export async function GET(
   _: NextRequest,
@@ -41,6 +43,8 @@ export async function PATCH(
     const body = await req.json();
 
     const name = body.name?.trim();
+    const thumbnailUrl = body.thumbnailUrl;
+    const thumbnailPublicId = body.thumbnailPublicId;
 
     if (!name) {
       return NextResponse.json(
@@ -72,8 +76,23 @@ export async function PATCH(
       data: {
         name,
         slug,
+        thumbnailUrl,
+        thumbnailPublicId,
       },
     });
+
+    const session = await auth();
+    if (session?.user) {
+      await auditLogger.log({
+        action: "UPDATE",
+        entityType: "Category",
+        entityId: category.id,
+        description: `Updated category: ${category.name}`,
+        actorUserId: session.user.id,
+        actorRole: session.user.role,
+        newValues: category,
+      });
+    }
 
     return NextResponse.json(category);
   } catch (error) {
@@ -109,9 +128,27 @@ export async function DELETE(
       );
     }
 
+    const category = await prisma.category.findUnique({ where: { id } });
+    if (!category) {
+      return NextResponse.json({ message: "Category not found" }, { status: 404 });
+    }
+
     await prisma.category.delete({
       where: { id },
     });
+
+    const session = await auth();
+    if (session?.user) {
+      await auditLogger.log({
+        action: "DELETE",
+        entityType: "Category",
+        entityId: id,
+        description: `Deleted category: ${category.name}`,
+        actorUserId: session.user.id,
+        actorRole: session.user.role,
+        oldValues: category,
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

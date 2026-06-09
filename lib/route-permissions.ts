@@ -21,6 +21,8 @@ export const roleRoutes: Record<UserRole, RouteConfig> = {
       routes.checkout,
       routes.profile,
       routes.wishlist,
+      routes.dashboard_reviews,
+      routes.dashboard_audit
     ],
   },
 

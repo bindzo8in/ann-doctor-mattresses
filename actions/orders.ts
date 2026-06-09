@@ -44,9 +44,10 @@ export async function getCustomerOrders(cursor: string | null = null, limit = 10
       discountTotal: Number(order.discountTotal),
       shippingTotal: Number(order.shippingTotal),
       totalAmount: Number(order.totalAmount),
-      payments: order.payments.map((p) => ({
+      payments: order.payments.map((p: any) => ({
         ...p,
         amount: Number(p.amount),
+        ...(p.refunds ? { refunds: p.refunds.map((r: any) => ({ ...r, amount: Number(r.amount) })) } : {}),
       })),
       items: order.items.map((item) => ({
         ...item,
@@ -78,7 +79,9 @@ export async function getOrderDetails(orderId: string) {
             product: true,
           },
         },
-        payments: true,
+        payments: {
+          include: { refunds: true }
+        },
       },
     });
 
@@ -103,9 +106,10 @@ export async function getOrderDetails(orderId: string) {
         offerType: item.offerType,
         saved: item.quantityFree * Number(item.unitPrice),
       })),
-      payments: order.payments.map((p) => ({
+      payments: order.payments.map((p: any) => ({
         ...p,
         amount: Number(p.amount),
+        ...(p.refunds ? { refunds: p.refunds.map((r: any) => ({ ...r, amount: Number(r.amount) })) } : {}),
       })),
     };
   } catch (error) {

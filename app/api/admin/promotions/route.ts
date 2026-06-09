@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { auditLogger } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,16 @@ export async function POST(req: NextRequest) {
         productIds: productIds || [],
         categoryIds: categoryIds || [],
       }
+    });
+
+    await auditLogger.log({
+      action: "CREATE",
+      entityType: "Promotion",
+      entityId: promotion.id,
+      description: `Created new promotion: ${promotion.name}`,
+      actorUserId: session.user.id,
+      actorRole: session.user.role,
+      newValues: promotion,
     });
 
     return NextResponse.json(promotion);

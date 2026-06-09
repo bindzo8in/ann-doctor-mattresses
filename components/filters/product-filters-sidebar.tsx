@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { FilterSection } from "./filter-section";
 import { CheckboxFilterGroup } from "./checkbox-filter-group";
 import { PriceRangeSlider } from "./price-range-slider";
+import { MultiSelectFilter } from "./multi-select-filter";
 import { useProductFilters } from "@/lib/filters/use-product-filters";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ interface ProductFiltersSidebarProps {
     seatingCapacityOptions: { value: string; label: string }[];
     materialOptions: { value: string; label: string }[];
     shapeOptions: { value: string; label: string }[];
+    categoryOptions: { value: string; label: string }[];
   };
 }
 
@@ -80,6 +82,17 @@ export function ProductFiltersSidebar({ dynamicFacets }: ProductFiltersSidebarPr
           </Link>
         </div>
       </FilterSection>
+
+      {dynamicFacets.categoryOptions && dynamicFacets.categoryOptions.length > 0 && (
+        <FilterSection title="Category" defaultOpen>
+          <MultiSelectFilter 
+            paramName="category" 
+            options={dynamicFacets.categoryOptions} 
+            placeholder="Search categories..."
+          />
+        </FilterSection>
+      )}
+
       <FilterSection title="Price Range" defaultOpen>
         <PriceRangeSlider minPrice={0} maxPrice={100000} step={500} />
       </FilterSection>

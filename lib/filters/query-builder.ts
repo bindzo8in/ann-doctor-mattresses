@@ -10,6 +10,10 @@ export function buildProductWhereClause(filters: ProductFilterParams): Prisma.Pr
     where.type = filters.type;
   }
 
+  if (filters.category && filters.category.length > 0) {
+    where.category = { slug: { in: filters.category } };
+  }
+
   // Build the variant filtering logic
   const variantConditions: Prisma.ProductVariantWhereInput = {};
 

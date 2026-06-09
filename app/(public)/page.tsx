@@ -3,8 +3,10 @@ import HomeHeroSection from "@/components/home/hero-section";
 import { ProductGridSection } from "@/components/home/product-grid-section";
 import { CategoriesSection } from "@/components/home/categories-section";
 // import { WhyChooseUsSection } from "@/components/home/why-choose-us-section";
-import { getFeaturedProducts, getNewLaunches, getCategories, getHeroBanners } from "@/lib/home";
+import { getFeaturedProducts, getNewLaunches, getCategories, getHeroBanners, getActiveBranchesGroupedByState } from "@/lib/home";
 import { Skeleton } from "@/components/ui/skeleton";
+import AboutUs from "@/components/home/about-us";
+import { BranchesSection } from "@/components/home/branches-section";
 
 // Loading skeleton for product grids
 function ProductGridSkeleton() {
@@ -69,6 +71,11 @@ async function CategoriesData() {
   return <CategoriesSection categories={categories} />;
 }
 
+async function BranchesData() {
+  const branchGroups = await getActiveBranchesGroupedByState();
+  return <BranchesSection branchGroups={branchGroups} />;
+}
+
 export default async function Home() {
   const heroBanners = await getHeroBanners();
 
@@ -106,9 +113,25 @@ export default async function Home() {
       {/* Why Choose Us */}
       {/* <WhyChooseUsSection /> */}
 
+      {/* About Us */}
+      <AboutUs />
+
       {/* New Launches */}
       <Suspense fallback={<ProductGridSkeleton />}>
         <NewLaunchesSection />
+      </Suspense>
+
+      {/* Branches Section */}
+      <Suspense
+        fallback={
+          <div className="py-16">
+            <div className="container mx-auto px-4">
+              <Skeleton className="h-[400px] w-full rounded-xl" />
+            </div>
+          </div>
+        }
+      >
+        <BranchesData />
       </Suspense>
     </main>
   );

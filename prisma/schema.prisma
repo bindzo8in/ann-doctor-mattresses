@@ -49,7 +49,10 @@ model Branch {
   id        String   @id @default(cuid())
   name      String
   address   String?
+  city      String?
+  state     String?
   phone     String?
+  googleMapUrl String?
   isActive  Boolean  @default(true)
   
   users     User[]
@@ -113,6 +116,9 @@ model Category {
   id   String @id @default(cuid())
   name String
   slug String @unique
+
+  thumbnailUrl      String?
+  thumbnailPublicId String?
 
   products Product[]
 }

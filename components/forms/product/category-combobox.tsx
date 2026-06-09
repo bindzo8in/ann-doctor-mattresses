@@ -61,6 +61,7 @@ import {
 
 import { useDebounce } from "@/hooks/use-debounce";
 import { toast } from "sonner";
+import { ImageUpload, type UploadedImage } from "@/components/ui/image-upload";
 
 interface Props {
   value?: string;
@@ -77,8 +78,13 @@ export function CategoryCombobox({
   const queryClient = useQueryClient();
   const loaderRef = useRef<HTMLDivElement>(null);
 
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createName, setCreateName] = useState("");
+  const [createThumbnail, setCreateThumbnail] = useState<UploadedImage | null>(null);
+
   const [editOpen, setEditOpen] = useState(false);
   const [editName, setEditName] = useState("");
+  const [editThumbnail, setEditThumbnail] = useState<UploadedImage | null>(null);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
 
@@ -129,12 +135,19 @@ export function CategoryCombobox({
       queryClient.setQueryData(["category", category.id], category);
       onChange(category.id);
       setOpen(false);
+      setCreateOpen(false);
+      setCreateName("");
+      setCreateThumbnail(null);
+      toast.success("Category created successfully");
     },
+    onError(error: Error) {
+      toast.error(error.message);
+    }
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: { id: string; name: string }) =>
-      updateCategory(data.id, data.name),
+    mutationFn: (data: { id: string; name: string; thumbnailUrl?: string | null; thumbnailPublicId?: string | null }) =>
+      updateCategory(data.id, { name: data.name, thumbnailUrl: data.thumbnailUrl, thumbnailPublicId: data.thumbnailPublicId }),
     onSuccess(category) {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       queryClient.setQueryData(["category", category.id], category);
@@ -168,6 +181,14 @@ export function CategoryCombobox({
   const handleEditClick = () => {
     if (selectedCategory.data) {
       setEditName(selectedCategory.data.name);
+      if (selectedCategory.data.thumbnailUrl && selectedCategory.data.thumbnailPublicId) {
+        setEditThumbnail({
+          url: selectedCategory.data.thumbnailUrl,
+          publicId: selectedCategory.data.thumbnailPublicId
+        });
+      } else {
+        setEditThumbnail(null);
+      }
       setEditOpen(true);
     }
   };
@@ -175,7 +196,22 @@ export function CategoryCombobox({
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!value || !editName.trim()) return;
-    updateMutation.mutate({ id: value, name: editName.trim() });
+    updateMutation.mutate({ 
+      id: value, 
+      name: editName.trim(),
+      thumbnailUrl: editThumbnail?.url || null,
+      thumbnailPublicId: editThumbnail?.publicId || null
+    });
+  };
+
+  const handleCreateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createName.trim()) return;
+    createMutation.mutate({
+      name: createName.trim(),
+      thumbnailUrl: createThumbnail?.url || null,
+      thumbnailPublicId: createThumbnail?.publicId || null
+    });
   };
 
   const handleDeleteSubmit = () => {
@@ -237,7 +273,12 @@ export function CategoryCombobox({
                     <Button
                       size="sm"
                       className="w-full"
-                      onClick={() => createMutation.mutate(search)}
+                      onClick={() => {
+                        setCreateName(search);
+                        setCreateThumbnail(null);
+                        setCreateOpen(true);
+                        setOpen(false);
+                      }}
                     >
                       <Plus className="mr-2 size-4" />
                       Create "{search}"
@@ -273,18 +314,72 @@ export function CategoryCombobox({
         )}
       </div>
 
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Category</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleCreateSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Name</label>
+              <Input
+                value={createName}
+                onChange={(e) => setCreateName(e.target.value)}
+                placeholder="Category name"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Thumbnail</label>
+              <ImageUpload
+                value={createThumbnail}
+                onChange={(val) => setCreateThumbnail(val as UploadedImage | null)}
+                maxFiles={1}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setCreateOpen(false)}
+                disabled={createMutation.isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={!createName.trim() || createMutation.isPending}
+              >
+                {createMutation.isPending ? "Creating..." : "Create"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Category</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleEditSubmit} className="space-y-4">
-            <Input
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              placeholder="Category name"
-              autoFocus
-            />
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Name</label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Category name"
+                autoFocus
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Thumbnail</label>
+              <ImageUpload
+                value={editThumbnail}
+                onChange={(val) => setEditThumbnail(val as UploadedImage | null)}
+                maxFiles={1}
+              />
+            </div>
             <DialogFooter>
               <Button
                 type="button"

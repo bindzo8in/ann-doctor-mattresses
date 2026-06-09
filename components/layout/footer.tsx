@@ -48,9 +48,15 @@ function ContactBlock() {
           {/* Left Side: Logo & Socials */}
           <div className="flex flex-col md:flex-row items-center gap-8 justify-center md:justify-start">
             <div className="bg-white p-4 rounded-lg inline-block">
-              <div className="flex items-center gap-2">
-                <span className="text-red-600 font-bold text-2xl tracking-tight leading-none">Ann Doctor<br/>Mattresses</span>
-              </div>
+              <Link href="/" className="flex items-center gap-2">
+                <Image
+                  src="/logo.webp"
+                  className="object-contain w-auto h-12"
+                  width={1887}
+                  height={512}
+                  alt="Ann Doctor Logo"
+                />
+              </Link>
             </div>
 
             <div className="space-y-4 text-center md:text-left">
@@ -144,18 +150,16 @@ function MainFooterBlock() {
             </div>
           </div>
 
-          {/* Column 2: Solutions */}
+          {/* Column 2: Products */}
           <div className="space-y-6">
-            <h4 className="font-bold text-lg">Solutions</h4>
+            <h4 className="font-bold text-lg">Products</h4>
             <ul className="space-y-3 text-sm text-slate-400">
-              <li><Link href="#" className="hover:text-white transition-colors">Managed WordPress</Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">Hosting</Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">Agencies</Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">Small & Medium-Sized</Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">Businesses</Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">Freelancers</Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">High-Traffic Websites</Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">WooCommerce</Link></li>
+              <li><Link href="/products?type=MATTRESS" className="hover:text-white transition-colors">Orthopedic Mattresses</Link></li>
+              <li><Link href="/products?type=MATTRESS" className="hover:text-white transition-colors">Memory Foam Mattresses</Link></li>
+              <li><Link href="/products?type=MATTRESS" className="hover:text-white transition-colors">Dual Comfort Mattresses</Link></li>
+              <li><Link href="/products?type=MATTRESS" className="hover:text-white transition-colors">Spring Mattresses</Link></li>
+              <li><Link href="/products?type=SOFA" className="hover:text-white transition-colors">Premium Sofas</Link></li>
+              <li><Link href="/products?type=MATTRESS" className="hover:text-white transition-colors">Custom Size Mattresses</Link></li>
             </ul>
           </div>
 
@@ -172,16 +176,16 @@ function MainFooterBlock() {
             </ul>
           </div>
 
-          {/* Column 4: Resources */}
+          {/* Column 4: Customer Service */}
           <div className="space-y-6">
-            <h4 className="font-bold text-lg">Resources</h4>
+            <h4 className="font-bold text-lg">Customer Service</h4>
             <ul className="space-y-3 text-sm text-slate-400">
-              <li><Link href="#" className="hover:text-white transition-colors">Blog</Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">eBooks</Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">Knowledge Base</Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">Customer Reviews</Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">Affiliate Program</Link></li>
-              <li><Link href="#" className="hover:text-white transition-colors">Strategic Partners</Link></li>
+              <li><Link href="#" className="hover:text-white transition-colors">Track Order</Link></li>
+              <li><Link href="#" className="hover:text-white transition-colors">Warranty Registration</Link></li>
+              <li><Link href="#" className="hover:text-white transition-colors">Return Policy</Link></li>
+              <li><Link href="#" className="hover:text-white transition-colors">Shipping Information</Link></li>
+              <li><Link href="#" className="hover:text-white transition-colors">FAQs</Link></li>
+              <li><Link href="#" className="hover:text-white transition-colors">Sleep Guide</Link></li>
             </ul>
           </div>
 

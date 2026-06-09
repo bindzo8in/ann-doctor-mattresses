@@ -31,22 +31,49 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function AuditLogsPage() {
-  const [actionFilter, setActionFilter] = useState("ALL");
-  const [entityFilter, setEntityFilter] = useState("ALL");
+  const [actionFilter, setActionFilter] = useState("");
+  const [entityFilter, setEntityFilter] = useState("");
+  const [actorUserId, setActorUserId] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [selectedLog, setSelectedLog] = useState<any>(null);
 
+  // Pagination state
+  const [cursorHistory, setCursorHistory] = useState<(string | null)[]>([null]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  const resetPagination = () => {
+    setCursorHistory([null]);
+    setCurrentIndex(0);
+  };
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ["audit-logs", actionFilter, entityFilter],
+    queryKey: ["audit-logs", actionFilter, entityFilter, actorUserId, fromDate, toDate, cursorHistory[currentIndex]],
     queryFn: async () => {
-      const params = new URLSearchParams({ limit: "100" });
-      if (actionFilter !== "ALL") params.set("action", actionFilter);
-      if (entityFilter !== "ALL") params.set("entityType", entityFilter);
+      const params = new URLSearchParams({ limit: "50" });
+      
+      const cursor = cursorHistory[currentIndex];
+      if (cursor) params.set("cursor", cursor);
+      if (actionFilter) params.set("action", actionFilter);
+      if (entityFilter) params.set("entityType", entityFilter);
+      if (actorUserId) params.set("actorUserId", actorUserId);
+      if (fromDate) params.set("fromDate", fromDate);
+      if (toDate) params.set("toDate", toDate);
       
       const res = await fetch(`/api/admin/audit?${params.toString()}`);
       if (!res.ok) throw new Error("Failed to fetch audit logs");
       return res.json();
     },
   });
+
+  const handleClearFilters = () => {
+    setActionFilter("");
+    setEntityFilter("");
+    setActorUserId("");
+    setFromDate("");
+    setToDate("");
+    resetPagination();
+  };
 
   return (
     <div className="p-6 md:p-8 space-y-6">
@@ -56,39 +83,57 @@ export default function AuditLogsPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <div className="flex-1 max-w-sm">
-          <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Action Type</label>
-          <Select value={actionFilter} onValueChange={setActionFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Actions" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Actions</SelectItem>
-              <SelectItem value="ORDER_UPDATED">Order Updated</SelectItem>
-              <SelectItem value="PAYMENT_CAPTURED">Payment Captured</SelectItem>
-              <SelectItem value="PAYMENT_FAILED">Payment Failed</SelectItem>
-              <SelectItem value="REFUND_PROCESSED">Refund Processed</SelectItem>
-              <SelectItem value="REFUND_FAILED">Refund Failed</SelectItem>
-              <SelectItem value="USER_LOGIN">User Login</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Filter className="w-4 h-4 text-slate-500" />
+          <h2 className="text-sm font-bold text-slate-700">Filter Logs</h2>
         </div>
-        <div className="flex-1 max-w-sm">
-          <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Entity Type</label>
-          <Select value={entityFilter} onValueChange={setEntityFilter}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Entities" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Entities</SelectItem>
-              <SelectItem value="Order">Order</SelectItem>
-              <SelectItem value="Payment">Payment</SelectItem>
-              <SelectItem value="Refund">Refund</SelectItem>
-              <SelectItem value="User">User</SelectItem>
-              <SelectItem value="Product">Product</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div>
+            <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Action Type</label>
+            <Input 
+              placeholder="e.g. ORDER_UPDATED" 
+              value={actionFilter} 
+              onChange={(e) => { setActionFilter(e.target.value); resetPagination(); }} 
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 mb-1.5 block">Entity Type</label>
+            <Input 
+              placeholder="e.g. Order" 
+              value={entityFilter} 
+              onChange={(e) => { setEntityFilter(e.target.value); resetPagination(); }} 
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 mb-1.5 block">User ID</label>
+            <Input 
+              placeholder="Search by User ID" 
+              value={actorUserId} 
+              onChange={(e) => { setActorUserId(e.target.value); resetPagination(); }} 
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 mb-1.5 block">From Date</label>
+            <Input 
+              type="date" 
+              value={fromDate} 
+              onChange={(e) => { setFromDate(e.target.value); resetPagination(); }} 
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-slate-500 mb-1.5 block">To Date</label>
+            <Input 
+              type="date" 
+              value={toDate} 
+              onChange={(e) => { setToDate(e.target.value); resetPagination(); }} 
+            />
+          </div>
+        </div>
+        <div className="flex justify-end pt-2">
+          <Button variant="outline" size="sm" onClick={handleClearFilters} className="text-slate-500">
+            Clear Filters
+          </Button>
         </div>
       </div>
 
@@ -160,6 +205,34 @@ export default function AuditLogsPage() {
             </TableBody>
           </Table>
         </div>
+      </div>
+
+      {/* Pagination Controls */}
+      <div className="flex items-center justify-end space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentIndex(currentIndex - 1)}
+          disabled={currentIndex === 0 || isLoading}
+        >
+          Previous
+        </Button>
+        <div className="text-sm font-medium px-2">Page {currentIndex + 1}</div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+             const nextCursor = data?.nextCursor;
+             if (nextCursor) {
+                const nextHistory = [...cursorHistory.slice(0, currentIndex + 1), nextCursor];
+                setCursorHistory(nextHistory);
+                setCurrentIndex(currentIndex + 1);
+             }
+          }}
+          disabled={!data?.nextCursor || isLoading}
+        >
+          Next
+        </Button>
       </div>
 
       {/* Details Dialog */}

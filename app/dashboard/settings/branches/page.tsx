@@ -8,13 +8,17 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { getBranches, createBranch, updateBranch, deleteBranch } from "@/actions/branches";
 
 type Branch = {
   id: string;
   name: string;
   address: string | null;
+  city: string | null;
+  state: string | null;
   phone: string | null;
+  googleMapUrl: string | null;
   isActive: boolean;
 };
 
@@ -45,7 +49,7 @@ export default function BranchesPage() {
     if (branch) {
       setEditingBranch({ ...branch });
     } else {
-      setEditingBranch({ name: "", address: "", phone: "", isActive: true });
+      setEditingBranch({ name: "", address: "", city: "", state: "", phone: "", googleMapUrl: "", isActive: true });
     }
     setIsModalOpen(true);
   };
@@ -62,7 +66,10 @@ export default function BranchesPage() {
         await updateBranch(editingBranch.id, {
           name: editingBranch.name,
           address: editingBranch.address || undefined,
+          city: editingBranch.city || undefined,
+          state: editingBranch.state || undefined,
           phone: editingBranch.phone || undefined,
+          googleMapUrl: editingBranch.googleMapUrl || undefined,
           isActive: editingBranch.isActive,
         });
         toast.success("Branch updated");
@@ -70,7 +77,10 @@ export default function BranchesPage() {
         await createBranch({
           name: editingBranch.name,
           address: editingBranch.address || undefined,
+          city: editingBranch.city || undefined,
+          state: editingBranch.state || undefined,
           phone: editingBranch.phone || undefined,
+          googleMapUrl: editingBranch.googleMapUrl || undefined,
           isActive: editingBranch.isActive,
         });
         toast.success("Branch created");
@@ -123,6 +133,7 @@ export default function BranchesPage() {
             <TableHeader>
               <TableRow className="bg-slate-50/50">
                 <TableHead>Branch Name</TableHead>
+                <TableHead>State & City</TableHead>
                 <TableHead>Address</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Status</TableHead>
@@ -133,6 +144,9 @@ export default function BranchesPage() {
               {branches.map((branch) => (
                 <TableRow key={branch.id}>
                   <TableCell className="font-medium">{branch.name}</TableCell>
+                  <TableCell className="text-slate-600">
+                    {branch.state && branch.city ? `${branch.city}, ${branch.state}` : (branch.state || branch.city || "-")}
+                  </TableCell>
                   <TableCell className="text-slate-600">{branch.address || "-"}</TableCell>
                   <TableCell className="text-slate-600">{branch.phone || "-"}</TableCell>
                   <TableCell>
@@ -188,6 +202,24 @@ export default function BranchesPage() {
               </div>
 
               <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">State</label>
+                <Input 
+                  value={editingBranch.state || ""} 
+                  onChange={e => setEditingBranch({...editingBranch, state: e.target.value})}
+                  placeholder="e.g., Tamil Nadu" 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">City</label>
+                <Input 
+                  value={editingBranch.city || ""} 
+                  onChange={e => setEditingBranch({...editingBranch, city: e.target.value})}
+                  placeholder="e.g., Chennai" 
+                />
+              </div>
+
+              <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Address</label>
                 <Input 
                   value={editingBranch.address || ""} 
@@ -198,10 +230,20 @@ export default function BranchesPage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-semibold text-slate-700">Phone Number</label>
-                <Input 
+                <PhoneInput 
+                  defaultCountry="IN"
                   value={editingBranch.phone || ""} 
-                  onChange={e => setEditingBranch({...editingBranch, phone: e.target.value})}
+                  onChange={value => setEditingBranch({...editingBranch, phone: value ? value.toString() : ""})}
                   placeholder="e.g., +91 98765 43210"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-slate-700">Google Map URL</label>
+                <Input 
+                  value={editingBranch.googleMapUrl || ""} 
+                  onChange={e => setEditingBranch({...editingBranch, googleMapUrl: e.target.value})}
+                  placeholder="e.g., https://goo.gl/maps/..."
                 />
               </div>
 

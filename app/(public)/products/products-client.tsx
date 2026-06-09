@@ -30,6 +30,7 @@ interface ProductsPageClientProps {
     seatingCapacityOptions: { value: string; label: string }[];
     materialOptions: { value: string; label: string }[];
     shapeOptions: { value: string; label: string }[];
+    categoryOptions: { value: string; label: string }[];
   };
 }
 
@@ -74,6 +75,7 @@ export function ProductsPageClient({ dynamicFacets }: ProductsPageClientProps) {
 
   // Combine dictionaries for ActiveFiltersBar
   const dictionaries = {
+    category: dynamicFacets.categoryOptions,
     size: MATTRESS_SIZE_OPTIONS,
     thickness: dynamicFacets.thicknessOptions,
     firmness: FIRMNESS_OPTIONS,

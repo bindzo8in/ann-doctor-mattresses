@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { userHasPermission } from "@/lib/rbac";
 import { Badge } from "@/components/ui/badge";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Loader2, Edit3, Truck, Calendar, DollarSign, User, Printer } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -1118,7 +1119,7 @@ export default function OrdersPage() {
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-600">Contact Phone</label>
-                        <Input value={printFromPhone} onChange={(e) => setPrintFromPhone(e.target.value)} />
+                        <PhoneInput defaultCountry="IN" value={printFromPhone} onChange={(val) => setPrintFromPhone(val ? val.toString() : "")} />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -1143,7 +1144,7 @@ export default function OrdersPage() {
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-slate-600">Customer Phone</label>
-                        <Input value={printToPhone} onChange={(e) => setPrintToPhone(e.target.value)} />
+                        <PhoneInput defaultCountry="IN" value={printToPhone} onChange={(val) => setPrintToPhone(val ? val.toString() : "")} />
                       </div>
                     </div>
                     <div className="space-y-1">

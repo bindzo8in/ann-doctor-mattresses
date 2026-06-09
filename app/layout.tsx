@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Geist, Inter, JetBrains_Mono, Playfair_Display } from "next/font/google";
+import { Geist, Inter, JetBrains_Mono, Montserrat_Alternates, Playfair_Display } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +23,23 @@ const fontMono = JetBrains_Mono({
   variable: "--font-mono",
 });
 
+const montserratAlternates = Montserrat_Alternates({
+  subsets: ["latin"],
+  variable: "--font-montserrat-alternates",
+  display: "swap",
+  weight: [
+    "100",
+    "200",
+    "300",
+    "400",
+    "500",
+    "600",
+    "700",
+    "800",
+    "900",
+  ],
+});
+
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -35,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} antialiased`}>
+    <html lang="en" className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} ${montserratAlternates.variable} antialiased`}>
       <body>
         <QueryProvider>
           <AppSessionProvider>

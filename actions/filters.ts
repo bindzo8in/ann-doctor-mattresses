@@ -57,10 +57,19 @@ export async function getDynamicFilterFacets(type?: ProductType) {
       }));
   }
 
+  const categories = await prisma.category.findMany({
+    select: { name: true, slug: true }
+  });
+  const categoryOptions = categories.map((c: any) => ({
+    value: c.slug,
+    label: c.name
+  }));
+
   return {
     thicknessOptions,
     seatingCapacityOptions,
     materialOptions,
-    shapeOptions
+    shapeOptions,
+    categoryOptions
   };
 }

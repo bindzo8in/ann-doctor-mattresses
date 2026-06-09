@@ -3,6 +3,7 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { auditLogger } from "@/lib/audit";
 
 export async function createReview(productId: string, rating: number, title: string | null, comment: string) {
   const session = await auth();
@@ -47,6 +48,16 @@ export async function createReview(productId: string, rating: number, title: str
         comment,
         isApproved: false, // Default to false
       },
+    });
+
+    await auditLogger.log({
+      action: "CREATE",
+      entityType: "Review",
+      entityId: review.id,
+      description: `User submitted a review for product ${productId}`,
+      actorUserId: session.user.id,
+      actorRole: session.user.role,
+      newValues: review,
     });
 
     revalidatePath(`/products/${productId}`); // Or correct slug path
@@ -160,6 +171,16 @@ export async function toggleReviewApproval(reviewId: string, isApproved: boolean
       include: { product: true }
     });
 
+    await auditLogger.log({
+      action: "UPDATE",
+      entityType: "Review",
+      entityId: reviewId,
+      description: `Review approval status set to ${isApproved}`,
+      actorUserId: session.user.id,
+      actorRole: session.user.role,
+      newValues: updatedReview,
+    });
+
     revalidatePath("/dashboard/reviews");
     if (updatedReview.product?.slug) {
         revalidatePath(`/product/${updatedReview.product.slug}`);
@@ -182,6 +203,16 @@ export async function deleteReview(reviewId: string) {
     const deletedReview = await prisma.review.delete({
       where: { id: reviewId },
       include: { product: true }
+    });
+
+    await auditLogger.log({
+      action: "DELETE",
+      entityType: "Review",
+      entityId: reviewId,
+      description: `Deleted review`,
+      actorUserId: session.user.id,
+      actorRole: session.user.role,
+      oldValues: deletedReview,
     });
 
     revalidatePath("/dashboard/reviews");

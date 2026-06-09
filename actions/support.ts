@@ -2,6 +2,8 @@
 
 import prisma from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { auth } from "@/auth";
+import { auditLogger } from "@/lib/audit";
 import * as React from "react";
 import ContactMessageEmail from "@/emails/ContactMessageEmail";
 import ContactAutoReplyEmail from "@/emails/ContactAutoReplyEmail";
@@ -38,6 +40,16 @@ export async function submitContactMessage(data: { name: string; email: string; 
         name: data.name,
         message: data.message,
       }),
+    });
+
+    const session = await auth();
+    await auditLogger.log({
+      action: "CREATE",
+      entityType: "ContactMessage",
+      entityId: contact.id,
+      description: `New contact message from ${data.name}`,
+      actorUserId: session?.user?.id,
+      actorRole: session?.user?.role,
     });
 
     return { success: true, contact };
@@ -99,6 +111,16 @@ export async function submitComplaint(formData: FormData) {
         subject,
         message,
       }),
+    });
+
+    const session = await auth();
+    await auditLogger.log({
+      action: "CREATE",
+      entityType: "Complaint",
+      entityId: complaint.id,
+      description: `New complaint logged by ${name}`,
+      actorUserId: session?.user?.id,
+      actorRole: session?.user?.role,
     });
 
     return { success: true, complaintId: complaint.id };

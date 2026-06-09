@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { auditLogger } from "@/lib/audit";
 
 interface RouteProps {
   params: Promise<{ id: string }>;
@@ -32,6 +33,16 @@ export async function PUT(req: NextRequest, { params }: RouteProps) {
       }
     });
 
+    await auditLogger.log({
+      action: "UPDATE",
+      entityType: "Promotion",
+      entityId: promotion.id,
+      description: `Updated promotion: ${promotion.name}`,
+      actorUserId: session.user.id,
+      actorRole: session.user.role,
+      newValues: promotion,
+    });
+
     return NextResponse.json(promotion);
   } catch (error) {
     console.error("Admin Promotion PUT Error:", error);
@@ -48,7 +59,22 @@ export async function DELETE(req: NextRequest, { params }: RouteProps) {
   try {
     const { id } = await params;
     
+    const promotion = await prisma.promotion.findUnique({ where: { id } });
+    if (!promotion) {
+      return NextResponse.json({ message: "Not found" }, { status: 404 });
+    }
+
     await prisma.promotion.delete({ where: { id } });
+
+    await auditLogger.log({
+      action: "DELETE",
+      entityType: "Promotion",
+      entityId: id,
+      description: `Deleted promotion: ${promotion.name}`,
+      actorUserId: session.user.id,
+      actorRole: session.user.role,
+      oldValues: promotion,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

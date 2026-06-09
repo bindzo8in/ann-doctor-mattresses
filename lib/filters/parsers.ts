@@ -56,6 +56,7 @@ export function parseProductFilters(
     type,
     priceMin: !isNaN(priceMin as number) ? priceMin : undefined,
     priceMax: !isNaN(priceMax as number) ? priceMax : undefined,
+    category: parseArray<string>(searchParams.category),
     
     // Mattress
     size: parseArray<MattressSize>(searchParams.size, Object.values(MattressSize)),

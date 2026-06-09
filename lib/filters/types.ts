@@ -15,6 +15,7 @@ export interface ProductFilterParams {
   // Common
   priceMin?: number;
   priceMax?: number;
+  category?: string[];
 
   // Mattress
   size?: MattressSize[];

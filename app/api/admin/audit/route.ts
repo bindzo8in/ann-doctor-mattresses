@@ -19,11 +19,19 @@ export async function GET(req: NextRequest) {
     const entityType = searchParams.get("entityType");
     const action = searchParams.get("action");
     const actorUserId = searchParams.get("actorUserId");
+    const fromDate = searchParams.get("fromDate");
+    const toDate = searchParams.get("toDate");
 
     const where: any = {};
-    if (entityType) where.entityType = entityType;
-    if (action) where.action = action;
+    if (entityType) where.entityType = { contains: entityType, mode: "insensitive" };
+    if (action) where.action = { contains: action, mode: "insensitive" };
     if (actorUserId) where.actorUserId = actorUserId;
+
+    if (fromDate || toDate) {
+      where.createdAt = {};
+      if (fromDate) where.createdAt.gte = new Date(fromDate);
+      if (toDate) where.createdAt.lte = new Date(toDate);
+    }
 
     const logs = await prisma.auditLog.findMany({
       where,

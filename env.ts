@@ -15,6 +15,8 @@ export const env = createEnv({
     WEB_PUSH_EMAIL: z.string().startsWith("mailto:"),
     // ADMIN_EMAIL: z.string().email(),
     AUTH_TRUST_HOST: z.coerce.boolean().default(true),
+    UPSTASH_REDIS_REST_URL: z.string().optional(),
+    UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_RAZORPAY_KEY_ID: z.string().nonempty(),
@@ -43,5 +45,7 @@ export const env = createEnv({
     // NEXT_PUBLIC_SITE_NAME: process.env.NEXT_PUBLIC_SITE_NAME,
     // NEXT_PUBLIC_EMAIL_ENGINE_MAIL: process.env.NEXT_PUBLIC_EMAIL_ENGINE_MAIL,
     // NEXT_PUBLIC_ADMIN_EMAIL: process.env.NEXT_PUBLIC_ADMIN_EMAIL,
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
   },
 });

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { UserRole } from "@/app/generated/prisma/client";
+import { auditLogger } from "@/lib/audit";
 
 export async function GET() {
   try {
@@ -52,6 +53,16 @@ export async function POST(req: Request) {
       }
     });
 
+    await auditLogger.log({
+      action: "CREATE",
+      entityType: "DeliveryZone",
+      entityId: newZone.id,
+      description: `Created delivery zone: ${newZone.name}`,
+      actorUserId: session.user.id,
+      actorRole: session.user.role,
+      newValues: newZone,
+    });
+
     return NextResponse.json(newZone);
   } catch (error) {
     console.error("Create Delivery Zone Error:", error);
@@ -91,6 +102,16 @@ export async function PUT(req: Request) {
       }
     });
 
+    await auditLogger.log({
+      action: "UPDATE",
+      entityType: "DeliveryZone",
+      entityId: updatedZone.id,
+      description: `Updated delivery zone: ${updatedZone.name}`,
+      actorUserId: session.user.id,
+      actorRole: session.user.role,
+      newValues: updatedZone,
+    });
+
     return NextResponse.json(updatedZone);
   } catch (error) {
     console.error("Update Delivery Zone Error:", error);
@@ -120,6 +141,16 @@ export async function DELETE(req: Request) {
 
     await prisma.deliveryZone.delete({
       where: { id }
+    });
+
+    await auditLogger.log({
+      action: "DELETE",
+      entityType: "DeliveryZone",
+      entityId: id,
+      description: `Deleted delivery zone: ${zone?.name || id}`,
+      actorUserId: session.user.id,
+      actorRole: session.user.role,
+      oldValues: zone,
     });
 
     return NextResponse.json({ success: true });

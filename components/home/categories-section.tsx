@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { HomeCategory } from "@/lib/home";
-import { ArrowRight } from "lucide-react";
 
 // Map well-known category slugs to local images
 const CATEGORY_IMAGES: Record<string, string> = {
@@ -47,43 +46,36 @@ export function CategoriesSection({ categories }: CategoriesSectionProps) {
 
         {/* Category cards grid */}
         <div
-          className={`grid gap-5 ${
+          className={`grid gap-6 ${
             categories.length <= 2
               ? "grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto"
               : categories.length === 3
               ? "grid-cols-1 sm:grid-cols-3"
-              : "grid-cols-2 sm:grid-cols-2 md:grid-cols-4"
+              : "grid-cols-2 lg:grid-cols-4"
           }`}
         >
           {categories.map((cat) => (
             <Link
               key={cat.id}
               href={`/products?categoryId=${cat.id}`}
-              className="group relative overflow-hidden rounded-2xl aspect-[4/3] flex items-end shadow-md hover:shadow-xl transition-shadow duration-300"
+              className="group flex flex-col bg-white overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.1)] transition-all duration-300 border border-border/50"
             >
-              {/* Background image */}
-              <Image
-                src={getCategoryImage(cat.slug, cat.name)}
-                alt={cat.name}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-              />
+              {/* Background image container */}
+              <div className="relative w-full aspect-[4/3] bg-muted/20">
+                <Image
+                  src={cat.thumbnailUrl || getCategoryImage(cat.slug, cat.name)}
+                  alt={cat.name}
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                />
+              </div>
 
-              {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-
-              {/* Text */}
-              <div className="relative z-10 p-5 w-full">
-                <h3 className="text-white font-bold text-lg leading-snug">
+              {/* Bottom bar */}
+              <div className="bg-[#e62a2d] py-3 sm:py-4 px-4 text-center mt-auto">
+                <h3 className="text-white font-medium text-base sm:text-lg">
                   {cat.name}
                 </h3>
-                <p className="text-white/60 text-sm mt-0.5">
-                  {cat.productCount} product{cat.productCount !== 1 ? "s" : ""}
-                </p>
-                <div className="mt-3 flex items-center gap-1 text-amber-400 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  Shop Now <ArrowRight className="size-3" />
-                </div>
               </div>
             </Link>
           ))}
