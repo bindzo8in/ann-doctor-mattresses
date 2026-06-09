@@ -4,19 +4,9 @@ import prisma from "@/lib/prisma";
 import { OrderStatus, PaymentStatus, RefundStatus } from "@/app/generated/prisma/client";
 import { env } from "@/env";
 import { auditLogger } from "@/lib/audit";
-import { webhookRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
-    if (webhookRateLimit) {
-      const ip = req.ip ?? req.headers.get("x-forwarded-for") ?? "127.0.0.1";
-      const { success } = await webhookRateLimit.limit(ip);
-      if (!success) {
-        console.error(`Webhook Rate limit exceeded for IP: ${ip}`);
-        return NextResponse.json({ message: "Too many requests" }, { status: 429 });
-      }
-    }
-
     const body = await req.text(); // We need raw text to verify the signature
     const signature = req.headers.get("x-razorpay-signature");
     const webhookSecret = env.RAZORPAY_WEBHOOK_SECRET;

@@ -40,6 +40,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
+        if (user.lockedUntil && user.lockedUntil > new Date()) {
+          throw new Error("Account is temporarily locked.");
+        }
+
         const validPassword = await bcrypt.compare(
           String(credentials.password),
           user.password,

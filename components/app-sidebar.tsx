@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, Settings2Icon, CircleHelpIcon, SearchIcon, CommandIcon, MessageSquareIcon, MonitorPlay, ShieldIcon } from "lucide-react"
+import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, Settings2Icon, CircleHelpIcon, SearchIcon, CommandIcon, MessageSquareIcon, MonitorPlay, ShieldIcon, UsersIcon } from "lucide-react"
 import { userHasPermission } from "@/lib/rbac"
 import { Permission } from "@/lib/permissions"
 
@@ -65,8 +65,22 @@ const navMain = [
 
 const navSecondary = [
   {
+    title: "Users",
+    url: "/dashboard/users",
+    icon: (
+      <UsersIcon />
+    ),
+  },
+  {
     title: "Audit Logs",
     url: "/dashboard/audit",
+    icon: (
+      <ShieldIcon />
+    ),
+  },
+  {
+    title: "Locked Accounts",
+    url: "/dashboard/security/locked-accounts",
     icon: (
       <ShieldIcon />
     ),
@@ -128,7 +142,9 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
           return true;
         })} />
         <NavSecondary items={navSecondary.filter(item => {
+          if (item.title === "Users") return userHasPermission(user, "users.read");
           if (item.title === "Audit Logs") return userHasPermission(user, "audit.read");
+          if (item.title === "Locked Accounts") return userHasPermission(user, "audit.read");
           if (item.title === "Settings") return userHasPermission(user, "settings.read");
           return true;
         })} className="mt-auto" />

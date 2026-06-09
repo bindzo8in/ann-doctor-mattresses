@@ -33,6 +33,7 @@ const NavBar = () => {
             width={1887}
             height={512}
             alt="Ann Doctor Logo"
+            priority={true}
           />
         </Link>
 

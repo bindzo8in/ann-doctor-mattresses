@@ -28,6 +28,12 @@ model User {
   role          UserRole  @default(CUSTOMER)
 
   isActive Boolean @default(true)
+  
+  // Security and Lockout
+  failedAttempts      Int       @default(0)
+  lockedUntil         DateTime?
+  lastFailedAttemptAt DateTime?
+
   branchId String?
   branch   Branch? @relation(fields: [branchId], references: [id])
 

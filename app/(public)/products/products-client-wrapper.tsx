@@ -10,6 +10,7 @@ interface ProductsPageClientWrapperProps {
     seatingCapacityOptions: { value: string; label: string }[];
     materialOptions: { value: string; label: string }[];
     shapeOptions: { value: string; label: string }[];
+    categoryOptions: { value: string; label: string }[];
   };
 }
 

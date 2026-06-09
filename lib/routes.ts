@@ -20,6 +20,9 @@ export const routes = {
     dashboard_promotions: "/dashboard/promotions",
     dashboard_reviews: "/dashboard/reviews",
     dashboard_audit: "/dashboard/audit",
+    dashboard_security: "/dashboard/security",
+    dashboard_users: "/dashboard/users",
+    dashboard_branches: "/dashboard/branches",
     dashboard_settings: "/dashboard/settings",
 
     profile: "/profile",
