@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import crypto from "crypto";
 import { OrderStatus, PaymentStatus, CheckoutSource } from "@/app/generated/prisma/client";
 import { sendOrderConfirmationEmail } from "@/lib/email";
+import { env } from "@/env";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Missing payment details" }, { status: 400 });
     }
 
-    const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET || "";
+    const razorpayKeySecret = env.RAZORPAY_KEY_SECRET;
 
     // Verify signature
     const hmac = crypto.createHmac("sha256", razorpayKeySecret);
@@ -73,9 +74,16 @@ export async function POST(req: NextRequest) {
 
     // Empty user's cart only if the order source is CART
     if (order.checkoutSource === CheckoutSource.CART) {
-      await prisma.cartItem.deleteMany({
-        where: { userId: order.customerId },
-      });
+      const orderItems = await prisma.orderItem.findMany({ where: { orderId: order.id } });
+      for (const item of orderItems) {
+        await prisma.cartItem.deleteMany({
+          where: {
+            userId: order.customerId,
+            productId: item.productId,
+            variantId: item.variantId,
+          }
+        });
+      }
     }
 
     return NextResponse.json({ success: true, orderId: order.id });

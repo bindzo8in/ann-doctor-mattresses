@@ -8,6 +8,7 @@ import bcrypt from "bcryptjs";
 import prisma from "./lib/prisma";
 import authConfig from "./auth.config";
 import { auditLogger } from "./lib/audit";
+import { loginRateLimit } from "./lib/security/rate-limit";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   debug: process.env.NODE_ENV === "development",
@@ -30,9 +31,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null;
         }
 
+        const emailStr = String(credentials.email).toLowerCase();
+
+        if (loginRateLimit) {
+          const { success } = await loginRateLimit.limit(`login:${emailStr}`);
+          if (!success) {
+            throw new Error("Too many login attempts. Please try again later.");
+          }
+        }
+
         const user = await prisma.user.findUnique({
           where: {
-            email: String(credentials.email).toLowerCase(),
+            email: emailStr,
           },
         });
 

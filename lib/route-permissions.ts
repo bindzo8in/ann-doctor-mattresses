@@ -26,7 +26,10 @@ export const roleRoutes: Record<UserRole, RouteConfig> = {
       routes.dashboard_audit,
       routes.dashboard_security,
       routes.dashboard_users,
-      routes.dashboard_branches
+      routes.dashboard_branches,
+      routes.api_upload,
+      "/api/notifications",
+      "/api/categories"
     ],
   },
 
@@ -42,6 +45,9 @@ export const roleRoutes: Record<UserRole, RouteConfig> = {
       routes.checkoutSuccess,
       routes.profile,
       routes.wishlist,
+      routes.api_upload,
+    "/api/notifications",
+      "/api/categories"
     ],
   },
 

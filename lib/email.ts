@@ -1,7 +1,6 @@
 import { Resend } from "resend";
 import prisma from "@/lib/prisma";
 import * as React from "react";
-import { render } from "@react-email/render";
 import OrderConfirmationEmail from "@/emails/OrderConfirmationEmail";
 import DeliveryStatusEmail from "@/emails/DeliveryStatusEmail";
 
@@ -36,11 +35,7 @@ export async function sendEmail({ to, subject, html, react }: SendEmailParams) {
   } else {
     let body = html || "";
     if (react) {
-      try {
-        body = await render(react as React.ReactElement);
-      } catch (e) {
-        body = "[Failed to render React Email]";
-      }
+      body = "[React Email Component rendered by Resend in production]";
     }
 
     console.log("==================================================");
@@ -78,12 +73,12 @@ export async function sendOrderConfirmationEmail(orderId: string) {
         items: order.items.map((item) => ({
           productName: item.productName,
           quantity: item.quantity,
-          price: Number(item.price),
+          price: Number(item.price.toNumber()),
         })),
-        subTotal: Number(order.subTotal),
-        discountTotal: Number(order.discountTotal),
-        shippingTotal: Number(order.shippingTotal),
-        totalAmount: Number(order.totalAmount),
+        subTotal: Number(order.subTotal.toNumber()),
+        discountTotal: Number(order.discountTotal.toNumber()),
+        shippingTotal: Number(order.shippingTotal.toNumber()),
+        totalAmount: Number(order.totalAmount.toNumber()),
         shippingAddress: order.shippingAddress as any,
         notes: order.notes,
       }),

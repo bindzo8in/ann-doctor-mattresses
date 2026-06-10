@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { userHasPermission } from "@/lib/rbac";
 import { Badge } from "@/components/ui/badge";
 import { PhoneInput } from "@/components/ui/phone-input";
-import { Loader2, Edit3, Truck, Calendar, DollarSign, User, Printer } from "lucide-react";
+import { Loader2, Edit3, Truck, Calendar, DollarSign, User, Printer, ExternalLink } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -59,6 +60,7 @@ export default function OrdersPage() {
   // Print Shipping Label State
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isAssignBranchModalOpen, setIsAssignBranchModalOpen] = useState(false);
+  const [isTrackingModalOpen, setIsTrackingModalOpen] = useState(false);
   const [printFromName, setPrintFromName] = useState("Ann Doctor Mattresses");
   const [printFromPhone, setPrintFromPhone] = useState("+91 98765 43210");
   const [printFromAddress1, setPrintFromAddress1] = useState("Geographic Hub: South India");
@@ -809,6 +811,8 @@ export default function OrdersPage() {
                           onClick={() => {
                             if (opt.value === "OPEN_ASSIGN_MODAL") {
                               setIsAssignBranchModalOpen(true);
+                            } else if (opt.value === "SHIPPED") {
+                              setIsTrackingModalOpen(true);
                             } else if (opt.value === "INITIATE_REFUND") {
                               handleInitiateRefund();
                             } else {
@@ -848,42 +852,44 @@ export default function OrdersPage() {
               </div>
 
               {/* Courier Tracking Details */}
-              <div className="space-y-4 border-t pt-4">
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                  <Truck className="w-4 h-4 text-slate-400" /> Shipping & Tracking
-                </h3>
-                
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700">Courier Partner Name</label>
-                  <Input
-                    value={courierName}
-                    onChange={(e) => setCourierName(e.target.value)}
-                    placeholder="E.g. Delhivery, BlueDart"
-                    disabled={selectedOrder.status === 'CANCELLED' || selectedOrder.status === 'REFUNDED'}
-                  />
+              { (selectedOrder.courierName || selectedOrder.trackingNumber || selectedOrder.status === 'SHIPPED' || selectedOrder.status === 'OUT_FOR_DELIVERY' || selectedOrder.status === 'DELIVERED') && (
+                <div className="space-y-3 border-t pt-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                      <Truck className="w-4 h-4 text-slate-400" /> Shipping & Tracking
+                    </h3>
+                    {selectedOrder.status !== 'CANCELLED' && selectedOrder.status !== 'REFUNDED' && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setIsTrackingModalOpen(true)} className="h-8 px-2 text-blue-600 hover:bg-blue-50">
+                        <Edit3 className="w-3.5 h-3.5 mr-1" /> {selectedOrder.courierName ? "Edit" : "Add Tracking"}
+                      </Button>
+                    )}
+                  </div>
+                  {(selectedOrder.courierName || selectedOrder.trackingNumber) ? (
+                    <div className="grid grid-cols-2 gap-4 bg-slate-50 p-3 rounded-lg border">
+                      <div>
+                        <div className="text-[10px] uppercase font-semibold text-slate-400">Courier Partner</div>
+                        <div className="font-semibold text-slate-800 text-sm mt-0.5">{selectedOrder.courierName || "N/A"}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] uppercase font-semibold text-slate-400">Tracking Number</div>
+                        <div className="font-semibold text-slate-800 text-sm mt-0.5">{selectedOrder.trackingNumber || "N/A"}</div>
+                      </div>
+                      {selectedOrder.trackingUrl && (
+                        <div className="col-span-2">
+                          <div className="text-[10px] uppercase font-semibold text-slate-400">Tracking URL</div>
+                          <a href={selectedOrder.trackingUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm font-medium mt-0.5 flex items-center gap-1">
+                            Track Shipment <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-slate-500 italic bg-slate-50 p-3 rounded-lg border">
+                      No tracking details provided.
+                    </div>
+                  )}
                 </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700">Tracking Number</label>
-                  <Input
-                    value={trackingNumber}
-                    onChange={(e) => setTrackingNumber(e.target.value)}
-                    placeholder="E.g. 1234567890"
-                    disabled={selectedOrder.status === 'CANCELLED' || selectedOrder.status === 'REFUNDED'}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-slate-700">Tracking URL</label>
-                  <Input
-                    type="url"
-                    value={trackingUrl}
-                    onChange={(e) => setTrackingUrl(e.target.value)}
-                    placeholder="https://track.delhivery.com/..."
-                    disabled={selectedOrder.status === 'CANCELLED' || selectedOrder.status === 'REFUNDED'}
-                  />
-                </div>
-              </div>
+              )}
 
               {/* Cancellation Reason (if applicable) */}
               {status === "CANCELLED" && (
@@ -1005,6 +1011,58 @@ export default function OrdersPage() {
               Confirm Assignment
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tracking Details Modal */}
+      <Dialog open={isTrackingModalOpen} onOpenChange={setIsTrackingModalOpen}>
+        <DialogContent className="sm:max-w-md bg-white">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-slate-900">Shipping & Tracking</DialogTitle>
+            <DialogDescription className="text-slate-500">
+              Provide tracking details for the customer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-700">Courier Partner Name</label>
+              <Input
+                value={courierName}
+                onChange={(e) => setCourierName(e.target.value)}
+                placeholder="E.g. Delhivery, BlueDart"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-700">Tracking Number</label>
+              <Input
+                value={trackingNumber}
+                onChange={(e) => setTrackingNumber(e.target.value)}
+                placeholder="E.g. 1234567890"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-700">Tracking URL</label>
+              <Input
+                type="url"
+                value={trackingUrl}
+                onChange={(e) => setTrackingUrl(e.target.value)}
+                placeholder="https://track.delhivery.com/..."
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setIsTrackingModalOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={() => {
+                const targetStatus = selectedOrder?.status === "PROCESSING" ? "SHIPPED" : undefined;
+                handleUpdateOrder(undefined, targetStatus);
+                setIsTrackingModalOpen(false);
+              }}
+              disabled={isUpdating}
+            >
+              {selectedOrder?.status === "PROCESSING" ? "Save & Mark as Shipped" : "Save Details"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -19,6 +19,12 @@ export const permissions = [
   "products.update",
   "products.delete",
 
+  // categories
+  "categories.read",
+  "categories.create",
+  "categories.update",
+  "categories.delete",
+
   // promotions
   "promotions.read",
   "promotions.create",

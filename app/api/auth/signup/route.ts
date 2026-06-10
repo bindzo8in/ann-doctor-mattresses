@@ -8,9 +8,21 @@ import { formSchema } from "@/lib/schema/signup-schema";
 import { UserRole, VerificationTokenType } from "@/app/generated/prisma/enums";
 import { getFieldErrors } from "@/lib/utils";
 import { Prisma } from "@/app/generated/prisma/client";
+import { registrationRateLimit } from "@/lib/security/rate-limit";
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
+    if (registrationRateLimit) {
+      const { success } = await registrationRateLimit.limit(`register:${ip}`);
+      if (!success) {
+        return NextResponse.json(
+          { success: false, message: "Too many requests. Please try again later." },
+          { status: 429 }
+        );
+      }
+    }
+
     const body = await req.json();
 
     const validation = formSchema.safeParse(body);

@@ -11,6 +11,7 @@ import { cancelOrderAction } from "@/actions/checkout";
 import { toast } from "sonner";
 import Script from "next/script";
 import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 import Image from "next/image";
 import { formatPrice } from "@/lib/price";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -174,170 +175,206 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
   };
 
   const handleDownloadInvoice = () => {
-    try {
-      const doc = new jsPDF();
+    setIsProcessing(true);
+    const toastId = toast.loading("Generating your invoice...");
 
-      // Premium styling colors
-      const primaryColor = [15, 23, 42]; // #0f172a (Slate 900)
-      const greyColor = [100, 116, 139]; // Slate 500
-      
-      // Header Section
-      doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.rect(0, 0, 210, 35, "F");
+    const generatePdf = (logoDataUrl: string | null) => {
+      try {
+        const doc = new jsPDF();
 
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(22);
-      doc.setTextColor(255, 255, 255);
-      doc.text("ANN DOCTOR MATTRESSES", 15, 22);
+        // Premium styling colors
+        const primaryColor = [15, 23, 42]; // #0f172a (Slate 900)
+        const greyColor = [100, 116, 139]; // Slate 500
+        
+        // Header Section
+        doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.rect(0, 0, 210, 35, "F");
 
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(10);
-      doc.setTextColor(230, 230, 230);
-      doc.text("Premium Mattresses & Sofas Store", 15, 28);
-
-      // Invoice / Bill Metadata
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(255, 255, 255);
-      doc.text("TAX INVOICE", 150, 18);
-
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.text(`Invoice No: INV-${order.orderNumber.split("-")[1]}`, 150, 24);
-      doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString("en-IN")}`, 150, 29);
-
-      // Resets Text Color to standard Slate 900
-      doc.setTextColor(30, 41, 59);
-
-      // Business & Customer Details Grid
-      let currentY = 50;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.text("Seller Information:", 15, currentY);
-      doc.text("Shipping Address / Bill To:", 110, currentY);
-
-      currentY += 6;
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      
-      // Left Column: Seller details
-      doc.text("Ann Doctor Mattresses", 15, currentY);
-      doc.text("Geographic Hub: South India", 15, currentY + 5);
-      doc.text("Email: support@anndoctor.in", 15, currentY + 10);
-      doc.text("GST Included in unit prices", 15, currentY + 15);
-
-      // Right Column: Customer details
-      const addr = order.shippingAddress;
-      doc.text(addr.fullName || "", 110, currentY);
-      doc.text(addr.addressLine1 || "", 110, currentY + 5);
-      let nextLineY = currentY + 10;
-      if (addr.addressLine2) {
-        doc.text(addr.addressLine2, 110, nextLineY);
-        nextLineY += 5;
-      }
-      doc.text(`${addr.city}, ${addr.state} - ${addr.postalCode}`, 110, nextLineY);
-      doc.text(`Phone: ${addr.phone}`, 110, nextLineY + 5);
-
-      currentY = nextLineY + 18;
-
-      // Draw Separator line
-      doc.setDrawColor(226, 232, 240);
-      doc.line(15, currentY, 195, currentY);
-
-      currentY += 10;
-
-      // Table Header
-      doc.setFillColor(248, 250, 252); // #f8fafc
-      doc.rect(15, currentY, 180, 8, "F");
-      
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(9);
-      doc.text("Product Details", 18, currentY + 5.5);
-      doc.text("Qty", 120, currentY + 5.5);
-      doc.text("Unit Price", 145, currentY + 5.5);
-      doc.text("Total", 175, currentY + 5.5);
-
-      currentY += 8;
-
-      // Table Items Rows
-      doc.setFont("helvetica", "normal");
-      order.items.forEach((item) => {
-        // Draw row line
-        doc.line(15, currentY, 195, currentY);
-
-        if (item.quantityFree > 0) {
-          // Purchased Line
-          doc.text(item.productName, 18, currentY + 6);
-          doc.text(String(item.quantityPurchased), 120, currentY + 6);
-          doc.text(`₹ ${formatPrice(item.unitPrice)}`, 145, currentY + 6);
-          doc.text(`₹ ${formatPrice(item.totalPaid)}`, 175, currentY + 6);
-
-          currentY += 8;
-
-          // Free Line
-          doc.text(`Free ${item.productName}`, 18, currentY + 6);
-          doc.text(String(item.quantityFree), 120, currentY + 6);
-          doc.text("₹ 0", 145, currentY + 6);
-          doc.text("₹ 0", 175, currentY + 6);
-
-          currentY += 10;
+        if (logoDataUrl) {
+          doc.addImage(logoDataUrl, 'JPEG', 15, 5, 45, 25);
         } else {
-          // Regular Line
-          doc.text(item.productName, 18, currentY + 6);
-          doc.text(String(item.quantity), 120, currentY + 6);
-          doc.text(`₹ ${formatPrice(item.price)}`, 145, currentY + 6);
-          doc.text(`₹ ${formatPrice(item.price * item.quantity)}`, 175, currentY + 6);
-
-          currentY += 10;
+          doc.setFont("helvetica", "bold");
+          doc.setFontSize(22);
+          doc.setTextColor(255, 255, 255);
+          doc.text("ANN DOCTOR", 15, 22);
         }
-      });
 
-      // Bottom border for table
-      doc.line(15, currentY, 195, currentY);
+        // Invoice / Bill Metadata
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(14);
+        doc.setTextColor(255, 255, 255);
+        doc.text("TAX INVOICE", 150, 15);
 
-      currentY += 8;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.text(`Invoice No: INV-${order.orderNumber.split("-")[1] || order.orderNumber}`, 150, 21);
+        doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString("en-IN")}`, 150, 26);
 
-      // Total Calculations Summary Align Right
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(9);
-      doc.text("Subtotal:", 130, currentY);
-      doc.text(`₹ ${formatPrice(order.subTotal)}`, 175, currentY);
+        // Resets Text Color
+        doc.setTextColor(30, 41, 59);
 
-      if (order.discountTotal > 0) {
+        // Business & Customer Details Grid
+        let currentY = 45;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text("Seller Information:", 15, currentY);
+        doc.text("Shipping Address / Bill To:", 110, currentY);
+
+        currentY += 6;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        
+        // Left Column: Seller details
+        doc.text("Ann Doctor Mattresses", 15, currentY);
+        doc.text("Hub: South India", 15, currentY + 5);
+        doc.text("Email: support@anndoctor.in", 15, currentY + 10);
+        doc.text("GST Included in unit prices", 15, currentY + 15);
+
+        // Right Column: Customer details
+        const addr = order.shippingAddress;
+        doc.text(addr.fullName || "", 110, currentY);
+        doc.text(addr.addressLine1 || "", 110, currentY + 5);
+        let nextLineY = currentY + 10;
+        if (addr.addressLine2) {
+          doc.text(addr.addressLine2, 110, nextLineY);
+          nextLineY += 5;
+        }
+        doc.text(`${addr.city}, ${addr.state} - ${addr.postalCode}`, 110, nextLineY);
+        doc.text(`Phone: ${addr.phone}`, 110, nextLineY + 5);
+
+        currentY = Math.max(currentY + 20, nextLineY + 10) + 5;
+
+        // AutoTable for Order Items
+        const tableBody: any[] = [];
+        
+        order.items.forEach((item) => {
+          if (item.quantityFree > 0) {
+            // Purchased Line
+            tableBody.push([
+              item.productName,
+              item.quantityPurchased,
+              `Rs. ${formatPrice(item.unitPrice)}`,
+              `Rs. ${formatPrice(item.totalPaid)}`
+            ]);
+            // Free Line
+            tableBody.push([
+              `FREE: ${item.productName}`,
+              item.quantityFree,
+              `Rs. 0`,
+              `Rs. 0`
+            ]);
+          } else {
+            // Regular Line
+            tableBody.push([
+              item.productName,
+              item.quantity,
+              `Rs. ${formatPrice(item.price)}`,
+              `Rs. ${formatPrice(item.price * item.quantity)}`
+            ]);
+          }
+        });
+
+        autoTable(doc, {
+          startY: currentY,
+          head: [['Product Details', 'Qty', 'Unit Price', 'Total']],
+          body: tableBody,
+          theme: 'striped',
+          headStyles: {
+            fillColor: [15, 23, 42],
+            textColor: 255,
+            fontStyle: 'bold'
+          },
+          columnStyles: {
+            0: { cellWidth: 90 },
+            1: { cellWidth: 20, halign: 'center' },
+            2: { cellWidth: 35, halign: 'right' },
+            3: { cellWidth: 35, halign: 'right' }
+          },
+          styles: {
+            fontSize: 9,
+            cellPadding: 4
+          }
+        });
+
+        currentY = (doc as any).lastAutoTable.finalY + 10;
+
+        // Total Calculations Summary Align Right
+        doc.setFontSize(9);
+        doc.text("Subtotal:", 145, currentY);
+        doc.text(`Rs. ${formatPrice(order.subTotal)}`, 195, currentY, { align: "right" });
+
+        if (order.discountTotal > 0) {
+          currentY += 6;
+          doc.setTextColor(16, 185, 129); // Green BOGO discount
+          doc.text("BOGO Discount:", 145, currentY);
+          doc.text(`-Rs. ${formatPrice(order.discountTotal)}`, 195, currentY, { align: "right" });
+          doc.setTextColor(30, 41, 59); // reset color
+        }
+
+        currentY += 6;
+        doc.text("Shipping Charge:", 145, currentY);
+        doc.text(order.shippingTotal === 0 ? "Free" : `Rs. ${formatPrice(order.shippingTotal)}`, 195, currentY, { align: "right" });
+
         currentY += 5;
-        doc.setTextColor(16, 185, 129); // Green BOGO discount
-        doc.text("BOGO Discount:", 130, currentY);
-        doc.text(`-₹ ${formatPrice(order.discountTotal)}`, 175, currentY);
-        doc.setTextColor(30, 41, 59); // reset color
+        doc.setDrawColor(200, 200, 200);
+        doc.line(140, currentY, 195, currentY);
+
+        currentY += 7;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text("Grand Total (INR):", 145, currentY);
+        doc.text(`Rs. ${formatPrice(order.totalAmount)}`, 195, currentY, { align: "right" });
+
+        // Disclaimer Notes
+        currentY += 25;
+        doc.setFont("helvetica", "italic");
+        doc.setFontSize(8);
+        doc.setTextColor(greyColor[0], greyColor[1], greyColor[2]);
+        doc.text("This is an electronically generated retail invoice. No physical signature is required.", 15, currentY);
+        doc.text("For any product inquiries or support, contact support@anndoctor.in.", 15, currentY + 4);
+
+        doc.save(`Invoice-${order.orderNumber}.pdf`);
+        toast.dismiss(toastId);
+        toast.success("Invoice PDF downloaded successfully!");
+      } catch (err) {
+        console.error(err);
+        toast.dismiss(toastId);
+        toast.error("Failed to generate PDF");
+      } finally {
+        setIsProcessing(false);
       }
+    };
 
-      currentY += 5;
-      doc.text("Shipping Charge:", 130, currentY);
-      doc.text(order.shippingTotal === 0 ? "Free" : `₹ ${formatPrice(order.shippingTotal)}`, 175, currentY);
+    // Load Image via hidden canvas
+    const img = new (window as any).Image();
+    img.crossOrigin = "Anonymous";
+    img.src = '/logo.webp';
+    
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+          const dataUrl = canvas.toDataURL("image/jpeg", 1.0);
+          generatePdf(dataUrl);
+        } else {
+          generatePdf(null);
+        }
+      } catch (err) {
+        console.warn("Could not load logo for invoice", err);
+        generatePdf(null);
+      }
+    };
 
-      currentY += 8;
-      doc.setDrawColor(15, 23, 42);
-      doc.line(125, currentY, 195, currentY);
-
-      currentY += 6;
-      doc.setFont("helvetica", "bold");
-      doc.text("Grand Total (INR):", 130, currentY);
-      doc.text(`₹ ${formatPrice(order.totalAmount)}`, 175, currentY);
-
-      // Disclaimer Notes
-      currentY += 25;
-      doc.setFont("helvetica", "italic");
-      doc.setFontSize(8);
-      doc.setTextColor(greyColor[0], greyColor[1], greyColor[2]);
-      doc.text("This is an electronically generated retail invoice. No physical signature is required.", 15, currentY);
-      doc.text("For any product inquiries or support, contact support@anndoctor.in.", 15, currentY + 4);
-
-      doc.save(`Invoice-${order.orderNumber}.pdf`);
-      toast.success("Invoice PDF downloaded successfully!");
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to generate PDF");
-    }
+    img.onerror = () => {
+      console.warn("Could not load logo for invoice");
+      generatePdf(null);
+    };
   };
 
   const getTimelineSteps = () => {
@@ -471,7 +508,8 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
               <div className="flex justify-between items-center min-w-[600px] px-4">
                 {timelineSteps.map((stepItem, index) => {
                   const isCompleted = index <= statusIndex;
-                  const isActive = index === statusIndex;
+                  const isTerminalState = ["DELIVERED", "REFUNDED"].includes(status);
+                  const isActive = index === statusIndex && !isTerminalState;
                   const isCancelledStep = stepItem.status === "CANCELLED";
                   
                   return (

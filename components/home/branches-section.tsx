@@ -1,83 +1,101 @@
+"use client";
+
+import { useState } from "react";
+import Image from "next/image";
 import { MapPin } from "lucide-react";
 import type { HomeBranchGroup } from "@/lib/home";
-import Image from "next/image";
+import { BranchMapModal } from "./branch-map-modal";
+import { BranchMap } from "./branch-map";
 
 interface BranchesSectionProps {
   branchGroups: HomeBranchGroup[];
 }
 
-export function BranchesSection({ branchGroups }: BranchesSectionProps) {
-  if (!branchGroups || branchGroups.length === 0) return null;
+export function BranchesSection({
+  branchGroups,
+}: BranchesSectionProps) {
+  const [selectedBranch, setSelectedBranch] = useState<any>(null);
+
+  if (!branchGroups?.length) return null;
+
+  const allBranches = branchGroups.flatMap(group => group.branches);
 
   return (
-    <section className="py-16 md:py-24 bg-white border-t border-b border-border/40">
-      <div className="container mx-auto px-4 md:px-8 max-w-7xl">
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">
-          {/* Map Area (Placeholder for actual map) */}
-          <div className="w-full lg:w-5/12 bg-sky-300/40 rounded-xl overflow-hidden min-h-[400px] lg:min-h-[600px] flex items-center justify-center relative border border-border">
-            <div className="absolute inset-0 bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=South+India&zoom=6&size=800x800&sensor=false')] bg-cover bg-center opacity-20"></div>
-            <div className="text-center z-10 p-6 bg-white/90 rounded-lg shadow-sm">
-              <MapPin className="size-12 text-destructive mx-auto mb-3" />
-              <h3 className="text-xl font-bold text-foreground">Our Locations</h3>
-              <p className="text-muted-foreground mt-2 text-sm max-w-[200px] mx-auto">
-                Find a store near you to experience our mattresses in person.
-              </p>
-            </div>
-          </div>
+    <>
+      <section className="bg-[#005814] py-16">
+        <div className="container mx-auto max-w-6xl px-4">
+          <h2 className="mb-8 text-xl text-white">
+            Branches:
+          </h2>
 
-          {/* Branches List Area */}
-          <div className="w-full lg:w-7/12 flex flex-col justify-center">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
-              {branchGroups.map((group, i) => (
-                <div key={i} className="flex flex-col relative">
-                  {/* Vertical Divider for desktop (except first column) */}
-                  {i > 0 && i % 3 !== 0 && (
-                    <div className="hidden lg:block absolute -left-4 top-0 bottom-0 w-px bg-border"></div>
-                  )}
+          <div className="overflow-hidden bg-[#efefef]">
+            <div className="grid lg:grid-cols-[320px_1fr]">
+              {/* Map */}
+              <div className="relative min-h-[420px] w-full h-full z-0">
+                <BranchMap branches={allBranches} />
+              </div>
 
-                  <h3 className="text-destructive font-bold text-base md:text-lg uppercase tracking-wider mb-8">
-                    {group.state}
-                  </h3>
-                  
-                  <div className="flex flex-col gap-8">
-                    {group.branches.map((branch) => (
-                      <div key={branch.id} className="flex flex-col gap-2">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-destructive text-white rounded-full p-1.5 shrink-0">
-                            <MapPin className="size-4" fill="currentColor" strokeWidth={1} />
-                          </div>
-                          {branch.googleMapUrl ? (
-                            <a 
-                              href={branch.googleMapUrl} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="font-bold text-foreground text-sm md:text-base tracking-wide uppercase hover:text-destructive hover:underline transition-colors"
+              {/* Branches */}
+              <div className="grid md:grid-cols-3">
+                {branchGroups.map((group, index) => (
+                  <div
+                    key={group.state}
+                    className={`p-6 ${
+                      index !== branchGroups.length - 1
+                        ? "border-r border-neutral-400"
+                        : ""
+                    }`}
+                  >
+                    <h3 className="mb-8 text-[11px] font-bold uppercase tracking-wide text-red-600">
+                      {group.state}
+                    </h3>
+
+                    <div className="space-y-8">
+                      {group.branches.map((branch) => (
+                        <div key={branch.id}>
+                          <div className="mb-2 flex items-start gap-2">
+                            <MapPin
+                              className="mt-0.5 h-4 w-4 shrink-0 text-red-600"
+                              fill="currentColor"
+                            />
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setSelectedBranch(branch)
+                              }
+                              className="cursor-pointer text-left text-xs font-bold uppercase text-black transition-colors hover:text-red-600"
                             >
-                              {branch.city}
-                            </a>
-                          ) : (
-                            <h4 className="font-bold text-foreground text-sm md:text-base tracking-wide uppercase">
-                              {branch.city}
-                            </h4>
-                          )}
+                              {branch.name}
+                            </button>
+                          </div>
+
+                          <p className="pl-6 text-[11px] leading-relaxed text-neutral-600">
+                            {branch.address}
+                          </p>
                         </div>
-                        <p className="text-muted-foreground text-sm leading-relaxed pl-10">
-                          {branch.address}
-                          {branch.phone && (
-                            <span className="block mt-1 font-medium text-foreground">
-                              Ph: {branch.phone}
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <BranchMapModal
+        open={!!selectedBranch}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedBranch(null);
+          }
+        }}
+        title={selectedBranch?.name}
+        address={selectedBranch?.address}
+        mapUrl={selectedBranch?.mapUrl}
+        googleMapUrl={selectedBranch?.googleMapUrl}
+      />
+    </>
   );
 }

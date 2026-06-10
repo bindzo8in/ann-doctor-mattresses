@@ -5,9 +5,21 @@ import { forgotPasswordSchema } from "@/lib/schema/forgot-password-schema";
 import { VerificationTokenType } from "@/app/generated/prisma/enums";
 import { getFieldErrors } from "@/lib/utils";
 import { env } from "@/env";
+import { passwordResetRateLimit } from "@/lib/security/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for") ?? "127.0.0.1";
+    if (passwordResetRateLimit) {
+      const { success } = await passwordResetRateLimit.limit(`password_reset:${ip}`);
+      if (!success) {
+        return NextResponse.json(
+          { success: false, message: "Too many requests. Please try again later." },
+          { status: 429 }
+        );
+      }
+    }
+
     const body = await req.json();
 
     const result = forgotPasswordSchema.safeParse(body);

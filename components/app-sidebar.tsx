@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, Settings2Icon, CircleHelpIcon, SearchIcon, CommandIcon, MessageSquareIcon, MonitorPlay, ShieldIcon, UsersIcon } from "lucide-react"
+import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, Settings2Icon, CircleHelpIcon, SearchIcon, CommandIcon, MessageSquareIcon, MonitorPlay, ShieldIcon, UsersIcon, TagsIcon } from "lucide-react"
 import { userHasPermission } from "@/lib/rbac"
 import { Permission } from "@/lib/permissions"
 
@@ -52,6 +52,13 @@ const navMain = [
     url: "/dashboard/products",
     icon: (
       <FolderIcon />
+    ),
+  },
+  {
+    title: "Categories",
+    url: "/dashboard/products/categories",
+    icon: (
+      <TagsIcon />
     ),
   },
   {
@@ -138,6 +145,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
           if (item.title === "Promotions") return userHasPermission(user, "promotions.read");
           if (item.title === "Hero Section") return userHasPermission(user, "settings.read");
           if (item.title === "Products") return userHasPermission(user, "products.read");
+          if (item.title === "Categories") return userHasPermission(user, "categories.read");
           if (item.title === "Reviews") return userHasPermission(user, "reviews.read");
           return true;
         })} />

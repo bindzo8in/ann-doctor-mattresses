@@ -96,17 +96,20 @@ export type HomeBranchGroup = {
   state: string;
   branches: Array<{
     id: string;
-    city: string;
+    district: string;
     address: string;
     phone: string | null;
     googleMapUrl: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    name: string
   }>;
 };
 
 export async function getActiveBranchesGroupedByState(): Promise<HomeBranchGroup[]> {
   const branches = await prisma.branch.findMany({
     where: { isActive: true },
-    orderBy: [{ state: "asc" }, { city: "asc" }],
+    orderBy: [{ state: "desc" }, { name: "asc" }],
   });
 
   const grouped = branches.reduce((acc, branch) => {
@@ -116,10 +119,13 @@ export async function getActiveBranchesGroupedByState(): Promise<HomeBranchGroup
     }
     acc[state].push({
       id: branch.id,
-      city: (branch.city || branch.name).toUpperCase() + ":",
+      district: (branch.district || branch.name).toUpperCase() + ":",
       address: branch.address || "",
       phone: branch.phone,
       googleMapUrl: branch.googleMapUrl,
+      latitude: branch.latitude,
+      longitude: branch.longitude,
+      name: branch.name,
     });
     return acc;
   }, {} as Record<string, any[]>);

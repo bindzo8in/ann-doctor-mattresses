@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { MattressSize } from "@/app/generated/prisma/client";
 import type { CreateProductInput } from "@/lib/schema/product-form-schema";
+import { formatPrice } from "@/lib/price";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const STANDARD_SIZES: { label: string, sizeName: MattressSize, w: number, l: number }[] = [
   { label: "Single 36x72", sizeName: "SINGLE", w: 36, l: 72 },
@@ -26,99 +26,52 @@ const STANDARD_SIZES: { label: string, sizeName: MattressSize, w: number, l: num
   { label: "King 72x84", sizeName: "KING", w: 72, l: 84 },
 ];
 
-const STANDARD_THICKNESSES = [4, 6, 8, 10, 12, 14];
+const STANDARD_THICKNESSES = [4, 5, 6, 8, 10, 12, 14];
 
 import { UseFormReturn } from "react-hook-form";
 
 export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductInput> }) {
   
-  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-  const [selectedThicknesses, setSelectedThicknesses] = useState<number[]>([]);
-  const [priceMatrix, setPriceMatrix] = useState<Record<string, Record<number, number | string>>>({});
-  const [mrpMatrix, setMrpMatrix] = useState<Record<string, Record<number, number | string>>>({});
-
-  const allowCustomSize = useWatch({ control: form.control, name: "allowCustomSize" }) || false;
   const customPricing = useWatch({ control: form.control, name: "customSizePricing" }) as Record<string, number> || {};
+  const mrpPricing = useWatch({ control: form.control, name: "customSizeMrpPricing" }) as Record<string, number> || {};
+  
+  // Which standard sizes are active
+  const [selectedSizes, setSelectedSizes] = useState<string[]>(STANDARD_SIZES.map(s => `${s.w}x${s.l}`));
+  const [hasCalculatedMrp, setHasCalculatedMrp] = useState(false);
 
-  // Initialize from existing form values if editing
+  // Initialization and reverse-calculation
+  const existingVariants = useWatch({ control: form.control, name: "variants" });
   useEffect(() => {
-    const existingVariants = form.getValues("variants") || [];
-    if (existingVariants.length > 0 && selectedSizes.length === 0) {
-      const sizes = new Set<string>();
-      const thicknesses = new Set<number>();
-      const prices: Record<string, Record<number, number>> = {};
-      const mrps: Record<string, Record<number, number>> = {};
-
-      existingVariants.forEach(v => {
-        if (v.variantType === "MATTRESS") {
-          const key = `${v.width}x${v.length}`;
-          sizes.add(key);
-          thicknesses.add(v.thickness);
-          
-          if (!prices[key]) prices[key] = {};
-          if (!mrps[key]) mrps[key] = {};
-          prices[key][v.thickness] = v.salePrice;
-          mrps[key][v.thickness] = v.mrp;
-        }
-      });
-
-      setSelectedSizes(Array.from(sizes));
-      setSelectedThicknesses(Array.from(thicknesses));
-      setPriceMatrix(prices);
-      setMrpMatrix(mrps);
+    // Force allow custom size to be true as per requirement
+    if (form.getValues("allowCustomSize") !== true) {
+      form.setValue("allowCustomSize", true, { shouldValidate: true });
     }
-  }, []);
 
-  // Sync to form whenever matrix changes
-  useEffect(() => {
-    const newVariants: any[] = [];
-    let isFirst = true;
+    // Default min/max
+    if (!form.getValues("minWidth")) form.setValue("minWidth", 30, { shouldValidate: true });
+    if (!form.getValues("maxWidth")) form.setValue("maxWidth", 84, { shouldValidate: true });
+    if (!form.getValues("minLength")) form.setValue("minLength", 70, { shouldValidate: true });
+    if (!form.getValues("maxLength")) form.setValue("maxLength", 84, { shouldValidate: true });
 
-    selectedSizes.forEach(sizeKey => {
-      const sizeDef = STANDARD_SIZES.find(s => `${s.w}x${s.l}` === sizeKey);
-      if (!sizeDef) return;
-
-      selectedThicknesses.forEach(t => {
-        const salePrice = Number(priceMatrix[sizeKey]?.[t]) || 0;
-        const mrp = Number(mrpMatrix[sizeKey]?.[t]) || 0;
-
-        // Only create variant if price is provided and > 0
-        if (salePrice > 0) {
-          newVariants.push({
-            isDefault: isFirst,
-            variantType: "MATTRESS",
-            mrp,
-            salePrice,
-            sizeName: sizeDef.sizeName,
-            width: sizeDef.w,
-            length: sizeDef.l,
-            thickness: t
-          });
-          isFirst = false;
+    // Try to reverse calculate MRP per sqft from existing variants if editing
+    if (existingVariants && existingVariants.length > 0 && !hasCalculatedMrp && Object.keys(mrpPricing).length === 0) {
+      const derivedMrp: Record<string, number> = {};
+      existingVariants.forEach(v => {
+        if (v.variantType === "MATTRESS" && v.mrp && v.width && v.length) {
+          const area = (v.width * v.length) / 144;
+          if (area > 0 && !derivedMrp[v.thickness.toString()]) {
+            derivedMrp[v.thickness.toString()] = Math.round(v.mrp / area);
+          }
         }
       });
-    });
+      if (Object.keys(derivedMrp).length > 0) {
+        form.setValue("customSizeMrpPricing", derivedMrp, { shouldValidate: true });
+        setHasCalculatedMrp(true);
+      }
+    }
+  }, [existingVariants, hasCalculatedMrp, mrpPricing, form]);
 
-    form.setValue("variants", newVariants, { shouldValidate: true });
-  }, [selectedSizes, selectedThicknesses, priceMatrix, mrpMatrix]);
-
-  const handleSizeToggle = (key: string) => {
-    setSelectedSizes(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
-  };
-
-  const handleThicknessToggle = (t: number) => {
-    setSelectedThicknesses(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t]);
-  };
-
-  const updatePrice = (sizeKey: string, t: number, val: string) => {
-    setPriceMatrix(prev => ({ ...prev, [sizeKey]: { ...(prev[sizeKey] || {}), [t]: val === "" ? "" : Number(val) } }));
-  };
-
-  const updateMrp = (sizeKey: string, t: number, val: string) => {
-    setMrpMatrix(prev => ({ ...prev, [sizeKey]: { ...(prev[sizeKey] || {}), [t]: val === "" ? "" : Number(val) } }));
-  };
-
-  const handleCustomPricingChange = (thickness: number, value: string) => {
+  const handleSalePriceChange = (thickness: number, value: string) => {
     const val = parseFloat(value);
     const current = { ...customPricing };
     if (isNaN(val)) {
@@ -126,180 +79,193 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
     } else {
       current[thickness.toString()] = val;
     }
-    form.setValue("customSizePricing", current);
+    form.setValue("customSizePricing", current, { shouldValidate: true });
   };
+
+  const handleMrpPriceChange = (thickness: number, value: string) => {
+    const val = parseFloat(value);
+    const current = { ...mrpPricing };
+    if (isNaN(val)) {
+      delete current[thickness.toString()];
+    } else {
+      current[thickness.toString()] = val;
+    }
+    form.setValue("customSizeMrpPricing", current, { shouldValidate: true });
+  };
+
+  const handleSizeToggle = (key: string) => {
+    setSelectedSizes(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]);
+  };
+
+  // Sync auto-calculated variants to the form
+  useEffect(() => {
+    const newVariants: any[] = [];
+    let isFirst = true;
+
+    // Only process thicknesses that have a defined Sale rate
+    const activeThicknesses = Object.keys(customPricing).map(Number).filter(t => !isNaN(t) && customPricing[t.toString()] > 0);
+
+    selectedSizes.forEach(sizeKey => {
+      const sizeDef = STANDARD_SIZES.find(s => `${s.w}x${s.l}` === sizeKey);
+      if (!sizeDef) return;
+
+      const areaSqFt = (sizeDef.w * sizeDef.l) / 144;
+
+      activeThicknesses.forEach(t => {
+        const saleRate = customPricing[t.toString()];
+        const mrpRate = mrpPricing[t.toString()] || saleRate; // Fallback to sale rate if no MRP
+
+        const salePrice = Math.round(areaSqFt * saleRate);
+        const mrpPrice = Math.round(areaSqFt * mrpRate);
+
+        newVariants.push({
+          isDefault: isFirst,
+          variantType: "MATTRESS",
+          mrp: mrpPrice,
+          salePrice: salePrice,
+          sizeName: sizeDef.sizeName,
+          width: sizeDef.w,
+          length: sizeDef.l,
+          thickness: t
+        });
+        isFirst = false;
+      });
+    });
+
+    // We only update if it actually changed to prevent infinite loops
+    // In a real robust implementation, deep compare is better, but this suffices for generation
+    form.setValue("variants", newVariants, { shouldValidate: true });
+  }, [customPricing, mrpPricing, selectedSizes, form]);
+
+  const activeThicknesses = Object.keys(customPricing).map(Number).filter(t => !isNaN(t) && customPricing[t.toString()] > 0).sort((a,b)=>a-b);
+  const variantsError = (form.formState.errors.variants as any)?.message;
 
   return (
     <div className="space-y-8">
-      {/* Standard Size Matrix */}
+      {variantsError && (
+        <div className="p-4 bg-red-50 text-red-600 rounded-md border border-red-200">
+          {variantsError}
+        </div>
+      )}
+
+      {/* Pricing Configuration */}
       <div className="border rounded-xl p-6 bg-slate-50 space-y-6">
-        <h3 className="text-lg font-semibold">Standard Sizes & Pricing</h3>
-        
-        <div className="grid md:grid-cols-2 gap-8">
-          <div>
-            <h4 className="font-medium mb-3">1. Select Available Sizes</h4>
-            <div className="space-y-2 max-h-60 overflow-y-auto p-2 border rounded-md bg-white">
-              {STANDARD_SIZES.map(s => {
-                const key = `${s.w}x${s.l}`;
-                return (
-                  <div key={key} className="flex items-center space-x-2">
-                    <Checkbox 
-                      id={`size-${key}`} 
-                      checked={selectedSizes.includes(key)}
-                      onCheckedChange={() => handleSizeToggle(key)}
+        <div>
+          <h3 className="text-lg font-semibold">Pricing Configuration</h3>
+          <p className="text-sm text-muted-foreground">
+            Enter the Per Square Feet rate for each thickness you offer. All standard variants will be automatically calculated and saved. Custom size orders will also use these rates.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {STANDARD_THICKNESSES.map(t => (
+            <div key={t} className="bg-white p-4 rounded-lg border space-y-4">
+              <h4 className="font-semibold text-center border-b pb-2">{t}" Thickness</h4>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">MRP per Sq.Ft</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">₹</span>
+                    <Input 
+                      type="number"
+                      className="pl-7"
+                      placeholder="e.g., 1500"
+                      value={mrpPricing[t.toString()] || ""}
+                      onChange={(e) => handleMrpPriceChange(t, e.target.value)}
                     />
-                    <label htmlFor={`size-${key}`} className="text-sm cursor-pointer">{s.label}</label>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-medium mb-3">2. Select Thicknesses (Inches)</h4>
-            <div className="flex flex-wrap gap-4 p-2">
-              {STANDARD_THICKNESSES.map(t => (
-                <div key={t} className="flex items-center space-x-2">
-                  <Checkbox 
-                    id={`thick-${t}`} 
-                    checked={selectedThicknesses.includes(t)}
-                    onCheckedChange={() => handleThicknessToggle(t)}
-                  />
-                  <label htmlFor={`thick-${t}`} className="text-sm cursor-pointer">{t}"</label>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {selectedSizes.length > 0 && selectedThicknesses.length > 0 && (
-          <div className="pt-6 border-t overflow-x-auto">
-            <h4 className="font-medium mb-4">3. Pricing Matrix</h4>
-            <table className="w-full text-sm text-left">
-              <thead className="bg-slate-100">
-                <tr>
-                  <th className="px-4 py-2 border rounded-tl-md">Size</th>
-                  {selectedThicknesses.sort((a,b)=>a-b).map(t => (
-                    <th key={t} className="px-4 py-2 border text-center">{t}" Thickness</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {selectedSizes.map(sizeKey => {
-                  const label = STANDARD_SIZES.find(s => `${s.w}x${s.l}` === sizeKey)?.label;
-                  return (
-                    <tr key={sizeKey} className="bg-white">
-                      <td className="px-4 py-2 border font-medium">{label}</td>
-                      {selectedThicknesses.sort((a,b)=>a-b).map(t => (
-                        <td key={t} className="px-4 py-2 border">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground w-8">MRP:</span>
-                              <Input 
-                                type="number" 
-                                value={!mrpMatrix[sizeKey]?.[t] || Number(mrpMatrix[sizeKey]?.[t]) === 0 ? "" : mrpMatrix[sizeKey]?.[t]} 
-                                onChange={(e) => updateMrp(sizeKey, t, e.target.value)}
-                                className="h-8"
-                                placeholder="Optional"
-                              />
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground w-8">Sale:</span>
-                              <Input 
-                                type="number" 
-                                value={!priceMatrix[sizeKey]?.[t] || Number(priceMatrix[sizeKey]?.[t]) === 0 ? "" : priceMatrix[sizeKey]?.[t]} 
-                                onChange={(e) => updatePrice(sizeKey, t, e.target.value)}
-                                className="h-8 border-primary"
-                                placeholder="Optional"
-                              />
-                            </div>
-                          </div>
-                        </td>
-                      ))}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Custom Size Settings */}
-      <div className="border rounded-xl p-6 bg-slate-50 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold">Custom Size Configuration</h3>
-            <p className="text-sm text-muted-foreground">Allow customers to order custom dimensions.</p>
-          </div>
-          <Switch 
-            checked={allowCustomSize} 
-            onCheckedChange={(val) => {
-              form.setValue("allowCustomSize", val, { shouldValidate: true });
-              if (val) {
-                if (!form.getValues("minWidth")) form.setValue("minWidth", 30, { shouldValidate: true });
-                if (!form.getValues("maxWidth")) form.setValue("maxWidth", 72, { shouldValidate: true });
-                if (!form.getValues("minLength")) form.setValue("minLength", 72, { shouldValidate: true });
-                if (!form.getValues("maxLength")) form.setValue("maxLength", 84, { shouldValidate: true });
-              }
-            }} 
-          />
-        </div>
-
-        {allowCustomSize && (
-          <div className="space-y-6 pt-4 border-t">
-            <p className="text-sm text-slate-600 bg-slate-100 p-3 rounded-md">
-              Default values cover most Single, Double, Queen, King, and standard custom mattress sizes. You can adjust these limits for this mattress.
-            </p>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label>Min Width (Inches)</Label>
-                <Input type="number" {...form.register("minWidth", { valueAsNumber: true })} />
-                {form.formState.errors.minWidth && <p className="text-xs text-destructive">{form.formState.errors.minWidth.message as string}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label>Max Width (Inches)</Label>
-                <Input type="number" {...form.register("maxWidth", { valueAsNumber: true })} />
-                {form.formState.errors.maxWidth && <p className="text-xs text-destructive">{form.formState.errors.maxWidth.message as string}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label>Min Length (Inches)</Label>
-                <Input type="number" {...form.register("minLength", { valueAsNumber: true })} />
-                {form.formState.errors.minLength && <p className="text-xs text-destructive">{form.formState.errors.minLength.message as string}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label>Max Length (Inches)</Label>
-                <Input type="number" {...form.register("maxLength", { valueAsNumber: true })} />
-                {form.formState.errors.maxLength && <p className="text-xs text-destructive">{form.formState.errors.maxLength.message as string}</p>}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <h4 className="font-medium">Per Sq.Ft Pricing by Thickness</h4>
-              <p className="text-sm text-muted-foreground">Set the price per square foot for each allowed custom thickness.</p>
-              
-              <div className="grid md:grid-cols-3 gap-4">
-                {STANDARD_THICKNESSES.map(t => (
-                  <div key={t} className="flex items-center gap-3">
-                    <Label className="w-12 text-right">{t}"</Label>
-                    <div className="relative flex-1">
-                      <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">₹</span>
-                      <Input 
-                        type="number"
-                        className="pl-7"
-                        placeholder="Rate / Sq.Ft"
-                        value={customPricing[t.toString()] || ""}
-                        onChange={(e) => handleCustomPricingChange(t, e.target.value)}
-                      />
-                    </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Sale Price per Sq.Ft</Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">₹</span>
+                    <Input 
+                      type="number"
+                      className="pl-7 border-primary"
+                      placeholder="e.g., 1000"
+                      value={customPricing[t.toString()] || ""}
+                      onChange={(e) => handleSalePriceChange(t, e.target.value)}
+                    />
                   </div>
-                ))}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
+
+      {/* Standard Size Selection */}
+      <div className="border rounded-xl p-6 bg-slate-50 space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold">Included Standard Sizes</h3>
+          <p className="text-sm text-muted-foreground">Uncheck any sizes you do not want to auto-generate variants for.</p>
+        </div>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-4 bg-white border rounded-lg">
+          {STANDARD_SIZES.map(s => {
+            const key = `${s.w}x${s.l}`;
+            return (
+              <div key={key} className="flex items-center space-x-2">
+                <Checkbox 
+                  id={`size-${key}`} 
+                  checked={selectedSizes.includes(key)}
+                  onCheckedChange={() => handleSizeToggle(key)}
+                />
+                <label htmlFor={`size-${key}`} className="text-sm font-medium cursor-pointer">{s.label}</label>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Auto-Calculated Preview */}
+      {activeThicknesses.length > 0 && selectedSizes.length > 0 && (
+        <div className="border rounded-xl overflow-hidden shadow-sm">
+          <div className="p-4 bg-slate-100 border-b">
+            <h3 className="font-semibold text-slate-800">Auto-Calculated Variants Preview</h3>
+            <p className="text-xs text-slate-500">These variants will be permanently saved to the database.</p>
+          </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50">
+                  <TableHead className="w-[200px]">Size</TableHead>
+                  <TableHead>Area (Sq.Ft)</TableHead>
+                  {activeThicknesses.map(t => (
+                    <TableHead key={t} className="text-right">{t}" Thickness</TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {STANDARD_SIZES.filter(s => selectedSizes.includes(`${s.w}x${s.l}`)).map(sizeDef => {
+                  const area = (sizeDef.w * sizeDef.l) / 144;
+                  return (
+                    <TableRow key={sizeDef.label}>
+                      <TableCell className="font-medium">{sizeDef.label}</TableCell>
+                      <TableCell className="text-slate-500">{area.toFixed(2)}</TableCell>
+                      {activeThicknesses.map(t => {
+                        const sale = Math.round(area * customPricing[t.toString()]);
+                        const mrpRate = mrpPricing[t.toString()] || customPricing[t.toString()];
+                        const mrp = Math.round(area * mrpRate);
+                        return (
+                          <TableCell key={t} className="text-right">
+                            <div className="flex flex-col items-end">
+                              <span className="font-bold text-green-600">₹{formatPrice(sale)}</span>
+                              {mrp > sale && (
+                                <span className="text-xs text-slate-400 line-through">₹{formatPrice(mrp)}</span>
+                              )}
+                            </div>
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

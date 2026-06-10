@@ -25,7 +25,7 @@ export default {
         matchesRoute(nextUrl.pathname, route),
       );
 
-      if (isApiAuthRoute || isPublicRoute) {
+      if (isApiAuthRoute || isPublicRoute || nextUrl.pathname.startsWith("/api/")) {
         return true;
       }
       // console.log("isApiAuthRoute",isApiAuthRoute,)
@@ -48,6 +48,9 @@ export default {
       const userRole = auth?.user?.role;
 
       if (!userRole) {
+        if (nextUrl.pathname.startsWith("/api/")) {
+          return Response.json({ error: "Unauthorized" }, { status: 401 });
+        }
         return Response.redirect(new URL(routes.unauthorized, nextUrl));
       }
 
@@ -84,6 +87,9 @@ export default {
       //   ),
       // );
       if (!hasExactAccess && !hasNestedAccess) {
+        if (nextUrl.pathname.startsWith("/api/")) {
+          return Response.json({ error: "Unauthorized" }, { status: 401 });
+        }
         return Response.redirect(new URL(routes.unauthorized, nextUrl));
       }
 
@@ -102,10 +108,43 @@ export default {
         token.email = user.email;
       }
 
+      if (token.id && token.iat) {
+        try {
+          const upstashUrl = process.env.UPSTASH_REDIS_REST_URL;
+          const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+          if (upstashUrl && upstashToken) {
+            const res = await fetch(`${upstashUrl}/get/jwtRevokedBefore:${token.id}`, {
+              headers: { Authorization: `Bearer ${upstashToken}` }
+            });
+            const data = await res.json();
+            if (data.result) {
+              const revokedBefore = parseInt(data.result, 10);
+              if ((token.iat as number) < revokedBefore) {
+                // Token is revoked
+                return null;
+              }
+            }
+          }
+        } catch (error) {
+          console.error("JWT Revocation check failed:", error);
+        }
+      }
+
+      // Ensure token is valid (not revoked to an empty object)
+      if (!token.id) {
+        return null;
+      }
+
       return token;
     },
 
     async session({ session, token }) {
+      if (!token.id) {
+        // If token is empty (revoked), clear session
+        session.user = null as any;
+        return session;
+      }
+
       if (session.user) {
         session.user.id = token.id;
         session.user.role = token.role;

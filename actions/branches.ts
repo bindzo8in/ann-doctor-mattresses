@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { UserRole } from "@/app/generated/prisma/enums";
 import { auditLogger } from "@/lib/audit";
+import { getCoordinates } from "@/lib/geocoding";
 
 export async function getBranches() {
   const session = await auth();
@@ -17,14 +18,23 @@ export async function getBranches() {
   return branches;
 }
 
-export async function createBranch(data: { name: string; address?: string; city?: string; state?: string; phone?: string; googleMapUrl?: string; isActive?: boolean }) {
+export async function createBranch(data: { name: string; address?: string; district: string; state?: string; phone?: string; googleMapUrl?: string; latitude?: number; longitude?: number; isActive?: boolean }) {
   const session = await auth();
   if (session?.user?.role !== UserRole.SUPER_ADMIN) {
     throw new Error("Unauthorized");
   }
 
+  let coords = null;
+  if (!data.latitude || !data.longitude) {
+    coords = await getCoordinates(data.address, data.district, data.state);
+  }
+
   const branch = await prisma.branch.create({
-    data
+    data: {
+      ...data,
+      latitude: data.latitude || coords?.latitude || null,
+      longitude: data.longitude || coords?.longitude || null,
+    }
   });
 
   await auditLogger.log({
@@ -40,15 +50,37 @@ export async function createBranch(data: { name: string; address?: string; city?
   return branch;
 }
 
-export async function updateBranch(id: string, data: { name?: string; address?: string; city?: string; state?: string; phone?: string; googleMapUrl?: string; isActive?: boolean }) {
+export async function updateBranch(id: string, data: { name?: string; address?: string; district?: string; state?: string; phone?: string; googleMapUrl?: string; latitude?: number; longitude?: number; isActive?: boolean }) {
   const session = await auth();
   if (session?.user?.role !== UserRole.SUPER_ADMIN) {
     throw new Error("Unauthorized");
   }
 
+  let updateData: any = { ...data };
+
+  // Handle explicit coordinate updates
+  if (data.latitude !== undefined) updateData.latitude = data.latitude;
+  if (data.longitude !== undefined) updateData.longitude = data.longitude;
+
+  // Re-geocode only if address, district, or state changes AND manual coordinates weren't provided
+  if ((data.address !== undefined || data.district !== undefined || data.state !== undefined) && data.latitude === undefined && data.longitude === undefined) {
+    const existing = await prisma.branch.findUnique({ where: { id } });
+    if (existing) {
+      const address = data.address !== undefined ? data.address : existing.address || undefined;
+      const district = data.district !== undefined ? data.district : existing.district;
+      const state = data.state !== undefined ? data.state : existing.state;
+
+      const coords = await getCoordinates(address, district, state);
+      if (coords) {
+        updateData.latitude = coords.latitude;
+        updateData.longitude = coords.longitude;
+      }
+    }
+  }
+
   const branch = await prisma.branch.update({
     where: { id },
-    data
+    data: updateData
   });
 
   await auditLogger.log({

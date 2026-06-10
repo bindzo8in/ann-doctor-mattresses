@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { auditLogger } from "@/lib/audit";
 import { userHasPermission } from "@/lib/rbac";
+import { roundPrice } from "@/lib/price";
 
 export async function getCustomerOrders(cursor: string | null = null, limit = 10) {
   const session = await auth();
@@ -37,23 +38,23 @@ export async function getCustomerOrders(cursor: string | null = null, limit = 10
       nextCursor = nextItem!.id;
     }
 
-    // Convert decimal to number for client
+    // Convert decimal to number for client using decimal.js toNumber()
     const formattedOrders = orders.map((order) => ({
       ...order,
-      subTotal: Number(order.subTotal),
-      discountTotal: Number(order.discountTotal),
-      shippingTotal: Number(order.shippingTotal),
-      totalAmount: Number(order.totalAmount),
+      subTotal: roundPrice(order.subTotal.toNumber()),
+      discountTotal: roundPrice(order.discountTotal.toNumber()),
+      shippingTotal: roundPrice(order.shippingTotal.toNumber()),
+      totalAmount: roundPrice(order.totalAmount.toNumber()),
       payments: order.payments.map((p: any) => ({
         ...p,
-        amount: Number(p.amount),
-        ...(p.refunds ? { refunds: p.refunds.map((r: any) => ({ ...r, amount: Number(r.amount) })) } : {}),
+        amount: roundPrice(p.amount.toNumber()),
+        ...(p.refunds ? { refunds: p.refunds.map((r: any) => ({ ...r, amount: roundPrice(r.amount.toNumber()) })) } : {}),
       })),
       items: order.items.map((item) => ({
         ...item,
-        price: Number(item.price),
-        unitPrice: Number(item.unitPrice),
-        totalPaid: Number(item.totalPaid),
+        price: roundPrice(item.price.toNumber()),
+        unitPrice: roundPrice(item.unitPrice.toNumber()),
+        totalPaid: roundPrice(item.totalPaid.toNumber()),
       })),
     }));
 
@@ -76,7 +77,14 @@ export async function getOrderDetails(orderId: string) {
       include: {
         items: {
           include: {
-            product: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                thumbnailUrl: true,
+              }
+            },
           },
         },
         payments: {
@@ -92,24 +100,24 @@ export async function getOrderDetails(orderId: string) {
     // Convert decimal to number for client
     return {
       ...order,
-      subTotal: Number(order.subTotal),
-      discountTotal: Number(order.discountTotal),
-      shippingTotal: Number(order.shippingTotal),
-      totalAmount: Number(order.totalAmount),
+      subTotal: roundPrice(order.subTotal.toNumber()),
+      discountTotal: roundPrice(order.discountTotal.toNumber()),
+      shippingTotal: roundPrice(order.shippingTotal.toNumber()),
+      totalAmount: roundPrice(order.totalAmount.toNumber()),
       items: order.items.map((item) => ({
         ...item,
-        price: Number(item.price),
+        price: roundPrice(item.price.toNumber()),
         quantityPurchased: item.quantityPurchased,
         quantityFree: item.quantityFree,
-        unitPrice: Number(item.unitPrice),
-        totalPaid: Number(item.totalPaid),
+        unitPrice: roundPrice(item.unitPrice.toNumber()),
+        totalPaid: roundPrice(item.totalPaid.toNumber()),
         offerType: item.offerType,
-        saved: item.quantityFree * Number(item.unitPrice),
+        saved: roundPrice(item.unitPrice.mul(item.quantityFree).toNumber()),
       })),
       payments: order.payments.map((p: any) => ({
         ...p,
-        amount: Number(p.amount),
-        ...(p.refunds ? { refunds: p.refunds.map((r: any) => ({ ...r, amount: Number(r.amount) })) } : {}),
+        amount: roundPrice(p.amount.toNumber()),
+        ...(p.refunds ? { refunds: p.refunds.map((r: any) => ({ ...r, amount: roundPrice(r.amount.toNumber()) })) } : {}),
       })),
     };
   } catch (error) {
@@ -205,7 +213,7 @@ export async function initiateRazorpayRefund(orderId: string) {
 
     // Initiate full refund
     const refund = await razorpay.payments.refund(paidPayment.razorpayPaymentId, {
-      amount: Math.round(Number(paidPayment.amount) * 100),
+      amount: Math.round(paidPayment.amount.toNumber() * 100),
       notes: {
         orderId: order.id,
         orderNumber: order.orderNumber,

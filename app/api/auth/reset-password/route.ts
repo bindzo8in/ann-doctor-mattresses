@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { resetPasswordSchema } from "@/lib/schema/reset-password-schema";
 import { VerificationTokenType } from "@/app/generated/prisma/enums";
 import { getFieldErrors } from "@/lib/utils";
+import { env } from "@/env";
+import { Redis } from "@upstash/redis";
 
 export async function POST(req: NextRequest) {
   try {
@@ -109,6 +111,15 @@ export async function POST(req: NextRequest) {
         },
       }),
     ]);
+
+    // Revoke existing JWTs
+    if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
+      const redis = new Redis({
+        url: env.UPSTASH_REDIS_REST_URL,
+        token: env.UPSTASH_REDIS_REST_TOKEN,
+      });
+      await redis.set(`jwtRevokedBefore:${user.id}`, Math.floor(Date.now() / 1000));
+    }
 
     return NextResponse.json({
       success: true,

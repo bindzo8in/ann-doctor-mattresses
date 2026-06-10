@@ -56,9 +56,12 @@ model Branch {
   name      String
   address   String?
   city      String?
-  state     String?
+  district  String   @default("Unknown")
+  state     String   @default("Tamil Nadu")
   phone     String?
   googleMapUrl String?
+  latitude  Float?
+  longitude Float?
   isActive  Boolean  @default(true)
   
   users     User[]
@@ -500,6 +503,7 @@ model CartItem {
 
   @@index([productId])
   @@index([variantId])
+  @@index([userId])
 }
 
 enum PromotionType {
@@ -546,6 +550,7 @@ model WishlistItem {
   createdAt DateTime @default(now())
 
   @@unique([userId, productId])
+  @@index([userId])
 }
 
 model DeliveryZone {
@@ -715,4 +720,17 @@ model AuditLog {
   @@index([entityType])
   @@index([entityId])
   @@index([action])
+}
+
+model WebhookEvent {
+  id          String   @id @default(cuid())
+  event       String
+  payload     Json
+  status      String   @default("PENDING") // PENDING, SUCCESS, FAILED
+  error       String?  @db.Text
+  createdAt   DateTime @default(now())
+  processedAt DateTime?
+
+  @@index([status])
+  @@index([event])
 }

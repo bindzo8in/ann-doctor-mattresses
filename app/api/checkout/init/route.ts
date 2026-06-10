@@ -5,6 +5,20 @@ import { calculateCartTotals } from "@/lib/checkout";
 import { OrderStatus, CheckoutSource } from "@/app/generated/prisma/client";
 import { env } from "@/env";
 import { roundPrice, toRazorpayAmount } from "@/lib/price";
+import { Redis } from "@upstash/redis";
+import crypto from "crypto";
+
+const getRedisInstance = () => {
+  if (!env.UPSTASH_REDIS_REST_URL || !env.UPSTASH_REDIS_REST_TOKEN) {
+    return null;
+  }
+  return new Redis({
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
+  });
+};
+
+const redis = getRedisInstance();
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -14,7 +28,14 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { addressId, notes, source, buyNowItem } = body;
+    const { addressId, notes, source, buyNowItem, idempotencyKey } = body;
+
+    if (idempotencyKey && redis) {
+      const isNew = await redis.set(`idempotency:checkout:${session.user.id}:${idempotencyKey}`, "processing", { nx: true, ex: 60 * 60 * 24 });
+      if (!isNew) {
+        return NextResponse.json({ message: "Duplicate checkout request detected" }, { status: 409 });
+      }
+    }
 
     if (!addressId) {
       return NextResponse.json({ message: "Shipping address is required" }, { status: 400 });
@@ -133,28 +154,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Create Order Number
-    const orderCount = await prisma.order.count();
-    const orderNumber = `ORD-${1000 + orderCount + 1}`;
-
-    // Create Order in Database
-    const order = await prisma.order.create({
-      data: {
-        orderNumber,
-        customerId: session.user.id,
-        status: OrderStatus.PENDING_PAYMENT,
-        checkoutSource,
-        subTotal: calculation.subTotal,
-        discountTotal: calculation.discountTotal,
-        shippingTotal: calculation.shippingTotal,
-        totalAmount: calculation.totalAmount,
-        shippingAddress: address as any, // Snapshot
-        notes: notes || null,
-        items: {
-          create: orderItemsData,
-        }
-      }
-    });
+    // Create Order Number without race condition
+    const orderNumber = `ORD-${Date.now()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
 
     // Initialize Razorpay Order via REST API (Basic Auth)
     const razorpayKeyId = env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
@@ -174,24 +175,44 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         amount: amountInPaise,
         currency: "INR",
-        receipt: order.id,
+        receipt: orderNumber,
       })
     });
 
     if (!rzpRes.ok) {
       const errorData = await rzpRes.json();
       console.error("Razorpay Error:", errorData);
+      // Remove idempotency key if external API fails, allowing retry
+      if (idempotencyKey && redis) {
+        await redis.del(`idempotency:checkout:${session.user.id}:${idempotencyKey}`);
+      }
       return NextResponse.json({ message: "Failed to initialize payment gateway" }, { status: 500 });
     }
 
     const rzpOrder = await rzpRes.json();
 
-    // Create Payment Record
-    await prisma.payment.create({
+    // Create Order and Payment in Database atomically via nested create
+    const order = await prisma.order.create({
       data: {
-        orderId: order.id,
-        razorpayOrderId: rzpOrder.id,
-        amount: finalAmount,
+        orderNumber,
+        customerId: session.user.id,
+        status: OrderStatus.PENDING_PAYMENT,
+        checkoutSource,
+        subTotal: calculation.subTotal,
+        discountTotal: calculation.discountTotal,
+        shippingTotal: calculation.shippingTotal,
+        totalAmount: calculation.totalAmount,
+        shippingAddress: address as any, // Snapshot
+        notes: notes || null,
+        items: {
+          create: orderItemsData,
+        },
+        payments: {
+          create: {
+            razorpayOrderId: rzpOrder.id,
+            amount: finalAmount,
+          }
+        }
       }
     });
 

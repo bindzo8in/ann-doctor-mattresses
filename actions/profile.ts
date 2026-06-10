@@ -4,6 +4,8 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import bcrypt from "bcryptjs";
 import { auditLogger } from "@/lib/audit";
+import { env } from "@/env";
+import { Redis } from "@upstash/redis";
 
 export async function updateCustomerProfile(data: {
   name: string;
@@ -64,6 +66,14 @@ export async function updateCustomerProfile(data: {
     actorRole: session.user.role,
     newValues: { name: updatedUser.name, passwordChanged: !!newPassword },
   });
+
+  if (newPassword && env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) {
+    const redis = new Redis({
+      url: env.UPSTASH_REDIS_REST_URL,
+      token: env.UPSTASH_REDIS_REST_TOKEN,
+    });
+    await redis.set(`jwtRevokedBefore:${session.user.id}`, Math.floor(Date.now() / 1000));
+  }
 
   return { success: true };
 }

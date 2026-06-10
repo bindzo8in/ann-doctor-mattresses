@@ -33,8 +33,18 @@ export async function POST(req: NextRequest) {
 
     const event = JSON.parse(body);
 
-    // Process the exact events requested
-    switch (event.event) {
+    // Save to DLQ immediately
+    const webhookRecord = await prisma.webhookEvent.create({
+      data: {
+        event: event.event,
+        payload: event,
+        status: "PENDING",
+      }
+    });
+
+    try {
+      // Process the exact events requested
+      switch (event.event) {
       case "order.paid":
       case "payment.captured": {
         // Both indicate successful payment
@@ -67,9 +77,16 @@ export async function POST(req: NextRequest) {
             });
 
             if (order.checkoutSource === "CART") {
-              await prisma.cartItem.deleteMany({
-                where: { userId: order.customerId },
-              });
+              const orderItems = await prisma.orderItem.findMany({ where: { orderId: order.id } });
+              for (const item of orderItems) {
+                await prisma.cartItem.deleteMany({
+                  where: {
+                    userId: order.customerId,
+                    productId: item.productId,
+                    variantId: item.variantId,
+                  }
+                });
+              }
             }
 
             await auditLogger.log({
@@ -209,9 +226,21 @@ export async function POST(req: NextRequest) {
 
       default:
         console.log(`Unhandled webhook event: ${event.event}`);
-    }
+      }
 
-    return NextResponse.json({ success: true });
+      await prisma.webhookEvent.update({
+        where: { id: webhookRecord.id },
+        data: { status: "SUCCESS", processedAt: new Date() }
+      });
+
+      return NextResponse.json({ success: true });
+    } catch (processError: any) {
+      await prisma.webhookEvent.update({
+        where: { id: webhookRecord.id },
+        data: { status: "FAILED", error: processError.message }
+      });
+      throw processError;
+    }
   } catch (error) {
     console.error("Webhook Error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });

@@ -70,6 +70,7 @@ export const createProductSchema = z
     minLength: z.coerce.number().min(1).nullable().optional(),
     maxLength: z.coerce.number().min(1).nullable().optional(),
     customSizePricing: z.any().optional(),
+    customSizeMrpPricing: z.any().optional(),
 
     variants: z
       .array(productVariantSchema)

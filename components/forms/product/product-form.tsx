@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -47,9 +47,37 @@ export function ProductForm({ initialData, productId }: ProductFormProps = {}) {
   });
   const router = useRouter();
 
-  console.log("initial data : ", initialData)
-  console.log("form errors : ", form.formState.errors);
-  console.log("form values : ", form.getValues());
+  console.log("initial data : ", initialData);
+
+  const DRAFT_KEY = `product_form_draft_${productId || "new"}`;
+  const [isRestored, setIsRestored] = useState(false);
+
+  useEffect(() => {
+    if (!isRestored) {
+      if (!productId) {
+        const savedDraft = localStorage.getItem(DRAFT_KEY);
+        if (savedDraft) {
+          try {
+            const parsedDraft = JSON.parse(savedDraft);
+            form.reset(parsedDraft);
+          } catch (e) {
+            console.error("Failed to parse form draft", e);
+          }
+        }
+      }
+      setIsRestored(true);
+    }
+  }, [DRAFT_KEY, isRestored, form, productId]);
+
+  useEffect(() => {
+    if (isRestored && !productId) {
+      const subscription = form.watch((value) => {
+        // Save the current form state
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(value));
+      });
+      return () => subscription.unsubscribe();
+    }
+  }, [form, DRAFT_KEY, isRestored, productId]);
 
   async function onSubmit(values: CreateProductInput) {
     try {
@@ -66,13 +94,17 @@ export function ProductForm({ initialData, productId }: ProductFormProps = {}) {
         const data = await res.json();
 
         if (data.errors) {
+          const errorMessages: string[] = [];
           // Iterate over the errors and set them in the form
           Object.keys(data.errors).forEach((key) => {
+            const msg = data.errors[key]?.message || "Invalid value";
+            errorMessages.push(`${key}: ${msg}`);
             form.setError(key as keyof CreateProductInput, {
               type: "server",
-              message: data.errors[key]?.message || "Invalid value",
+              message: msg,
             });
           });
+          alert("Failed to save product due to validation errors:\n\n" + errorMessages.join("\n"));
           return;
         }
 
@@ -80,6 +112,7 @@ export function ProductForm({ initialData, productId }: ProductFormProps = {}) {
       }
 
       alert(`Product ${productId ? "updated" : "created"} successfully`);
+      localStorage.removeItem(DRAFT_KEY); // Clear draft on success
       if (!productId) {
         form.reset();
       }
