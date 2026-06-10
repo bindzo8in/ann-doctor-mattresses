@@ -99,7 +99,8 @@ export default async function ProductDetailsPage({ params }: Props) {
             <ProductSectionsRenderer sections={product.sections} sectionHeading={product.sectionHeading} />
           </div>
         </div>
-
+          {/* similar products */}
+          
         {/* FAQs Section */}
         {product.faqs.length > 0 && (
           <div className="py-16">

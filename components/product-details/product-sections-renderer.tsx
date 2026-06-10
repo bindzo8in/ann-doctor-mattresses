@@ -23,7 +23,7 @@ export function ProductSectionsRenderer({ sections, sectionHeading }: Props) {
 
         return (
           <div key={section.id} id={`section-${section.id}`} className="space-y-6">
-            
+
             {/* Base Types Rendering */}
             {section.type === "TEXT" && textContent && (
               <div className="prose prose-slate max-w-none dark:prose-invert">
@@ -72,7 +72,7 @@ export function ProductSectionsRenderer({ sections, sectionHeading }: Props) {
                   {content.description && (
                     <p className="text-slate-600 leading-relaxed">{content.description}</p>
                   )}
-                  
+
                   {content.features && Array.isArray(content.features) && (
                     <ul className="space-y-4">
                       {content.features.map((feature: any, i: number) => (
@@ -87,14 +87,14 @@ export function ProductSectionsRenderer({ sections, sectionHeading }: Props) {
                     </ul>
                   )}
                 </div>
-                
+
                 <div className="order-1 lg:order-2 flex justify-center">
                   {content.image?.url && (
                     <div className="relative w-full max-w-md aspect-[4/3]">
-                      <Image 
-                        src={content.image.url} 
-                        alt="Features" 
-                        fill 
+                      <Image
+                        src={content.image.url}
+                        alt="Features"
+                        fill
                         className="object-contain"
                         sizes="(max-width: 1024px) 100vw, 50vw"
                       />
@@ -110,10 +110,10 @@ export function ProductSectionsRenderer({ sections, sectionHeading }: Props) {
                   <div key={i} className="relative w-full max-w-4xl flex items-center gap-6">
                     <div className="flex-1 relative aspect-[3/1] rounded-2xl overflow-hidden shadow-lg border border-slate-100 bg-white">
                       {item.image?.url && (
-                        <Image 
-                          src={item.image.url} 
-                          alt={`Comparison ${item.label}`} 
-                          fill 
+                        <Image
+                          src={item.image.url}
+                          alt={`Comparison ${item.label}`}
+                          fill
                           className="object-contain p-4"
                           sizes="(max-width: 1024px) 100vw, 80vw"
                         />
@@ -142,12 +142,18 @@ export function ProductSectionsRenderer({ sections, sectionHeading }: Props) {
                   <div key={i} className="bg-white rounded-xl shadow-sm border border-slate-100 p-8 hover:shadow-md transition-shadow">
                     <h4 className="text-xl font-bold text-slate-900 mb-6">{guide.title}</h4>
                     <ul className="space-y-3">
-                      {guide.features && guide.features.map((feature: any, j: number) => (
-                        <li key={j} className="flex gap-3 text-slate-600 text-sm">
-                          <span className="text-[#E53935] mt-1.5 text-[6px]">■</span>
-                          <span>{typeof feature === 'string' ? feature : feature.text}</span>
-                        </li>
-                      ))}
+                      <li className="flex gap-3 text-slate-600 text-sm">Ideal Mattress Type :{guide.mattressType}</li>
+                      <li className="flex gap-3 text-slate-600 text-sm">Support Needed :{guide.supportNeeded}</li>
+                      <li className="flex gap-3 text-slate-600 text-sm">Features :
+                        <ul>
+                          {guide.features && guide.features.map((feature: any, j: number) => (
+                            <li key={j} className="flex gap-3 text-slate-600 text-sm list-inside">
+                              <span className="text-[#E53935] mt-1.5 text-[6px]">■</span>
+                              <span>{typeof feature === 'string' ? feature : feature.text}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </li>
                     </ul>
                   </div>
                 ))}
