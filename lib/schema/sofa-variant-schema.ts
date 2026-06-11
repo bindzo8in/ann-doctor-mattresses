@@ -1,6 +1,7 @@
 import z from "zod";
 
 export const sofaVariantSchema = z.object({
+  id: z.string().optional(),
   variantType: z.literal("SOFA"),
 
   seatCount: z.number().int().positive(),

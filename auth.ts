@@ -16,9 +16,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
 
   providers: [
-    Google({
-      allowDangerousEmailAccountLinking: true,
-    }),
+    // Google({
+    //   allowDangerousEmailAccountLinking: true,
+    // }),
 
     Credentials({
       credentials: {

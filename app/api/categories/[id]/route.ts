@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import slugify from "slugify";
 import { auth } from "@/auth";
 import { auditLogger } from "@/lib/audit";
+import { userHasPermission } from "@/lib/rbac";
 
 export async function GET(
   _: NextRequest,
@@ -39,6 +40,11 @@ export async function PATCH(
   }
 ) {
   try {
+    const session = await auth();
+    if (!userHasPermission(session?.user, "categories.update")) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     const { id } = await params;
     const body = await req.json();
 
@@ -81,7 +87,6 @@ export async function PATCH(
       },
     });
 
-    const session = await auth();
     if (session?.user) {
       await auditLogger.log({
         action: "UPDATE",
@@ -113,6 +118,11 @@ export async function DELETE(
   }
 ) {
   try {
+    const session = await auth();
+    if (!userHasPermission(session?.user, "categories.delete")) {
+      return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+    }
+
     const { id } = await params;
 
     const productCount = await prisma.product.count({
@@ -137,7 +147,6 @@ export async function DELETE(
       where: { id },
     });
 
-    const session = await auth();
     if (session?.user) {
       await auditLogger.log({
         action: "DELETE",

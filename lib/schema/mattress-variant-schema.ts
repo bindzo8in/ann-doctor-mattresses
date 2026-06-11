@@ -36,6 +36,7 @@ export const healthBenefitEnum = z.enum([
 
 export const mattressVariantSchema = z
   .object({
+    id: z.string().optional(),
     variantType: z.literal("MATTRESS"),
 
     sizeName: z.enum(["SINGLE", "DOUBLE", "QUEEN", "KING", "CUSTOM"]),

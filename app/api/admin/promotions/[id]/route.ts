@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { auditLogger } from "@/lib/audit";
+import { userHasPermission } from "@/lib/rbac";
 
 interface RouteProps {
   params: Promise<{ id: string }>;
@@ -9,7 +10,7 @@ interface RouteProps {
 
 export async function PUT(req: NextRequest, { params }: RouteProps) {
   const session = await auth();
-  if (session?.user?.role !== "SUPER_ADMIN") {
+  if (!userHasPermission(session?.user, "promotions.update")) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
@@ -52,7 +53,7 @@ export async function PUT(req: NextRequest, { params }: RouteProps) {
 
 export async function DELETE(req: NextRequest, { params }: RouteProps) {
   const session = await auth();
-  if (session?.user?.role !== "SUPER_ADMIN") {
+  if (!userHasPermission(session?.user, "promotions.delete")) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 

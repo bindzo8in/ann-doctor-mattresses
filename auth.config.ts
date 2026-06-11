@@ -25,7 +25,7 @@ export default {
         matchesRoute(nextUrl.pathname, route),
       );
 
-      if (isApiAuthRoute || isPublicRoute) {
+      if (isApiAuthRoute || isPublicRoute || nextUrl.pathname.startsWith("/api/")) {
         return true;
       }
       // console.log("isApiAuthRoute",isApiAuthRoute,)

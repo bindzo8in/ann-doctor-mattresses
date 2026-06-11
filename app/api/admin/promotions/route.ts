@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { auditLogger } from "@/lib/audit";
+import { userHasPermission } from "@/lib/rbac";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
-  if (session?.user?.role !== "SUPER_ADMIN") {
+  if (!userHasPermission(session?.user, "promotions.read")) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await auth();
-  if (session?.user?.role !== "SUPER_ADMIN") {
+  if (!userHasPermission(session?.user, "promotions.create")) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 

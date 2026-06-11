@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import slugify from "slugify";
 import { auth } from "@/auth";
 import { auditLogger } from "@/lib/audit";
+import { userHasPermission } from "@/lib/rbac";
 
 export async function GET(req: NextRequest) {
   const search = req.nextUrl.searchParams.get("search") ?? "";
@@ -41,6 +42,12 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await auth();
+  
+  if (!userHasPermission(session?.user, "categories.create")) {
+    return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+  }
+
   const body = await req.json();
 
   const name = body.name?.trim();
@@ -81,7 +88,6 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  const session = await auth();
   if (session?.user) {
     await auditLogger.log({
       action: "CREATE",

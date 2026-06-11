@@ -181,18 +181,128 @@ export async function PUT(
     // the safest way to update is to delete the existing relations and recreate them.
     
     // Explicitly find variant children to prevent foreign key constraint violations
-    const existingVariants = await prisma.productVariant.findMany({ where: { productId: id }, select: { id: true } });
-    const variantIds = existingVariants.map(v => v.id);
-    
+    const existingVariants = await prisma.productVariant.findMany({
+      where: { productId: id },
+      include: {
+        mattressVariant: true,
+        sofaVariant: true,
+      },
+    });
+
+    const existingVariantMap = new Map(existingVariants.map(v => [v.id, v]));
+    const incomingVariantIds = new Set(data.variants.map((v: any) => v.id).filter(Boolean));
+    const variantsToDelete = existingVariants.filter(v => !incomingVariantIds.has(v.id)).map(v => v.id);
+
     const transactionOps: any[] = [];
-    
-    if (variantIds.length > 0) {
-      transactionOps.push(prisma.mattressVariant.deleteMany({ where: { variantId: { in: variantIds } } }));
-      transactionOps.push(prisma.sofaVariant.deleteMany({ where: { variantId: { in: variantIds } } }));
+
+    // 1. Delete removed variants
+    if (variantsToDelete.length > 0) {
+      transactionOps.push(prisma.mattressVariant.deleteMany({ where: { variantId: { in: variantsToDelete } } }));
+      transactionOps.push(prisma.sofaVariant.deleteMany({ where: { variantId: { in: variantsToDelete } } }));
+      transactionOps.push(prisma.productVariant.deleteMany({ where: { id: { in: variantsToDelete } } }));
     }
 
+    // 2. Update existing variants
+    const variantsToUpdate = data.variants.filter((v: any) => v.id && existingVariantMap.has(v.id));
+    variantsToUpdate.forEach((incomingVariant: any) => {
+      const old = existingVariantMap.get(incomingVariant.id)!;
+      
+      if (
+        old.mrp.toNumber() !== incomingVariant.mrp ||
+        old.salePrice.toNumber() !== incomingVariant.salePrice ||
+        old.isDefault !== incomingVariant.isDefault
+      ) {
+        transactionOps.push(
+          prisma.productVariant.update({
+            where: { id: incomingVariant.id },
+            data: {
+              mrp: incomingVariant.mrp,
+              salePrice: incomingVariant.salePrice,
+              isDefault: incomingVariant.isDefault,
+            },
+          })
+        );
+      }
+
+      if (incomingVariant.variantType === "MATTRESS" && old.mattressVariant) {
+        const mv = old.mattressVariant;
+        if (
+          mv.sizeName !== incomingVariant.sizeName ||
+          mv.width !== incomingVariant.width ||
+          mv.length !== incomingVariant.length ||
+          mv.thickness !== incomingVariant.thickness
+        ) {
+          transactionOps.push(
+            prisma.mattressVariant.update({
+              where: { variantId: incomingVariant.id },
+              data: {
+                sizeName: incomingVariant.sizeName,
+                width: incomingVariant.width,
+                length: incomingVariant.length,
+                thickness: incomingVariant.thickness,
+              },
+            })
+          );
+        }
+      } else if (incomingVariant.variantType === "SOFA" && old.sofaVariant) {
+        const sv = old.sofaVariant;
+        if (
+          sv.seatCount !== incomingVariant.seatCount ||
+          sv.material !== incomingVariant.material ||
+          sv.shape !== incomingVariant.shape ||
+          (sv as any).color !== (incomingVariant as any).color // Included in case of future changes
+        ) {
+          transactionOps.push(
+            prisma.sofaVariant.update({
+              where: { variantId: incomingVariant.id },
+              data: {
+                seatCount: incomingVariant.seatCount,
+                material: incomingVariant.material,
+                shape: incomingVariant.shape,
+              },
+            })
+          );
+        }
+      }
+    });
+
+    // 3. Create new variants
+    const variantsToCreate = data.variants.filter((v: any) => !v.id || !existingVariantMap.has(v.id));
+    variantsToCreate.forEach((incomingVariant: any) => {
+      transactionOps.push(
+        prisma.productVariant.create({
+          data: {
+            productId: id,
+            mrp: incomingVariant.mrp,
+            salePrice: incomingVariant.salePrice,
+            isDefault: incomingVariant.isDefault,
+            ...(incomingVariant.variantType === "MATTRESS"
+              ? {
+                  mattressVariant: {
+                    create: {
+                      sizeName: incomingVariant.sizeName,
+                      width: incomingVariant.width,
+                      length: incomingVariant.length,
+                      thickness: incomingVariant.thickness,
+                    },
+                  },
+                }
+              : {
+                  sofaVariant: {
+                    create: {
+                      seatCount: incomingVariant.seatCount,
+                      material: incomingVariant.material,
+                      shape: incomingVariant.shape,
+                    },
+                  },
+                }),
+          },
+        })
+      );
+    });
+
+    // Keep existing images, specs, faqs, sections logic unchanged
     transactionOps.push(prisma.productImage.deleteMany({ where: { productId: id } }));
-    transactionOps.push(prisma.productVariant.deleteMany({ where: { productId: id } }));
     transactionOps.push(prisma.productSpecification.deleteMany({ where: { productId: id } }));
     transactionOps.push(prisma.productSection.deleteMany({ where: { productId: id } }));
     transactionOps.push(prisma.productFaq.deleteMany({ where: { productId: id } }));
@@ -255,33 +365,6 @@ export async function PUT(
                 answer: faq.answer,
               })),
             },
-          },
-          variants: {
-            create: data.variants.map((variant) => ({
-              mrp: variant.mrp,
-              salePrice: variant.salePrice,
-              isDefault: variant.isDefault,
-              ...(variant.variantType === "MATTRESS"
-                ? {
-                    mattressVariant: {
-                      create: {
-                        sizeName: variant.sizeName,
-                        width: variant.width,
-                        length: variant.length,
-                        thickness: variant.thickness,
-                      },
-                    },
-                  }
-                : {
-                    sofaVariant: {
-                      create: {
-                        seatCount: variant.seatCount,
-                        material: variant.material,
-                        shape: variant.shape,
-                      },
-                    },
-                  }),
-            })),
           },
         },
       })
