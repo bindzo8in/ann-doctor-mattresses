@@ -75,26 +75,26 @@ export default {
       const hasNestedAccess = (allowedRoutes.nested ?? []).some((route) =>
         matchesRoute(nextUrl.pathname, route),
       );
-      // console.log({
-      //   pathname: nextUrl.pathname,
-      //   role: auth?.user?.role,
-      // });
+      console.log({
+        pathname: nextUrl.pathname,
+        role: auth?.user?.role,
+      });
 
-      // console.log("allowedRoutes", allowedRoutes);
+      console.log("allowedRoutes", allowedRoutes);
 
-      // console.log(
-      //   "hasExactAccess",
-      //   (allowedRoutes.exact ?? []).some((route) =>
-      //     matchesExactRoute(nextUrl.pathname, route),
-      //   ),
-      // );
+      console.log(
+        "hasExactAccess",
+        (allowedRoutes.exact ?? []).some((route) =>
+          matchesExactRoute(nextUrl.pathname, route),
+        ),
+      );
 
-      // console.log(
-      //   "hasNestedAccess",
-      //   (allowedRoutes.nested ?? []).some((route) =>
-      //     matchesRoute(nextUrl.pathname, route),
-      //   ),
-      // );
+      console.log(
+        "hasNestedAccess",
+        (allowedRoutes.nested ?? []).some((route) =>
+          matchesRoute(nextUrl.pathname, route),
+        ),
+      );
       if (!hasExactAccess && !hasNestedAccess) {
         if (nextUrl.pathname.startsWith("/api/")) {
           return Response.json({ error: "Unauthorized" }, { status: 401 });

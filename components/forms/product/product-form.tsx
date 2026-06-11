@@ -91,6 +91,7 @@ export function ProductForm({ initialData, productId }: ProductFormProps = {}) {
 
       if (!res.ok) {
         const data = await res.json();
+        console.log(data)
 
         if (data.errors) {
           const errorMessages: string[] = [];

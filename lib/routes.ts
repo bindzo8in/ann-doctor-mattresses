@@ -74,6 +74,7 @@ export const publicRoutes = [
     routes.privacyPolicy,
     routes.termsAndConditions,
     routes.api_categories,
+    routes.api_products,
     routes.api_webhooks,
     routes.api_signup,
     routes.api_signin,

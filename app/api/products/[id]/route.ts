@@ -88,6 +88,7 @@ export async function PUT(
   try {
     const session = await auth();
     if (!userHasPermission(session?.user, "products.update")) {
+      console.log("no permission", session?.user.role)
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
