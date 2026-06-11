@@ -66,8 +66,8 @@ export async function POST(req: NextRequest) {
       entityType: "Promotion",
       entityId: promotion.id,
       description: `Created new promotion: ${promotion.name}`,
-      actorUserId: session.user.id,
-      actorRole: session.user.role,
+      actorUserId: session!.user.id,
+      actorRole: session!.user.role,
       newValues: promotion,
     });
 

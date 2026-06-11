@@ -9,11 +9,11 @@ interface RouteProps {
 }
 
 export async function PUT(req: NextRequest, { params }: RouteProps) {
+  
   const session = await auth();
   if (!userHasPermission(session?.user, "promotions.update")) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
-
   try {
     const { id } = await params;
     const body = await req.json();
@@ -39,8 +39,8 @@ export async function PUT(req: NextRequest, { params }: RouteProps) {
       entityType: "Promotion",
       entityId: promotion.id,
       description: `Updated promotion: ${promotion.name}`,
-      actorUserId: session.user.id,
-      actorRole: session.user.role,
+      actorUserId: session!.user.id,
+      actorRole: session!.user.role,
       newValues: promotion,
     });
 
@@ -72,8 +72,8 @@ export async function DELETE(req: NextRequest, { params }: RouteProps) {
       entityType: "Promotion",
       entityId: id,
       description: `Deleted promotion: ${promotion.name}`,
-      actorUserId: session.user.id,
-      actorRole: session.user.role,
+      actorUserId: session!.user.id,
+      actorRole: session!.user.role,
       oldValues: promotion,
     });
 
