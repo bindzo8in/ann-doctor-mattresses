@@ -50,7 +50,6 @@ export function VerifyEmailForm() {
 
         const result =
           await response.json();
-        console.log(result)
         if (!response.ok) {
           throw new Error(
             result.message ??
@@ -60,7 +59,7 @@ export function VerifyEmailForm() {
 
         setStatus("verified");
       } catch (error) {
-        console.log(error)
+        console.error(error)
         setStatus("error");
 
         toast.error(

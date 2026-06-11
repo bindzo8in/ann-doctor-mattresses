@@ -17,53 +17,54 @@ import {
 import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, Settings2Icon, CircleHelpIcon, SearchIcon, CommandIcon, MessageSquareIcon, MonitorPlay, ShieldIcon, UsersIcon, TagsIcon } from "lucide-react"
 import { userHasPermission } from "@/lib/rbac"
 import { Permission } from "@/lib/permissions"
+import { routes } from "@/lib/routes"
 
 const navMain = [
   {
     title: "Dashboard",
-    url: "/dashboard",
+    url: routes.dashboard,
     icon: (
       <LayoutDashboardIcon />
     ),
   },
   {
     title: "Orders",
-    url: "/dashboard/orders",
+    url: routes.dashboard_orders,
     icon: (
       <ListIcon />
     ),
   },
   {
     title: "Promotions",
-    url: "/dashboard/promotions",
+    url: routes.dashboard_promotions,
     icon: (
       <ChartBarIcon />
     ),
   },
   {
     title: "Hero Section",
-    url: "/dashboard/hero",
+    url: routes.dashboard_hero,
     icon: (
       <MonitorPlay />
     ),
   },
   {
     title: "Products",
-    url: "/dashboard/products",
+    url: routes.dashboard_products,
     icon: (
       <FolderIcon />
     ),
   },
   {
     title: "Categories",
-    url: "/dashboard/products/categories",
+    url: routes.dashboard_categories,
     icon: (
       <TagsIcon />
     ),
   },
   {
     title: "Reviews",
-    url: "/dashboard/reviews",
+    url: routes.dashboard_reviews,
     icon: (
       <MessageSquareIcon />
     ),
@@ -73,35 +74,35 @@ const navMain = [
 const navSecondary = [
   {
     title: "Users",
-    url: "/dashboard/users",
+    url: routes.dashboard_users,
     icon: (
       <UsersIcon />
     ),
   },
   {
     title: "Audit Logs",
-    url: "/dashboard/audit",
+    url: routes.dashboard_audit,
     icon: (
       <ShieldIcon />
     ),
   },
   {
     title: "Locked Accounts",
-    url: "/dashboard/security/locked-accounts",
+    url: routes.dashboard_locked_accounts,
     icon: (
       <ShieldIcon />
     ),
   },
   {
     title: "Settings",
-    url: "/dashboard/settings",
+    url: routes.dashboard_settings,
     icon: (
       <Settings2Icon />
     ),
   },
   {
     title: "Get Help",
-    url: "#",
+    url: routes.help,
     icon: (
       <CircleHelpIcon />
     ),
@@ -130,7 +131,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              <a href="/">
+              <a href={routes.home}>
                 <CommandIcon className="size-5!" />
                 <span className="text-base font-semibold">Ann Doctor Mattresses</span>
               </a>

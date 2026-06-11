@@ -2,7 +2,7 @@ import type { NextAuthConfig } from "next-auth";
 import { rolePermissions } from "./lib/role-permissions";
 import { roleRoutes } from "./lib/route-permissions";
 import { matchesExactRoute, matchesRoute } from "./lib/route-matcher";
-import { publicRoutes, routes } from "./lib/routes";
+import { publicRoutes, routes, commonApiRoutes } from "./lib/routes";
 
 export default {
   providers: [],
@@ -25,7 +25,7 @@ export default {
         matchesRoute(nextUrl.pathname, route),
       );
 
-      if (isApiAuthRoute || isPublicRoute || nextUrl.pathname.startsWith("/api/")) {
+      if (isApiAuthRoute || isPublicRoute) {
         return true;
       }
       // console.log("isApiAuthRoute",isApiAuthRoute,)
@@ -34,12 +34,13 @@ export default {
       
 
       if (!isLoggedIn) {
+        if (nextUrl.pathname.startsWith("/api/")) {
+          return Response.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const signInUrl = nextUrl.clone();
-
         signInUrl.pathname = routes.login;
-
         signInUrl.searchParams.set("callbackUrl", nextUrl.href);
-
         signInUrl.searchParams.set("error", "AccessDenied");
 
         return Response.redirect(signInUrl);
@@ -52,6 +53,14 @@ export default {
           return Response.json({ error: "Unauthorized" }, { status: 401 });
         }
         return Response.redirect(new URL(routes.unauthorized, nextUrl));
+      }
+
+      const isCommonApiRoute = commonApiRoutes.some((route: string) =>
+        matchesRoute(nextUrl.pathname, route),
+      );
+
+      if (isCommonApiRoute) {
+        return true;
       }
 
       const allowedRoutes = roleRoutes[userRole] ?? {

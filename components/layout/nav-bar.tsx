@@ -1,83 +1,122 @@
-import { CircleQuestionMark, Heart, Info, ShoppingBag } from "lucide-react";
+"use client";
+
+import { Heart, Home, Info, ShoppingBag, CircleHelp } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import { usePathname } from "next/navigation";
+import { routes } from "@/lib/routes";
 import { CartDrawer } from "@/components/cart/cart-drawer";
 
-const NavBar = () => {
-  const contactInfo = [
-    {
-      state: "Tamil Nadu",
-      phone: "+91 70257 37666",
-      href: "tel:+917025737666",
-    },
-    {
-      state: "Karnataka",
-      phone: "+91 70348 46777",
-      href: "tel:+917034846777",
-    },
-    {
-      state: "Kerala",
-      phone: "+91 70257 37666",
-      href: "tel:+917025737666",
-    },
-  ];
+const contactInfo = [
+  { state: "TN", phone: "+91 70257 37666", href: "tel:+917025737666" },
+  { state: "KA", phone: "+91 70348 46777", href: "tel:+917034846777" },
+  { state: "KL", phone: "+91 70257 37666", href: "tel:+917025737666" },
+];
+
+const navLinks = [
+  { label: "Home", href: routes.home },
+  { label: "Products", href: routes.products },
+  { label: "Wishlist", href: routes.wishlist },
+  { label: "Help", href: routes.help },
+];
+
+export default function NavBar() {
+  const pathname = usePathname();
+
   return (
-    <header>
-      <nav className="container mx-auto flex items-center justify-between py-4 px-8 text-primary">
-        {/* logo - left */}
-        <Link href="/">
+    <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-sm border-b border-border shadow-sm">
+      <nav className="page-container flex items-center justify-between h-16 gap-4">
+        {/* Logo */}
+        <Link href={routes.home} className="shrink-0">
           <Image
             src="/logo.webp"
-            className="object-contain w-auto h-12"
+            className="object-contain w-auto h-10"
             width={1887}
             height={512}
             alt="Ann Doctor Logo"
-            priority={true}
+            priority
           />
         </Link>
 
-        {/* right */}
-        <div className="flex gap-4">
-          <div className="hidden md:block">
-            <h6>Contact Us:</h6>
-            <ul className="flex gap-4 text-sm">
-              {contactInfo.map((info) => (
-                <li key={info.state}>
-                  <a href={info.href}>
-                    <span className="font-semibold">{info.state}</span>:{" "}
-                    {info.phone}
+        {/* Desktop nav links – hidden on mobile */}
+        <div className="hidden md:flex items-center gap-1 lg:gap-2">
+          {navLinks.map((link) => {
+            const active = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-destructive/10 text-destructive"
+                    : "text-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Right side: contact info + action icons */}
+        <div className="flex items-center gap-3 lg:gap-5">
+          {/* Contact strip – only on extra-large screens to prevent squishing */}
+          <div className="hidden xl:flex flex-col items-end leading-none">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-primary mb-0.5">
+              Contact Us
+            </span>
+            <ul className="flex gap-3 text-xs text-foreground/80">
+              {contactInfo.map((c) => (
+                <li key={c.state}>
+                  <a
+                    href={c.href}
+                    className="hover:text-primary transition-colors"
+                  >
+                    <span className="font-semibold">{c.state}:</span> {c.phone}
                   </a>
                 </li>
               ))}
             </ul>
           </div>
-          <div className="flex gap-4 items-center justify-center">
-            <Link aria-label="Home" href="/" className="hover:text-primary/80 transition-colors">
-              <span className="font-medium hidden md:inline-block mr-1">Home</span>
-            </Link>
-            <Link aria-label="Products" href="/products" className="hover:text-primary/80 transition-colors">
-              <ShoppingBag className="w-5 h-5 md:hidden" />
-              <span className="font-medium hidden md:inline-block mr-1">Products</span>
-            </Link>
-            <Link aria-label="Wishlist" href="/wishlist" className="hover:text-primary/80 transition-colors">
+
+          {/* Action icons – always visible on desktop, hidden on mobile (bottom bar handles it) */}
+          <div className="hidden md:flex items-center gap-2">
+            <Link
+              aria-label="Wishlist"
+              href={routes.wishlist}
+              className="p-2 rounded-md hover:bg-muted transition-colors"
+            >
               <Heart className="w-5 h-5" />
             </Link>
             <CartDrawer />
-            <Link aria-label="Profile" href="/profile" className="hover:text-primary/80 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <Link
+              aria-label="Profile"
+              href={routes.profile}
+              className="p-2 rounded-md hover:bg-muted transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
             </Link>
-            <Link aria-label="Information" href="/info" className="hover:text-primary/80 transition-colors">
-              <Info className="w-5 h-5" />
-            </Link>
-            <Link aria-label="Help" href="/help" className="hover:text-primary/80 transition-colors">
-              <CircleQuestionMark className="w-5 h-5" />
-            </Link>
+          </div>
+
+          {/* Mobile: only show cart icon in navbar (rest in bottom bar) */}
+          <div className="flex md:hidden items-center gap-2">
+            <CartDrawer />
           </div>
         </div>
       </nav>
     </header>
   );
-};
-
-export default NavBar;
+}

@@ -10,8 +10,6 @@ import {
   firmnessEnum,
   comfortLevelEnum,
   healthBenefitEnum,
-  ageGroupEnum,
-  weightGroupEnum,
   sleepingPositionEnum,
 } from "./mattress-variant-schema";
 
@@ -59,8 +57,6 @@ export const createProductSchema = z
     firmness: firmnessEnum.optional(),
     comfortLevel: comfortLevelEnum.optional(),
     healthBenefits: z.array(healthBenefitEnum).optional(),
-    recommendedAgeGroups: z.array(ageGroupEnum).optional(),
-    recommendedWeightGroups: z.array(weightGroupEnum).optional(),
     recommendedPositions: z.array(sleepingPositionEnum).optional(),
     availableColors: z.array(z.string()).optional(),
 
@@ -98,12 +94,6 @@ export const createProductSchema = z
       }
       if (!data.healthBenefits || data.healthBenefits.length === 0) {
         ctx.addIssue({ code: "custom", path: ["healthBenefits"], message: "At least one health benefit must be selected" });
-      }
-      if (!data.recommendedAgeGroups || data.recommendedAgeGroups.length === 0) {
-        ctx.addIssue({ code: "custom", path: ["recommendedAgeGroups"], message: "At least one age group must be selected" });
-      }
-      if (!data.recommendedWeightGroups || data.recommendedWeightGroups.length === 0) {
-        ctx.addIssue({ code: "custom", path: ["recommendedWeightGroups"], message: "At least one weight group must be selected" });
       }
       if (!data.recommendedPositions || data.recommendedPositions.length === 0) {
         ctx.addIssue({ code: "custom", path: ["recommendedPositions"], message: "At least one sleeping position must be selected" });

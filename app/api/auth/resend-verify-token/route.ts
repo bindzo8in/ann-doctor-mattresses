@@ -6,6 +6,8 @@ import { getFieldErrors } from "@/lib/utils";
 import { resendVerificationSchema } from "@/lib/schema/resend-verification-schema";
 import { VerificationTokenType } from "@/app/generated/prisma/enums";
 import { env } from "@/env";
+import { sendEmail } from "@/lib/email";
+import EmailVerificationEmail from "@/emails/EmailVerificationEmail";
 
 const RESEND_COOLDOWN_MINUTES = 2;
 const TOKEN_EXPIRY_HOURS = 24;
@@ -113,10 +115,22 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const verificationUrl =
-      `${env.NEXT_PUBLIC_SITE_URL}/verify-email?token=${token}`;
-    console.log(verificationUrl)
-    // send email here
+    const verificationUrl = `${env.NEXT_PUBLIC_SITE_URL}/verify-email?token=${token}`;
+
+    // Fire-and-forget — resend must not fail the response
+    sendEmail({
+      to: email,
+      subject: "Verify your email — Ann Doctor Mattresses",
+      react: EmailVerificationEmail({
+        customerName: user.name,
+        verificationUrl,
+      }),
+    }).catch((err) => {
+      console.error("[ResendVerify] Failed to send verification email", {
+        email,
+        err,
+      });
+    });
 
     return NextResponse.json({
       success: true,

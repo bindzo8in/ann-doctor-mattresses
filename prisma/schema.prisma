@@ -69,6 +69,9 @@ model Branch {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([state])
 }
 
 model Account {
@@ -181,14 +184,18 @@ model Product {
   firmness                Firmness?
   comfortLevel            ComfortLevel?
   healthBenefits          HealthBenefit[]    @default([])
-  recommendedAgeGroups    AgeGroup[]         @default([])
-  recommendedWeightGroups WeightGroup[]      @default([])
+
   recommendedPositions    SleepingPosition[] @default([])
 
   orderItems    OrderItem[]
   cartItems     CartItem[]
   wishlistItems WishlistItem[]
   reviews       Review[]
+
+  @@index([isActive])
+  @@index([isFeatured])
+  @@index([categoryId])
+  @@index([createdAt])
 }
 
 model ProductImage {
@@ -223,19 +230,7 @@ enum Firmness {
   FIRM
 }
 
-enum AgeGroup {
-  KIDS
-  TEEN
-  ADULT
-  SENIOR
-}
 
-enum WeightGroup {
-  UNDER_60
-  KG_60_80
-  KG_80_100
-  OVER_100
-}
 
 enum SleepingPosition {
   SIDE
@@ -431,6 +426,9 @@ model Order {
   updatedAt DateTime @updatedAt
 
   @@index([customerId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([branchId])
 }
 
 model OrderItem {
@@ -733,4 +731,26 @@ model WebhookEvent {
 
   @@index([status])
   @@index([event])
+}
+
+// ---------------------------------------------------------------------------
+// Email Logging
+// ---------------------------------------------------------------------------
+
+enum EmailStatus {
+  SENT
+  FAILED
+}
+
+model EmailLog {
+  id           String      @id @default(cuid())
+  recipient    String
+  subject      String
+  status       EmailStatus
+  errorMessage String?     @db.Text
+  createdAt    DateTime    @default(now())
+
+  @@index([recipient])
+  @@index([status])
+  @@index([createdAt])
 }

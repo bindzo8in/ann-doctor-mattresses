@@ -55,12 +55,6 @@ export function buildProductWhereClause(filters: ProductFilterParams): Prisma.Pr
   if (filters.sleepingPosition && filters.sleepingPosition.length > 0) {
     where.recommendedPositions = { hasSome: filters.sleepingPosition };
   }
-  if (filters.ageGroup && filters.ageGroup.length > 0) {
-    where.recommendedAgeGroups = { hasSome: filters.ageGroup };
-  }
-  if (filters.weightGroup && filters.weightGroup.length > 0) {
-    where.recommendedWeightGroups = { hasSome: filters.weightGroup };
-  }
 
   // Sofa Filters
   if (filters.type === "SOFA" || !filters.type) {

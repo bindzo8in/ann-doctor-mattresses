@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSession, SessionProvider } from "next-auth/react";
+import { useEffect, useState, useRef } from "react";
+import { useSession } from "next-auth/react";
 import { env } from "@/env";
 
 // Helper to convert base64 to Uint8Array for VAPID key
@@ -21,16 +21,13 @@ function urlBase64ToUint8Array(base64String: string) {
 }
 
 export function PushManager() {
-  return (
-    <SessionProvider>
-      <PushManagerInner />
-    </SessionProvider>
-  );
+  return <PushManagerInner />;
 }
 
 function PushManagerInner() {
   const { data: session } = useSession();
   const [permissionState, setPermissionState] = useState<NotificationPermission>("default");
+  const hasSynced = useRef(false);
 
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
@@ -38,13 +35,15 @@ function PushManagerInner() {
     }
   }, []);
 
+  const userId = session?.user?.id;
+
   useEffect(() => {
-    // Only attempt to register and subscribe if user is logged in
-    // and permission is granted.
-    if (session?.user?.id && permissionState === "granted") {
+    // Only attempt to register and subscribe if user is logged in,
+    // permission is granted, and we haven't already synced this session.
+    if (userId && permissionState === "granted" && !hasSynced.current) {
       registerAndSubscribe();
     }
-  }, [session, permissionState]);
+  }, [userId, permissionState]);
 
   const registerAndSubscribe = async () => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -71,11 +70,15 @@ function PushManagerInner() {
       }
 
       // 5. Send to our server
-      await fetch("/api/push/subscribe", {
+      const res = await fetch("/api/push/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(subscription),
       });
+
+      if (res.ok) {
+        hasSynced.current = true;
+      }
 
     } catch (error) {
       console.error("Error during service worker registration or subscription:", error);

@@ -9,6 +9,9 @@ import type { MattressSize } from "@/app/generated/prisma/client";
 import type { CreateProductInput } from "@/lib/schema/product-form-schema";
 import { formatPrice } from "@/lib/price";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Settings2, Star, RefreshCw } from "lucide-react";
 
 const STANDARD_SIZES: { label: string, sizeName: MattressSize, w: number, l: number }[] = [
   { label: "Single 36x72", sizeName: "SINGLE", w: 36, l: 72 },
@@ -38,9 +41,14 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
   // Which standard sizes are active
   const [selectedSizes, setSelectedSizes] = useState<string[]>(STANDARD_SIZES.map(s => `${s.w}x${s.l}`));
   const [hasCalculatedMrp, setHasCalculatedMrp] = useState(false);
+  const [hasInitializedOverrides, setHasInitializedOverrides] = useState(false);
+
+  const [defaultVariantKey, setDefaultVariantKey] = useState<string>("");
+  const [priceOverrides, setPriceOverrides] = useState<Record<string, { mrp?: number, salePrice?: number }>>({});
 
   // Initialization and reverse-calculation
   const existingVariants = useWatch({ control: form.control, name: "variants" });
+  
   useEffect(() => {
     // Force allow custom size to be true as per requirement
     if (form.getValues("allowCustomSize") !== true) {
@@ -54,13 +62,13 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
     if (!form.getValues("maxLength")) form.setValue("maxLength", 84, { shouldValidate: true });
 
     // Try to reverse calculate MRP per sqft from existing variants if editing
+    let derivedMrp: Record<string, number> = {};
     if (existingVariants && existingVariants.length > 0 && !hasCalculatedMrp && Object.keys(mrpPricing).length === 0) {
-      const derivedMrp: Record<string, number> = {};
       existingVariants.forEach(v => {
         if (v.variantType === "MATTRESS" && v.mrp && v.width && v.length) {
           const area = (v.width * v.length) / 144;
-          if (area > 0 && !derivedMrp[v.thickness.toString()]) {
-            derivedMrp[v.thickness.toString()] = Math.round(v.mrp / area);
+          if (area > 0 && !derivedMrp[v.thickness!.toString()]) {
+            derivedMrp[v.thickness!.toString()] = Math.round(v.mrp / area);
           }
         }
       });
@@ -69,7 +77,39 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
         setHasCalculatedMrp(true);
       }
     }
-  }, [existingVariants, hasCalculatedMrp, mrpPricing, form]);
+
+    // Initialize overrides and default variant
+    if (existingVariants && existingVariants.length > 0 && !hasInitializedOverrides) {
+       const initialOverrides: Record<string, { mrp?: number, salePrice?: number }> = {};
+       let initialDefault = "";
+       
+       existingVariants.forEach(v => {
+          if (v.variantType === "MATTRESS" && v.width && v.length && v.thickness) {
+             const key = `${v.width}x${v.length}-${v.thickness}`;
+             if (v.isDefault) initialDefault = key;
+             
+             const areaSqFt = (v.width * v.length) / 144;
+             
+             // Get the SqFt rate from form values because customPricing might not be synced yet in this block
+             const currentCustomPricing = form.getValues("customSizePricing") || {};
+             const sqftSale = currentCustomPricing[v.thickness.toString()] || 0;
+             const expectedSale = Math.round(areaSqFt * sqftSale);
+             
+             const currentMrpPricing = Object.keys(derivedMrp).length > 0 ? derivedMrp : (form.getValues("customSizeMrpPricing") || {});
+             const sqftMrp = currentMrpPricing[v.thickness.toString()] || sqftSale;
+             const expectedMrp = Math.round(areaSqFt * sqftMrp);
+
+             if (v.salePrice !== expectedSale || v.mrp !== expectedMrp) {
+                initialOverrides[key] = { mrp: v.mrp, salePrice: v.salePrice };
+             }
+          }
+       });
+       
+       setPriceOverrides(initialOverrides);
+       if (initialDefault) setDefaultVariantKey(initialDefault);
+       setHasInitializedOverrides(true);
+    }
+  }, [existingVariants, hasCalculatedMrp, mrpPricing, form, hasInitializedOverrides]);
 
   const handleSalePriceChange = (thickness: number, value: string) => {
     const val = parseFloat(value);
@@ -112,14 +152,26 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
       const areaSqFt = (sizeDef.w * sizeDef.l) / 144;
 
       activeThicknesses.forEach(t => {
+        const key = `${sizeDef.w}x${sizeDef.l}-${t}`;
+        
         const saleRate = customPricing[t.toString()];
         const mrpRate = mrpPricing[t.toString()] || saleRate; // Fallback to sale rate if no MRP
 
-        const salePrice = Math.round(areaSqFt * saleRate);
-        const mrpPrice = Math.round(areaSqFt * mrpRate);
+        let salePrice = Math.round(areaSqFt * saleRate);
+        let mrpPrice = Math.round(areaSqFt * mrpRate);
+        
+        if (priceOverrides[key]) {
+           if (priceOverrides[key].salePrice !== undefined) salePrice = priceOverrides[key].salePrice!;
+           if (priceOverrides[key].mrp !== undefined) mrpPrice = priceOverrides[key].mrp!;
+        }
+        
+        let isDefault = isFirst;
+        if (defaultVariantKey) {
+            isDefault = defaultVariantKey === key;
+        }
 
         newVariants.push({
-          isDefault: isFirst,
+          isDefault: isDefault,
           variantType: "MATTRESS",
           mrp: mrpPrice,
           salePrice: salePrice,
@@ -132,10 +184,8 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
       });
     });
 
-    // We only update if it actually changed to prevent infinite loops
-    // In a real robust implementation, deep compare is better, but this suffices for generation
     form.setValue("variants", newVariants, { shouldValidate: true });
-  }, [customPricing, mrpPricing, selectedSizes, form]);
+  }, [customPricing, mrpPricing, selectedSizes, form, priceOverrides, defaultVariantKey]);
 
   const activeThicknesses = Object.keys(customPricing).map(Number).filter(t => !isNaN(t) && customPricing[t.toString()] > 0).sort((a,b)=>a-b);
   const variantsError = (form.formState.errors.variants as any)?.message;
@@ -221,18 +271,20 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
       {/* Auto-Calculated Preview */}
       {activeThicknesses.length > 0 && selectedSizes.length > 0 && (
         <div className="border rounded-xl overflow-hidden shadow-sm">
-          <div className="p-4 bg-slate-100 border-b">
-            <h3 className="font-semibold text-slate-800">Auto-Calculated Variants Preview</h3>
-            <p className="text-xs text-slate-500">These variants will be permanently saved to the database.</p>
+          <div className="p-4 bg-slate-100 border-b flex justify-between items-center">
+            <div>
+              <h3 className="font-semibold text-slate-800">Variants Matrix</h3>
+              <p className="text-xs text-slate-500">Hover over a price to override it manually, or click the star to set a variant as Default.</p>
+            </div>
           </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50">
-                  <TableHead className="w-[200px]">Size</TableHead>
-                  <TableHead>Area (Sq.Ft)</TableHead>
+                  <TableHead className="w-[150px]">Size</TableHead>
+                  {/* <TableHead>Area</TableHead> */}
                   {activeThicknesses.map(t => (
-                    <TableHead key={t} className="text-right">{t}" Thickness</TableHead>
+                    <TableHead key={t} className="text-center">{t}" Thick</TableHead>
                   ))}
                 </TableRow>
               </TableHeader>
@@ -241,18 +293,125 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
                   const area = (sizeDef.w * sizeDef.l) / 144;
                   return (
                     <TableRow key={sizeDef.label}>
-                      <TableCell className="font-medium">{sizeDef.label}</TableCell>
-                      <TableCell className="text-slate-500">{area.toFixed(2)}</TableCell>
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {sizeDef.label}
+                        <div className="text-[10px] text-muted-foreground">{area.toFixed(2)} Sq.Ft</div>
+                      </TableCell>
+                      {/* <TableCell className="text-slate-500">{area.toFixed(2)}</TableCell> */}
                       {activeThicknesses.map(t => {
-                        const sale = Math.round(area * customPricing[t.toString()]);
-                        const mrpRate = mrpPricing[t.toString()] || customPricing[t.toString()];
-                        const mrp = Math.round(area * mrpRate);
+                        const key = `${sizeDef.w}x${sizeDef.l}-${t}`;
+                        const isOverridden = !!priceOverrides[key];
+                        
+                        let sale = Math.round(area * customPricing[t.toString()]);
+                        let mrp = Math.round(area * (mrpPricing[t.toString()] || customPricing[t.toString()]));
+                        
+                        if (isOverridden) {
+                            if (priceOverrides[key].salePrice !== undefined) sale = priceOverrides[key].salePrice!;
+                            if (priceOverrides[key].mrp !== undefined) mrp = priceOverrides[key].mrp!;
+                        }
+                        
+                        // Set the first variant as default fallback if nothing is selected
+                        const isFirstGenerated = defaultVariantKey === "" && sizeDef === STANDARD_SIZES.filter(s => selectedSizes.includes(`${s.w}x${s.l}`))[0] && t === activeThicknesses[0];
+                        const isDefault = defaultVariantKey === key || isFirstGenerated;
+
                         return (
-                          <TableCell key={t} className="text-right">
-                            <div className="flex flex-col items-end">
-                              <span className="font-bold text-green-600">₹{formatPrice(sale)}</span>
-                              {mrp > sale && (
-                                <span className="text-xs text-slate-400 line-through">₹{formatPrice(mrp)}</span>
+                          <TableCell key={t} className="text-center group relative border-l">
+                            <div className="flex flex-col items-center justify-center gap-1 min-h-[50px] relative">
+                              {/* Set Default Button */}
+                              <button 
+                                 type="button"
+                                 onClick={() => setDefaultVariantKey(key)}
+                                 className={`absolute left-0 top-1/2 -translate-y-1/2 transition-opacity ${isDefault ? 'text-yellow-500 opacity-100' : 'text-slate-200 opacity-0 group-hover:opacity-100 hover:text-yellow-400'}`}
+                                 title="Set as Default Variant"
+                              >
+                                 <Star className="h-4 w-4" fill={isDefault ? "currentColor" : "none"} />
+                              </button>
+
+                              <div className="flex items-center gap-1">
+                                 <div className="flex flex-col items-center">
+                                    <span className="font-bold text-green-600">₹{formatPrice(sale)}</span>
+                                    {mrp > sale && (
+                                      <span className="text-[10px] text-slate-400 line-through">₹{formatPrice(mrp)}</span>
+                                    )}
+                                 </div>
+                                 
+                                 <Popover>
+                                   <PopoverTrigger asChild>
+                                     <button type="button" className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-slate-700 bg-white shadow-sm border rounded p-1 absolute right-0 top-1/2 -translate-y-1/2 z-10">
+                                       <Settings2 className="h-3.5 w-3.5" />
+                                     </button>
+                                   </PopoverTrigger>
+                                   <PopoverContent className="w-64 p-4 space-y-4">
+                                      <h4 className="font-semibold text-sm border-b pb-2">Override Pricing</h4>
+                                      <p className="text-xs text-muted-foreground font-medium">Size: {sizeDef.label} - {t}" Thick</p>
+                                      
+                                      <div className="space-y-3">
+                                         <div className="space-y-1">
+                                            <Label className="text-xs">MRP (₹)</Label>
+                                            <Input 
+                                               type="number" 
+                                               value={priceOverrides[key]?.mrp !== undefined ? priceOverrides[key].mrp : mrp} 
+                                               onChange={(e) => {
+                                                  const newMrp = parseFloat(e.target.value);
+                                                  setPriceOverrides(prev => ({
+                                                     ...prev,
+                                                     [key]: {
+                                                         ...prev[key],
+                                                         mrp: isNaN(newMrp) ? undefined : newMrp
+                                                     }
+                                                  }));
+                                               }}
+                                            />
+                                         </div>
+                                         <div className="space-y-1">
+                                            <Label className="text-xs">Sale Price (₹)</Label>
+                                            <Input 
+                                               type="number" 
+                                               value={priceOverrides[key]?.salePrice !== undefined ? priceOverrides[key].salePrice : sale} 
+                                               onChange={(e) => {
+                                                  const newSale = parseFloat(e.target.value);
+                                                  setPriceOverrides(prev => ({
+                                                     ...prev,
+                                                     [key]: {
+                                                         ...prev[key],
+                                                         salePrice: isNaN(newSale) ? undefined : newSale
+                                                     }
+                                                  }));
+                                               }}
+                                            />
+                                         </div>
+                                      </div>
+                                      
+                                      <div className="flex justify-between items-center pt-3 border-t">
+                                         <Button 
+                                            type="button" 
+                                            variant="ghost" 
+                                            size="sm"
+                                            className="text-xs text-red-500 hover:text-red-600 h-8 px-2"
+                                            onClick={() => {
+                                                const next = {...priceOverrides};
+                                                delete next[key];
+                                                setPriceOverrides(next);
+                                                document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+                                            }}
+                                         >
+                                            Reset
+                                         </Button>
+                                         <Button 
+                                            type="button"
+                                            size="sm"
+                                            className="text-xs h-8 px-3"
+                                            onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))}
+                                         >
+                                            Done
+                                         </Button>
+                                      </div>
+                                   </PopoverContent>
+                                 </Popover>
+                              </div>
+                              
+                              {isOverridden && (
+                                <span className="text-[9px] text-orange-500 leading-none bg-orange-50 px-1 rounded">Manually Overridden</span>
                               )}
                             </div>
                           </TableCell>
@@ -269,3 +428,4 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
     </div>
   );
 }
+

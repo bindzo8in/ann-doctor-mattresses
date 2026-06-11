@@ -11,14 +11,13 @@ import { MultiSelectFilter } from "./multi-select-filter";
 import { useProductFilters } from "@/lib/filters/use-product-filters";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { routes } from "@/lib/routes";
 
 import {
   FIRMNESS_OPTIONS,
   COMFORT_LEVEL_OPTIONS,
   HEALTH_BENEFIT_OPTIONS,
   SLEEPING_POSITION_OPTIONS,
-  AGE_GROUP_OPTIONS,
-  WEIGHT_GROUP_OPTIONS,
 } from "@/components/forms/product/constants";
 
 const MATTRESS_SIZE_OPTIONS = [
@@ -27,6 +26,36 @@ const MATTRESS_SIZE_OPTIONS = [
   { value: "QUEEN", label: "Queen" },
   { value: "KING", label: "King" },
   { value: "CUSTOM", label: "Custom" },
+];
+
+/** Maps a weight-range UI option → the firmness values that suit that weight */
+const WEIGHT_TO_FIRMNESS: Record<string, string[]> = {
+  UNDER_60:  ["SOFT", "MEDIUM_SOFT"],
+  KG_60_80:  ["MEDIUM"],
+  KG_80_100: ["MEDIUM_FIRM"],
+  OVER_100:  ["FIRM"],
+};
+
+const WEIGHT_OPTIONS = [
+  { value: "UNDER_60",  label: "Under 60 kg",  hint: "Soft / Medium Soft" },
+  { value: "KG_60_80",  label: "60 – 80 kg",   hint: "Medium" },
+  { value: "KG_80_100", label: "80 – 100 kg",  hint: "Medium Firm" },
+  { value: "OVER_100",  label: "Over 100 kg",  hint: "Firm" },
+];
+
+/** Maps an age-group UI option → the firmness / healthBenefits that suit that age */
+const AGE_TO_FILTERS: Record<string, { firmness?: string[], healthBenefits?: string[] }> = {
+  KIDS: { firmness: ["FIRM", "MEDIUM_FIRM"] },
+  TEEN: { firmness: ["FIRM", "MEDIUM_FIRM"] },
+  ADULT: { firmness: ["MEDIUM", "MEDIUM_FIRM"] },
+  SENIOR: { healthBenefits: ["ORTHOPEDIC", "BACK_PAIN_RELIEF"] },
+};
+
+const AGE_OPTIONS = [
+  { value: "KIDS", label: "Kids", hint: "Firm / Medium Firm" },
+  { value: "TEEN", label: "Teen", hint: "Firm / Medium Firm" },
+  { value: "ADULT", label: "Adult", hint: "Medium / Medium Firm" },
+  { value: "SENIOR", label: "Senior", hint: "Orthopedic Support" },
 ];
 
 interface ProductFiltersSidebarProps {
@@ -40,15 +69,79 @@ interface ProductFiltersSidebarProps {
 }
 
 export function ProductFiltersSidebar({ dynamicFacets }: ProductFiltersSidebarProps) {
-  const { searchParams } = useProductFilters();
+  const { searchParams, setFilter, setFilters } = useProductFilters();
   const currentType = searchParams.get("type");
+
+  // ── Weight → Firmness helper ──────────────────────────────────────────────
+  // Derive which weight-range bucket is currently active by looking at the
+  // current `firmness` param and matching it back to a weight bucket.
+  const currentFirmness = searchParams.get("firmness")?.split(",") ?? [];
+
+  function getActiveWeightKey(): string | null {
+    for (const [key, firmnessValues] of Object.entries(WEIGHT_TO_FIRMNESS)) {
+      if (firmnessValues.every((f) => currentFirmness.includes(f)) && currentFirmness.length === firmnessValues.length) {
+        return key;
+      }
+    }
+    return null;
+  }
+
+  function toggleWeight(weightKey: string) {
+    const active = getActiveWeightKey();
+    if (active === weightKey) {
+      // Deselect — clear firmness param
+      setFilter("firmness", null);
+    } else {
+      // Select — set firmness to the mapped values
+      setFilter("firmness", WEIGHT_TO_FIRMNESS[weightKey].join(","));
+    }
+  }
+
+  const activeWeightKey = getActiveWeightKey();
+
+  // ── Age → Firmness/Health helper ─────────────────────────────────────────
+  const currentHealth = searchParams.get("healthBenefits")?.split(",") ?? [];
+
+  function getActiveAgeKey(): string | null {
+    for (const [key, mapping] of Object.entries(AGE_TO_FILTERS)) {
+      const matchFirmness = !mapping.firmness || (mapping.firmness.every(f => currentFirmness.includes(f)) && currentFirmness.length === mapping.firmness.length);
+      const matchHealth = !mapping.healthBenefits || (mapping.healthBenefits.every(h => currentHealth.includes(h)) && currentHealth.length === mapping.healthBenefits.length);
+      
+      if (matchFirmness && matchHealth) {
+        if (mapping.firmness || mapping.healthBenefits) return key;
+      }
+    }
+    return null;
+  }
+
+  function toggleAge(ageKey: string) {
+    const active = getActiveAgeKey();
+    const mapping = AGE_TO_FILTERS[ageKey];
+    
+    if (active === ageKey) {
+      // Deselect
+      const newFilters: Record<string, string | null> = {};
+      if (mapping.firmness) newFilters.firmness = null;
+      if (mapping.healthBenefits) newFilters.healthBenefits = null;
+      setFilters(newFilters);
+    } else {
+      // Select
+      const newFilters: Record<string, string | null> = {};
+      if (mapping.firmness) newFilters.firmness = mapping.firmness.join(",");
+      if (mapping.healthBenefits) newFilters.healthBenefits = mapping.healthBenefits.join(",");
+      setFilters(newFilters);
+    }
+  }
+
+  const activeAgeKey = getActiveAgeKey();
+  // ─────────────────────────────────────────────────────────────────────────
 
   const filterContent = (
     <div className="space-y-2 pb-12">
       <FilterSection title="Product Type" defaultOpen>
         <div className="flex flex-col gap-1">
           <Link
-            href="/products"
+            href={routes.products}
             className={cn(
               "text-sm font-medium px-2 py-1.5 rounded-md transition-colors",
               !currentType
@@ -59,7 +152,7 @@ export function ProductFiltersSidebar({ dynamicFacets }: ProductFiltersSidebarPr
             All Products
           </Link>
           <Link
-            href="/products?type=MATTRESS"
+            href={`${routes.products}?type=MATTRESS`}
             className={cn(
               "text-sm font-medium px-2 py-1.5 rounded-md transition-colors",
               currentType === "MATTRESS"
@@ -70,7 +163,7 @@ export function ProductFiltersSidebar({ dynamicFacets }: ProductFiltersSidebarPr
             Mattresses
           </Link>
           <Link
-            href="/products?type=SOFA"
+            href={`${routes.products}?type=SOFA`}
             className={cn(
               "text-sm font-medium px-2 py-1.5 rounded-md transition-colors",
               currentType === "SOFA"
@@ -109,10 +202,6 @@ export function ProductFiltersSidebar({ dynamicFacets }: ProductFiltersSidebarPr
             </FilterSection>
           )}
 
-          <FilterSection title="Firmness">
-            <CheckboxFilterGroup paramName="firmness" options={FIRMNESS_OPTIONS} />
-          </FilterSection>
-
           <FilterSection title="Comfort Level">
             <CheckboxFilterGroup paramName="comfortLevel" options={COMFORT_LEVEL_OPTIONS} />
           </FilterSection>
@@ -126,11 +215,55 @@ export function ProductFiltersSidebar({ dynamicFacets }: ProductFiltersSidebarPr
           </FilterSection>
 
           <FilterSection title="Age Group">
-            <CheckboxFilterGroup paramName="ageGroup" options={AGE_GROUP_OPTIONS} />
+            <div className="space-y-1">
+              {AGE_OPTIONS.map((opt) => {
+                const isActive = activeAgeKey === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => toggleAge(opt.value)}
+                    className={cn(
+                      "w-full flex items-center justify-between text-left px-2.5 py-2 rounded-md text-sm transition-colors",
+                      isActive
+                        ? "bg-primary/10 text-primary font-semibold"
+                        : "hover:bg-muted text-foreground"
+                    )}
+                  >
+                    <span>{opt.label}</span>
+                    <span className={cn(
+                      "text-xs",
+                      isActive ? "text-primary/80" : "text-muted-foreground"
+                    )}>{opt.hint}</span>
+                  </button>
+                );
+              })}
+            </div>
           </FilterSection>
 
-          <FilterSection title="Weight Group">
-            <CheckboxFilterGroup paramName="weightGroup" options={WEIGHT_GROUP_OPTIONS} />
+          <FilterSection title="Weight">
+            <div className="space-y-1">
+              {WEIGHT_OPTIONS.map((opt) => {
+                const isActive = activeWeightKey === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    onClick={() => toggleWeight(opt.value)}
+                    className={cn(
+                      "w-full flex items-center justify-between text-left px-2.5 py-2 rounded-md text-sm transition-colors",
+                      isActive
+                        ? "bg-primary/10 text-primary font-semibold"
+                        : "hover:bg-muted text-foreground"
+                    )}
+                  >
+                    <span>{opt.label}</span>
+                    <span className={cn(
+                      "text-xs",
+                      isActive ? "text-primary/80" : "text-muted-foreground"
+                    )}>{opt.hint}</span>
+                  </button>
+                );
+              })}
+            </div>
           </FilterSection>
         </>
       )}

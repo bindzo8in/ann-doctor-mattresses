@@ -44,7 +44,14 @@ export async function PATCH(req: NextRequest, { params }: RouteProps) {
     });
 
     if (status === "DELIVERED") {
-      await sendDeliveryStatusEmail(id);
+      // Fire-and-forget — admin panel response must not block on email delivery
+      sendDeliveryStatusEmail(id).catch((error) => {
+        console.error("[AdminOrders] Failed to send delivery status email", {
+          orderId: id,
+          orderNumber: order.orderNumber,
+          error,
+        });
+      });
     }
 
     if (status && order.customerId) {

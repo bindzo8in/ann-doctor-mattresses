@@ -1,6 +1,33 @@
 "use server";
 
 import prisma from "@/lib/prisma";
+import { auth } from "@/auth";
+
+export async function getAdminPromotions(cursor: string | null = null, limit = 10) {
+  const session = await auth();
+  if (session?.user?.role !== "SUPER_ADMIN") {
+    throw new Error("Forbidden");
+  }
+
+  try {
+    const promotions = await prisma.promotion.findMany({
+      take: limit + 1,
+      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+      orderBy: { createdAt: "desc" },
+    });
+
+    let nextCursor: string | undefined = undefined;
+    if (promotions.length > limit) {
+      const nextItem = promotions.pop();
+      nextCursor = nextItem!.id;
+    }
+
+    return { promotions, nextCursor };
+  } catch (error) {
+    console.error("getAdminPromotions Error:", error);
+    throw new Error("Failed to load promotions");
+  }
+}
 
 export async function getPromotionsSelectionData() {
   try {

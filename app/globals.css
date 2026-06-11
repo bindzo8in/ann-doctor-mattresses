@@ -216,3 +216,28 @@
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
+
+/* ===================== GLOBAL LAYOUT UTILITIES ===================== */
+/* Standard section container — consistent horizontal padding at every breakpoint */
+.page-container {
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 1536px; /* 2xl */
+  padding-left: 1rem;    /* px-4  */
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {   /* sm */
+  .page-container {
+    padding-left: 1.5rem;  /* px-6 */
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {  /* lg */
+  .page-container {
+    padding-left: 3rem;   /* px-12 */
+    padding-right: 3rem;
+  }
+}

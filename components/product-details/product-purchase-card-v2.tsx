@@ -26,8 +26,14 @@ interface Props {
 }
 
 export function ProductPurchaseCardV2({ product }: Props) {
+  const sortedVariants = [...product.variants].sort((a, b) => {
+    if (a.isDefault && !b.isDefault) return -1;
+    if (!a.isDefault && b.isDefault) return 1;
+    return 0;
+  });
+
   const [selectedVariant, setSelectedVariant] = useState<ProductVariantWithDetails>(
-    product.variants.find((v) => v.isDefault) || product.variants[0]
+    sortedVariants[0]
   );
   const [quantity, setQuantity] = useState(1);
   const [isCustomMode, setIsCustomMode] = useState(false);
@@ -241,7 +247,7 @@ export function ProductPurchaseCardV2({ product }: Props) {
           {product.type === "MATTRESS" ? (
             <MattressVariantSelector
               product={product}
-              variants={product.variants as ProductVariantWithDetails[]}
+              variants={sortedVariants as ProductVariantWithDetails[]}
               selectedVariant={selectedVariant}
               onSelect={setSelectedVariant}
               quantity={quantity}
@@ -253,7 +259,7 @@ export function ProductPurchaseCardV2({ product }: Props) {
             />
           ) : product.type === "SOFA" ? (
             <SofaVariantSelector
-              variants={product.variants as ProductVariantWithDetails[]}
+              variants={sortedVariants as ProductVariantWithDetails[]}
               selectedVariant={selectedVariant}
               onSelect={setSelectedVariant}
             />

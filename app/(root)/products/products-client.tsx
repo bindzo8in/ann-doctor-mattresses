@@ -20,8 +20,6 @@ import {
   COMFORT_LEVEL_OPTIONS,
   HEALTH_BENEFIT_OPTIONS,
   SLEEPING_POSITION_OPTIONS,
-  AGE_GROUP_OPTIONS,
-  WEIGHT_GROUP_OPTIONS,
 } from "@/components/forms/product/constants";
 
 interface ProductsPageClientProps {
@@ -32,6 +30,19 @@ interface ProductsPageClientProps {
     shapeOptions: { value: string; label: string }[];
     categoryOptions: { value: string; label: string }[];
   };
+  initialProducts: {
+    products: {
+      id: string;
+      name: string;
+      slug: string;
+      images: { url: string }[];
+      shortDescription: string[];
+      variants: { isDefault: boolean, mrp: number | string, salePrice: number | string }[];
+      [key: string]: unknown;
+    }[];
+    nextCursor?: string;
+  };
+
 }
 
 const MATTRESS_SIZE_OPTIONS = [
@@ -42,8 +53,9 @@ const MATTRESS_SIZE_OPTIONS = [
   { value: "CUSTOM", label: "Custom" },
 ];
 
-export function ProductsPageClient({ dynamicFacets }: ProductsPageClientProps) {
+export function ProductsPageClient({ dynamicFacets, initialProducts }: ProductsPageClientProps) {
   const { searchParams } = useProductFilters();
+
   const { ref, inView } = useInView();
   const router = useRouter();
 
@@ -65,7 +77,13 @@ export function ProductsPageClient({ dynamicFacets }: ProductsPageClientProps) {
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialData: {
+      pages: [initialProducts],
+      pageParams: [undefined],
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
+
 
   useEffect(() => {
     if (inView && hasNextPage) {
@@ -82,8 +100,6 @@ export function ProductsPageClient({ dynamicFacets }: ProductsPageClientProps) {
     comfortLevel: COMFORT_LEVEL_OPTIONS,
     healthBenefits: HEALTH_BENEFIT_OPTIONS,
     sleepingPosition: SLEEPING_POSITION_OPTIONS,
-    ageGroup: AGE_GROUP_OPTIONS,
-    weightGroup: WEIGHT_GROUP_OPTIONS,
     seatingCapacity: dynamicFacets.seatingCapacityOptions,
     material: dynamicFacets.materialOptions,
     shape: dynamicFacets.shapeOptions,
@@ -99,13 +115,10 @@ export function ProductsPageClient({ dynamicFacets }: ProductsPageClientProps) {
           <ProductFiltersSidebar dynamicFacets={dynamicFacets} />
           
           <div className="flex-1">
-            {status === "pending" ? (
-              <div className="flex h-64 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : status === "error" ? (
+            {status === "error" ? (
               <div className="flex h-64 flex-col items-center justify-center text-destructive">
                 <p>Error loading products.</p>
+
                 <p className="text-sm">{(error as Error).message}</p>
               </div>
             ) : (
@@ -119,17 +132,18 @@ export function ProductsPageClient({ dynamicFacets }: ProductsPageClientProps) {
                     {data.pages.map((page, i) => (
                       <div key={i} className="contents">
                         {page.products.map((product) => {
-                          const defaultVariant = product.variants.find((v) => v.isDefault) || product.variants[0];
+                          const defaultVariant = product.variants.find((v: { isDefault: boolean, mrp: number | string, salePrice: number | string }) => v.isDefault) || product.variants[0];
                           
                           // Find a variant that matches the price filters (if applied)
                           let displayVariant = defaultVariant;
                           if (filters.priceMin !== undefined || filters.priceMax !== undefined) {
-                            const matchedVariant = product.variants.find(v => {
+                            const matchedVariant = product.variants.find((v: { isDefault: boolean, mrp: number | string, salePrice: number | string }) => {
                               const vPrice = Number(v.salePrice);
                               if (filters.priceMin !== undefined && vPrice < filters.priceMin) return false;
                               if (filters.priceMax !== undefined && vPrice > filters.priceMax) return false;
                               return true;
                             });
+
                             if (matchedVariant) {
                               displayVariant = matchedVariant;
                             }
@@ -153,7 +167,7 @@ export function ProductsPageClient({ dynamicFacets }: ProductsPageClientProps) {
                               reviewCount={0}
                               features={product.shortDescription}
                               slug={product.slug}
-                              productData={product as any}
+                              productData={product as unknown as Record<string, unknown>}
                             />
                           );
                         })}

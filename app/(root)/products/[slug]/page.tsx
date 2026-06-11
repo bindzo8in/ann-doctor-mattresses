@@ -9,6 +9,8 @@ import { FaqAccordionV2 } from "@/components/product-details/faq-accordion-v2";
 import { HelpCircle } from "lucide-react";
 import { RelatedProductsCarousel } from "@/components/product-details/related-products-carousel";
 import { ProductReviews } from "@/components/product-details/product-reviews";
+import { getApprovedReviews, canUserReviewProduct } from "@/actions/reviews";
+
 import { Separator } from "@/components/ui/separator";
 
 interface Props {
@@ -18,7 +20,6 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const product = await getProductBySlug(slug);
-  console.log(product)
 
   if (!product) {
     return {
@@ -36,8 +37,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       card: "summary_large_image",
       images: [product.thumbnailUrl],
     },
+    alternates: {
+      canonical: `https://doctormattresses.com/products/${product.slug}`,
+    },
   };
 }
+
+
+import { MobileBackButton } from "@/components/product-details/mobile-back-button";
 
 export default async function ProductDetailsPage({ params }: Props) {
   const { slug } = await params;
@@ -47,7 +54,15 @@ export default async function ProductDetailsPage({ params }: Props) {
     notFound();
   }
 
-  const relatedProducts = await getRelatedProducts(product.categoryId, product.id);
+  const [relatedProducts, reviewsRes, canReviewRes] = await Promise.all([
+    getRelatedProducts(product.categoryId, product.id),
+    getApprovedReviews(product.id),
+    canUserReviewProduct(product.id)
+  ]);
+
+  const initialReviews = reviewsRes.success && reviewsRes.reviews ? reviewsRes.reviews : [];
+  const initialCanReview = canReviewRes;
+
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -75,6 +90,7 @@ export default async function ProductDetailsPage({ params }: Props) {
       />
       
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <MobileBackButton />
         {/* Top Section: Purchase Card (Left) & Gallery (Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:gap-16">
           <div className="w-full order-2 lg:order-1">
@@ -126,9 +142,10 @@ export default async function ProductDetailsPage({ params }: Props) {
 
         {/* Product Reviews */}
         <Separator className="my-12" />
-        <div className="max-w-4xl mx-auto">
-          <ProductReviews productId={product.id} />
+        <div id="reviews" className="max-w-4xl mx-auto scroll-mt-24">
+          <ProductReviews productId={product.id} initialReviews={initialReviews} initialCanReview={initialCanReview} />
         </div>
+
 
         {/* Related Products */}
         {relatedProducts.length > 0 && (

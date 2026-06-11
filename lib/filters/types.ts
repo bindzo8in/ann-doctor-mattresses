@@ -4,9 +4,7 @@ import {
   Firmness, 
   ComfortLevel, 
   HealthBenefit, 
-  SleepingPosition, 
-  AgeGroup, 
-  WeightGroup 
+  SleepingPosition
 } from "@/app/generated/prisma/browser";
 
 export interface ProductFilterParams {
@@ -24,8 +22,6 @@ export interface ProductFilterParams {
   comfortLevel?: ComfortLevel[];
   healthBenefits?: HealthBenefit[];
   sleepingPosition?: SleepingPosition[];
-  ageGroup?: AgeGroup[];
-  weightGroup?: WeightGroup[];
 
   // Sofa
   seatingCapacity?: number[];

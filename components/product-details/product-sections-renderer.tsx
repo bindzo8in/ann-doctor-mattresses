@@ -107,14 +107,14 @@ export function ProductSectionsRenderer({ sections, sectionHeading }: Props) {
             {section.type === "IMAGE_COMPARISON" && content.items && (
               <div className="flex flex-col gap-12 items-center">
                 {content.items.map((item: any, i: number) => (
-                  <div key={i} className="relative w-full max-w-4xl flex items-center gap-6">
+                  <div key={i} className="relative w-full max-w-4xl flex items-center gap-3 md:gap-6">
                     <div className="flex-1 relative aspect-[3/1] rounded-2xl overflow-hidden shadow-lg border border-slate-100 bg-white">
                       {item.image?.url && (
                         <Image
                           src={item.image.url}
                           alt={`Comparison ${item.label}`}
                           fill
-                          className="object-contain p-4"
+                          className="object-contain p-2 md:p-4"
                           sizes="(max-width: 1024px) 100vw, 80vw"
                         />
                       )}
@@ -122,12 +122,12 @@ export function ProductSectionsRenderer({ sections, sectionHeading }: Props) {
                     {/* Status Icon based on order or label */}
                     <div className="shrink-0">
                       {i === 0 ? (
-                        <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-200">
-                          <CheckCircle2 className="w-10 h-10 text-white" />
+                        <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-200">
+                          <CheckCircle2 className="w-6 h-6 md:w-10 md:h-10 text-white" />
                         </div>
                       ) : (
-                        <div className="w-16 h-16 rounded-full bg-[#E53935] flex items-center justify-center shadow-lg shadow-red-200">
-                          <XCircle className="w-10 h-10 text-white" />
+                        <div className="w-10 h-10 md:w-16 md:h-16 rounded-full bg-[#E53935] flex items-center justify-center shadow-lg shadow-red-200">
+                          <XCircle className="w-6 h-6 md:w-10 md:h-10 text-white" />
                         </div>
                       )}
                     </div>
@@ -141,15 +141,22 @@ export function ProductSectionsRenderer({ sections, sectionHeading }: Props) {
                 {content.guides.map((guide: any, i: number) => (
                   <div key={i} className="bg-white rounded-xl shadow-sm border border-slate-100 p-8 hover:shadow-md transition-shadow">
                     <h4 className="text-xl font-bold text-slate-900 mb-6">{guide.title}</h4>
-                    <ul className="space-y-3">
-                      <li className="flex gap-3 text-slate-600 text-sm">Ideal Mattress Type :{guide.mattressType}</li>
-                      <li className="flex gap-3 text-slate-600 text-sm">Support Needed :{guide.supportNeeded}</li>
-                      <li className="flex gap-3 text-slate-600 text-sm">Features :
-                        <ul>
+                    <ul className="space-y-4">
+                      <li className="text-slate-600 text-sm">
+                        <span className="font-medium text-slate-800 mr-1.5">Ideal Mattress Type:</span>
+                        {guide.mattressType}
+                      </li>
+                      <li className="text-slate-600 text-sm">
+                        <span className="font-medium text-slate-800 mr-1.5">Support Needed:</span>
+                        {guide.supportNeeded}
+                      </li>
+                      <li className="text-slate-600 text-sm">
+                        <span className="font-medium text-slate-800 block mb-2">Features:</span>
+                        <ul className="space-y-2">
                           {guide.features && guide.features.map((feature: any, j: number) => (
-                            <li key={j} className="flex gap-3 text-slate-600 text-sm list-inside">
-                              <span className="text-[#E53935] mt-1.5 text-[6px]">■</span>
-                              <span>{typeof feature === 'string' ? feature : feature.text}</span>
+                            <li key={j} className="flex items-start gap-2.5 text-slate-600 text-sm">
+                              <span className="text-[#E53935] mt-1.5 text-[8px] shrink-0">■</span>
+                              <span className="leading-relaxed">{typeof feature === 'string' ? feature : feature.text}</span>
                             </li>
                           ))}
                         </ul>

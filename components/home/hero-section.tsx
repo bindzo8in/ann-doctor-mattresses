@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ShieldCheck, Star, Gift } from "lucide-react";
 import { HeroBanner } from "@/app/generated/prisma/client";
+import { routes } from "@/lib/routes";
 
 /* ─────────────────────────────────────────────
    Trust badges
@@ -52,10 +53,10 @@ function StaticHero() {
             rest. Trusted by thousands across South India.
           </p>
           <div className="hero-ctas">
-            <Link href="/products" className="hero-btn-primary">
+            <Link href={routes.products} className="hero-btn-primary">
               Shop Now <ArrowRight size={16} />
             </Link>
-            <Link href="/products" className="hero-btn-ghost">
+            <Link href={routes.products} className="hero-btn-ghost">
               Explore Collection
             </Link>
           </div>
@@ -215,13 +216,13 @@ export default function HomeHeroSection({
             className="hero-ctas hero-anim-cta"
           >
             <Link
-              href={current.buttonLink || "/products"}
+              href={current.buttonLink || routes.products}
               className="hero-btn-primary"
             >
               {current.buttonText || "Shop Now"}
               <ArrowRight size={16} />
             </Link>
-            <Link href="/products" className="hero-btn-ghost">
+            <Link href={routes.products} className="hero-btn-ghost">
               Explore Collection
             </Link>
           </div>
@@ -239,7 +240,7 @@ export default function HomeHeroSection({
         </div>
 
         {/* Right: foreground product image */}
-        <div className="hero-right">
+        <div className="hero-right hero-anim-image">
           <div className="hero-product-glow" />
           {banners.map((banner, idx) => {
             if (!banner.foregroundImageUrl) return null;
@@ -337,12 +338,15 @@ const heroStyles = `
   /* ── Root shell ── */
   .hero-root {
     position: relative;
-    min-height: 96vh;
+    min-height: 70vh;
     display: flex;
     align-items: center;
     overflow: hidden;
     /* Uses your theme background so it blends with the page */
     background-color: var(--background);
+  }
+  @media (min-width: 768px) {
+    .hero-root { min-height: 92vh; }
   }
 
   /* ── Background image container ── */
@@ -404,7 +408,7 @@ const heroStyles = `
     width: 100%;
     max-width: 1280px;
     margin: 0 auto;
-    padding: 6rem 1.5rem 8rem;
+    padding: 3rem 1.25rem 4rem;
     display: flex;
     align-items: center;
     gap: 3rem;
@@ -435,7 +439,10 @@ const heroStyles = `
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--primary);
-    margin-bottom: 1.75rem;
+    margin-bottom: 1rem;
+  }
+  @media (min-width: 768px) {
+    .hero-eyebrow { margin-bottom: 1.75rem; }
   }
   .hero-eyebrow-dot {
     display: block;
@@ -453,12 +460,15 @@ const heroStyles = `
   /* ── Headline ── */
   .hero-headline {
     font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
-    font-size: clamp(2.8rem, 5.5vw, 5.25rem);
+    font-size: clamp(2.2rem, 5.5vw, 5.25rem);
     font-weight: 700;
     line-height: 1.05;
     letter-spacing: -0.02em;
     color: var(--foreground);
-    margin: 0 0 1.5rem;
+    margin: 0 0 1rem;
+  }
+  @media (min-width: 768px) {
+    .hero-headline { margin: 0 0 1.5rem; font-size: clamp(2.8rem, 5.5vw, 5.25rem); }
   }
   .hero-headline-outline {
     -webkit-text-stroke: 1.5px var(--foreground);
@@ -473,11 +483,14 @@ const heroStyles = `
 
   /* ── Body copy ── */
   .hero-body {
-    font-size: clamp(0.9rem, 1.35vw, 1.05rem);
+    font-size: clamp(0.875rem, 1.35vw, 1.05rem);
     color: var(--muted-foreground);
     line-height: 1.8;
     max-width: 480px;
-    margin: 0 0 2.5rem;
+    margin: 0 0 1.5rem;
+  }
+  @media (min-width: 768px) {
+    .hero-body { margin: 0 0 2.5rem; }
   }
   .hero-anim-body {
     animation: heroSlideUp 0.65s 0.14s cubic-bezier(0.4,0,0.2,1) both;
@@ -488,7 +501,10 @@ const heroStyles = `
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
-    margin-bottom: 3rem;
+    margin-bottom: 1.5rem;
+  }
+  @media (min-width: 768px) {
+    .hero-ctas { margin-bottom: 3rem; }
   }
   .hero-anim-cta {
     animation: heroSlideUp 0.65s 0.26s cubic-bezier(0.4,0,0.2,1) both;
@@ -684,11 +700,21 @@ const heroStyles = `
     to   { opacity: 1; transform: translateY(0); }
   }
 
+  /* ── Image Reveal keyframe ── */
+  @keyframes heroImageReveal {
+    from { opacity: 0; transform: translateX(50px) scale(0.95); }
+    to   { opacity: 1; transform: translateX(0) scale(1); }
+  }
+  .hero-anim-image {
+    animation: heroImageReveal 0.9s 0.35s cubic-bezier(0.4,0,0.2,1) both;
+  }
+
   /* ── Reduced motion ── */
   @media (prefers-reduced-motion: reduce) {
     .hero-anim-title,
     .hero-anim-body,
     .hero-anim-cta,
+    .hero-anim-image,
     .hero-eyebrow-dot {
       animation: none;
     }

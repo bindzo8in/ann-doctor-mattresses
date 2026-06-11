@@ -6,6 +6,8 @@ import { VerificationTokenType } from "@/app/generated/prisma/enums";
 import { getFieldErrors } from "@/lib/utils";
 import { env } from "@/env";
 import { passwordResetRateLimit } from "@/lib/security/rate-limit";
+import { sendEmail } from "@/lib/email";
+import ForgotPasswordEmail from "@/emails/ForgotPasswordEmail";
 
 export async function POST(req: NextRequest) {
   try {
@@ -72,11 +74,22 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const resetUrl =
-      `${env.NEXT_PUBLIC_SITE_URL}/reset-password?token=${token}`;
-    console.log(resetUrl);
+    const resetUrl = `${env.NEXT_PUBLIC_SITE_URL}/reset-password?token=${token}`;
 
-    // Send email here
+    // Fire-and-forget — a failed email must not expose enumeration via error codes
+    sendEmail({
+      to: email,
+      subject: "Reset your password — Ann Doctor Mattresses",
+      react: ForgotPasswordEmail({
+        customerName: user.name,
+        resetUrl,
+      }),
+    }).catch((err) => {
+      console.error("[ForgotPassword] Failed to send reset email", {
+        email,
+        err,
+      });
+    });
 
     return NextResponse.json({
       success: true,

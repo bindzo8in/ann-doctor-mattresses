@@ -49,22 +49,26 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({
+import { auth } from "@/auth";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html lang="en" className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} ${montserratAlternates.variable} antialiased`}>
       <body>
         <QueryProvider>
-          <AppSessionProvider>
+          <AppSessionProvider session={session}>
             <TooltipProvider>
               {children}
             </TooltipProvider>
+            <Toaster />
+            <PushManager />
           </AppSessionProvider>
-          <Toaster />
-          <PushManager />
         </QueryProvider>
       </body>
     </html>

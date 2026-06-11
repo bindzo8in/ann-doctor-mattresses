@@ -8,7 +8,6 @@ export async function GET(req: NextRequest) {
   const session = await auth();
   
   if (!session?.user) {
-    console.log("SSE Stream: Unauthorized - No session found");
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

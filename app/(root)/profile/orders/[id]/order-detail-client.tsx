@@ -4,15 +4,15 @@ import React, { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, ArrowLeft, Calendar, FileText, CheckCircle2, XCircle, ChevronRight, Truck, ClipboardList, Info, HelpCircle, ExternalLink } from "lucide-react";
+import { Loader2, ArrowLeft, Calendar, FileText, CheckCircle2, XCircle, ChevronRight, Truck, ClipboardList, Info, HelpCircle, ExternalLink, Star } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { routes } from "@/lib/routes";
 import { cancelOrderAction } from "@/actions/checkout";
 import { toast } from "sonner";
 import Script from "next/script";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
 import Image from "next/image";
+
 import { formatPrice } from "@/lib/price";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,6 +47,7 @@ interface OrderDetailClientProps {
       saved: number;
       product: {
         thumbnailUrl: string;
+        slug: string;
       };
     }>;
     payments: Array<{
@@ -62,7 +63,7 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancelReasonInput, setCancelReasonInput] = useState("");
   const router = useRouter();
-  console.log(order)
+
   const getStatusBadge = (orderStatus: string) => {
     switch (orderStatus) {
       case "PENDING_PAYMENT":
@@ -178,8 +179,11 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
     setIsProcessing(true);
     const toastId = toast.loading("Generating your invoice...");
 
-    const generatePdf = (logoDataUrl: string | null) => {
+    const generatePdf = async (logoDataUrl: string | null) => {
       try {
+        const { jsPDF } = await import("jspdf");
+        const autoTable = (await import("jspdf-autotable")).default;
+        
         const doc = new jsPDF();
 
         // Premium styling colors
@@ -300,29 +304,29 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
 
         // Total Calculations Summary Align Right
         doc.setFontSize(9);
-        doc.text("Subtotal:", 145, currentY);
+        doc.text("Subtotal:", 135, currentY);
         doc.text(`Rs. ${formatPrice(order.subTotal)}`, 195, currentY, { align: "right" });
 
         if (order.discountTotal > 0) {
           currentY += 6;
           doc.setTextColor(16, 185, 129); // Green BOGO discount
-          doc.text("BOGO Discount:", 145, currentY);
+          doc.text("BOGO Discount:", 135, currentY);
           doc.text(`-Rs. ${formatPrice(order.discountTotal)}`, 195, currentY, { align: "right" });
           doc.setTextColor(30, 41, 59); // reset color
         }
 
         currentY += 6;
-        doc.text("Shipping Charge:", 145, currentY);
+        doc.text("Shipping Charge:", 135, currentY);
         doc.text(order.shippingTotal === 0 ? "Free" : `Rs. ${formatPrice(order.shippingTotal)}`, 195, currentY, { align: "right" });
 
         currentY += 5;
         doc.setDrawColor(200, 200, 200);
-        doc.line(140, currentY, 195, currentY);
+        doc.line(130, currentY, 195, currentY);
 
         currentY += 7;
         doc.setFont("helvetica", "bold");
         doc.setFontSize(11);
-        doc.text("Grand Total (INR):", 145, currentY);
+        doc.text("Grand Total:", 135, currentY);
         doc.text(`Rs. ${formatPrice(order.totalAmount)}`, 195, currentY, { align: "right" });
 
         // Disclaimer Notes
@@ -375,6 +379,7 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
       console.warn("Could not load logo for invoice");
       generatePdf(null);
     };
+
   };
 
   const getTimelineSteps = () => {
@@ -654,6 +659,15 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
                           <div className="text-slate-500 mt-1 flex justify-between">
                             <span>Qty: {item.quantity}</span>
                             <span>Unit Price: ₹{formatPrice(Number(item.price))}</span>
+                          </div>
+                        )}
+                        {status === "DELIVERED" && (
+                          <div className="mt-3 flex justify-end">
+                            <Button variant="outline" size="sm" asChild className="gap-1.5 h-8 text-xs font-medium border-slate-200">
+                              <Link href={`/products/${item.product.slug}#reviews`}>
+                                <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> Write a Review
+                              </Link>
+                            </Button>
                           </div>
                         )}
                       </div>

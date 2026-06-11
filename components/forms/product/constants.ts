@@ -31,19 +31,7 @@ export const COMFORT_LEVEL_OPTIONS = [
   { value: "SUPPORTIVE", label: "Supportive" },
 ] as const;
 
-export const AGE_GROUP_OPTIONS = [
-  { value: "KIDS", label: "Kids" },
-  { value: "TEEN", label: "Teen" },
-  { value: "ADULT", label: "Adult" },
-  { value: "SENIOR", label: "Senior" },
-] as const;
 
-export const WEIGHT_GROUP_OPTIONS = [
-  { value: "UNDER_60", label: "Under 60 kg" },
-  { value: "KG_60_80", label: "60 - 80 kg" },
-  { value: "KG_80_100", label: "80 - 100 kg" },
-  { value: "OVER_100", label: "Over 100 kg" },
-] as const;
 
 export const SLEEPING_POSITION_OPTIONS = [
   { value: "SIDE", label: "Side Sleeper" },
@@ -88,8 +76,7 @@ export const defaultValues: CreateProductInput = {
   firmness: "MEDIUM",
   comfortLevel: "BALANCED",
   healthBenefits: [],
-  recommendedAgeGroups: [],
-  recommendedWeightGroups: [],
+
   recommendedPositions: [],
 
   categoryId: "",

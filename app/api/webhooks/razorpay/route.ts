@@ -74,16 +74,19 @@ export async function POST(req: NextRequest) {
             const order = await prisma.order.update({
               where: { id: payment.orderId },
               data: { status: OrderStatus.PENDING_ASSIGNMENT },
+              include: { items: true }
             });
 
             if (order.checkoutSource === "CART") {
-              const orderItems = await prisma.orderItem.findMany({ where: { orderId: order.id } });
-              for (const item of orderItems) {
+              const deleteConditions = order.items.map(item => ({
+                productId: item.productId,
+                variantId: item.variantId,
+              }));
+              if (deleteConditions.length > 0) {
                 await prisma.cartItem.deleteMany({
                   where: {
                     userId: order.customerId,
-                    productId: item.productId,
-                    variantId: item.variantId,
+                    OR: deleteConditions,
                   }
                 });
               }
@@ -98,7 +101,6 @@ export async function POST(req: NextRequest) {
               actorRole: "SYSTEM",
             });
 
-            console.log(`Webhook: Order ${order.orderNumber} successfully paid.`);
           }
         }
         break;
@@ -130,7 +132,6 @@ export async function POST(req: NextRequest) {
               actorRole: "SYSTEM",
             });
 
-            console.log(`Webhook: Payment for Order ${payment.orderId} failed.`);
           }
         }
         break;
@@ -195,7 +196,6 @@ export async function POST(req: NextRequest) {
               actorRole: "SYSTEM",
             });
           }
-          console.log(`Webhook: Refund processed for Refund ${razorpayRefundId}.`);
         }
         break;
       }
@@ -220,12 +220,11 @@ export async function POST(req: NextRequest) {
           actorRole: "SYSTEM",
         });
 
-        console.error(`Webhook: Refund failed for refund ${razorpayRefundId}.`);
         break;
       }
 
       default:
-        console.log(`Unhandled webhook event: ${event.event}`);
+        break;
       }
 
       await prisma.webhookEvent.update({

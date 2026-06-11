@@ -27,7 +27,7 @@ export function ProductGridSection({
 
   return (
     <section className="py-16 md:py-20">
-      <div className="container mx-auto px-6 md:px-12">
+      <div className="page-container">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
           <div>

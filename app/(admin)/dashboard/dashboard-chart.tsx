@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -11,6 +12,16 @@ import {
 } from "recharts";
 
 export function DashboardChart({ data }: { data: any[] }) {
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  if (!isMounted) {
+    return <div className="h-[350px] w-full animate-pulse bg-muted rounded-md" />;
+  }
+
   if (!data || data.length === 0) {
     return (
       <div className="flex h-[350px] items-center justify-center text-muted-foreground border border-dashed rounded-lg">

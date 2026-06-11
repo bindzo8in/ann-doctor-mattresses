@@ -16,11 +16,6 @@ export async function GET(req: NextRequest) {
     secret: process.env.AUTH_SECRET,
   });
 
-  console.log("TOKEN:", token);
-  console.log(
-    "COOKIES:",
-    cookieStore.getAll().map(c => c.name)
-  );
   const session = await auth();
   if (!userHasPermission(session?.user, "orders.read")) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });

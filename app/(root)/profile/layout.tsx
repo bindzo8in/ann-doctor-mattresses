@@ -1,18 +1,12 @@
 import React from "react";
-import NavBar from "@/components/layout/nav-bar";
-import NavMarquee from "@/components/layout/nav-marquee";
 import { ProfileSidebar } from "./profile-sidebar";
 import { auth } from "@/auth";
 
 export default async function ProfileLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   const userRole = session?.user?.role as string | undefined;
-
   return (
-    <div className="min-h-screen bg-slate-50/50 flex flex-col">
-      <NavMarquee />
-      <NavBar />
-
+    <div className="bg-slate-50/50 flex flex-col">
       {/* Main Grid Layout */}
       <div className="container mx-auto max-w-6xl py-10 px-4 md:px-8 flex-1">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">

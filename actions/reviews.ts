@@ -60,7 +60,6 @@ export async function createReview(productId: string, rating: number, title: str
       newValues: review,
     });
 
-    revalidatePath(`/products/${productId}`); // Or correct slug path
     return { success: true, review };
   } catch (error: any) {
     console.error("createReview Error:", error);
@@ -70,10 +69,16 @@ export async function createReview(productId: string, rating: number, title: str
 
 export async function getApprovedReviews(productId: string) {
   try {
+    const session = await auth();
+    const userId = session?.user?.id;
+
     const reviews = await prisma.review.findMany({
       where: {
         productId,
-        isApproved: true,
+        OR: [
+          { isApproved: true },
+          ...(userId ? [{ userId }] : [])
+        ]
       },
       include: {
         user: {
@@ -183,7 +188,7 @@ export async function toggleReviewApproval(reviewId: string, isApproved: boolean
 
     revalidatePath("/dashboard/reviews");
     if (updatedReview.product?.slug) {
-        revalidatePath(`/product/${updatedReview.product.slug}`);
+        revalidatePath(`/products/${updatedReview.product.slug}`);
     }
     
     return { success: true, review: updatedReview };
@@ -217,7 +222,7 @@ export async function deleteReview(reviewId: string) {
 
     revalidatePath("/dashboard/reviews");
     if (deletedReview.product?.slug) {
-        revalidatePath(`/product/${deletedReview.product.slug}`);
+        revalidatePath(`/products/${deletedReview.product.slug}`);
     }
 
     return { success: true };

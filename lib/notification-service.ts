@@ -35,7 +35,6 @@ async function sendWebPush(userIds: string[], payload: any) {
     } catch (error: any) {
       // 410 Gone means the subscription is no longer valid
       if (error.statusCode === 410 || error.statusCode === 404) {
-        console.log(`Removing invalid push subscription ${sub.id}`);
         await prisma.pushSubscription.delete({ where: { id: sub.id } });
       } else {
         console.error("Error sending web push:", error);

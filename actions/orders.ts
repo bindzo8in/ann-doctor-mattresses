@@ -65,6 +65,69 @@ export async function getCustomerOrders(cursor: string | null = null, limit = 10
   }
 }
 
+export async function getAdminOrders(cursor: string | null = null, limit = 10) {
+  const session = await auth();
+  if (!userHasPermission(session?.user, "orders.read")) {
+    throw new Error("Forbidden");
+  }
+
+  try {
+    let whereClause = {};
+    if (session!.user.role === "BRANCH_ADMIN") {
+      const dbUser = await prisma.user.findUnique({ where: { id: session!.user.id } });
+      if (!dbUser || !dbUser.branchId) {
+        return { orders: [], nextCursor: undefined };
+      }
+      whereClause = { branchId: dbUser.branchId };
+    }
+
+    const orders = await prisma.order.findMany({
+      where: whereClause,
+      take: limit + 1,
+      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+      orderBy: { createdAt: "desc" },
+      include: {
+        customer: { select: { name: true, email: true } },
+        payments: {
+          include: { refunds: true }
+        },
+        items: true,
+      }
+    });
+
+    let nextCursor: string | undefined = undefined;
+    if (orders.length > limit) {
+      const nextItem = orders.pop();
+      nextCursor = nextItem!.id;
+    }
+
+    const formattedOrders = orders.map(order => ({
+      ...order,
+      subTotal: roundPrice(order.subTotal.toNumber()),
+      discountTotal: roundPrice(order.discountTotal.toNumber()),
+      shippingTotal: roundPrice(order.shippingTotal.toNumber()),
+      totalAmount: roundPrice(order.totalAmount.toNumber()),
+      payments: order.payments.map((p: any) => ({
+        ...p,
+        amount: roundPrice(p.amount.toNumber()),
+        ...(p.refunds ? { refunds: p.refunds.map((r: any) => ({ ...r, amount: roundPrice(r.amount.toNumber()) })) } : {}),
+      })),
+      items: order.items.map((item: any) => ({
+        ...item,
+        price: roundPrice(item.price.toNumber()),
+        unitPrice: roundPrice(item.unitPrice.toNumber()),
+        totalPaid: roundPrice(item.totalPaid.toNumber()),
+      }))
+    }));
+
+    return { orders: formattedOrders, nextCursor };
+  } catch (error) {
+
+    console.error("getAdminOrders Error:", error);
+    throw new Error("Failed to load orders");
+  }
+}
+
 export async function getOrderDetails(orderId: string) {
   const session = await auth();
   if (!session?.user?.id) {

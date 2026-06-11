@@ -30,6 +30,8 @@ interface WishlistStore {
   toggleWishlist: (productId: string) => Promise<boolean>;
 }
 
+let wishlistFetchPromise: Promise<void> | null = null;
+
 const useWishlistStore = create<WishlistStore>((set, get) => ({
   wishlistItems: [],
   isLoading: false,
@@ -39,21 +41,31 @@ const useWishlistStore = create<WishlistStore>((set, get) => ({
   isAuthenticated: true, // Default to true until checked
 
   fetchWishlist: async () => {
-    set({ isLoading: !get().hasLoaded });
-    try {
-      const res = await fetch("/api/wishlist", { cache: "no-store" });
-      if (!res.ok) {
-        if (res.status === 401) {
-          set({ wishlistItems: [], isAuthenticated: false, isLoading: false, hasLoaded: true });
-          return;
-        }
-        throw new Error("Failed to fetch wishlist");
-      }
-      const data = await res.json();
-      set({ wishlistItems: data, isAuthenticated: true, isLoading: false, error: null, hasLoaded: true });
-    } catch (err: any) {
-      set({ error: err, isLoading: false, hasLoaded: true });
+    if (wishlistFetchPromise) {
+      return wishlistFetchPromise;
     }
+
+    wishlistFetchPromise = (async () => {
+      set({ isLoading: !get().hasLoaded });
+      try {
+        const res = await fetch("/api/wishlist", { cache: "no-store" });
+        if (!res.ok) {
+          if (res.status === 401) {
+            set({ wishlistItems: [], isAuthenticated: false, isLoading: false, hasLoaded: true });
+            return;
+          }
+          throw new Error("Failed to fetch wishlist");
+        }
+        const data = await res.json();
+        set({ wishlistItems: data, isAuthenticated: true, isLoading: false, error: null, hasLoaded: true });
+      } catch (err: any) {
+        set({ error: err, isLoading: false, hasLoaded: true });
+      } finally {
+        wishlistFetchPromise = null;
+      }
+    })();
+
+    return wishlistFetchPromise;
   },
 
   toggleWishlist: async (productId: string) => {
@@ -105,5 +117,7 @@ export function useWishlist() {
     error,
     toggleWishlist,
     isAuthenticated,
+    hasLoaded,
   };
 }
+

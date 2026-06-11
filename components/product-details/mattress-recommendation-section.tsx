@@ -10,12 +10,10 @@ export function MattressRecommendationSection({ product }: Props) {
   
   if (!mattress) return null;
 
-  const { recommendedPositions, recommendedAgeGroups, recommendedWeightGroups } = product;
+  const { recommendedPositions } = product;
 
   if (
-    !recommendedPositions?.length &&
-    !recommendedAgeGroups?.length &&
-    !recommendedWeightGroups?.length
+    !recommendedPositions?.length
   ) {
     return null;
   }
@@ -34,36 +32,6 @@ export function MattressRecommendationSection({ product }: Props) {
               {recommendedPositions.map((pos: string) => (
                 <Badge key={pos} variant="secondary" className="px-3 py-1 text-sm font-medium">
                   {pos}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {recommendedAgeGroups?.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Age Groups
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {recommendedAgeGroups.map((age: string) => (
-                <Badge key={age} variant="secondary" className="px-3 py-1 text-sm font-medium">
-                  {age}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {recommendedWeightGroups?.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              Weight Groups
-            </h4>
-            <div className="flex flex-wrap gap-2">
-              {recommendedWeightGroups.map((weight: string) => (
-                <Badge key={weight} variant="secondary" className="px-3 py-1 text-sm font-medium">
-                  {weight}
                 </Badge>
               ))}
             </div>

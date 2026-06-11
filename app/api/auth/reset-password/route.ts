@@ -6,6 +6,8 @@ import { VerificationTokenType } from "@/app/generated/prisma/enums";
 import { getFieldErrors } from "@/lib/utils";
 import { env } from "@/env";
 import { Redis } from "@upstash/redis";
+import { sendEmail } from "@/lib/email";
+import PasswordResetSuccessEmail from "@/emails/PasswordResetSuccessEmail";
 
 export async function POST(req: NextRequest) {
   try {
@@ -120,6 +122,21 @@ export async function POST(req: NextRequest) {
       });
       await redis.set(`jwtRevokedBefore:${user.id}`, Math.floor(Date.now() / 1000));
     }
+
+    // Fire-and-forget — password is already changed; email failure must not surface as an error
+    sendEmail({
+      to: user.email,
+      subject: "Your password has been reset — Ann Doctor Mattresses",
+      react: PasswordResetSuccessEmail({
+        customerName: user.name,
+        signinUrl: `${env.NEXT_PUBLIC_SITE_URL}/signin`,
+      }),
+    }).catch((err) => {
+      console.error("[ResetPassword] Failed to send success email", {
+        email: user.email,
+        err,
+      });
+    });
 
     return NextResponse.json({
       success: true,

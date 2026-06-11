@@ -23,7 +23,7 @@ export function BranchesSection({
   return (
     <>
       <section className="bg-[#005814] py-16">
-        <div className="container mx-auto max-w-6xl px-4">
+        <div className="page-container">
           <h2 className="mb-8 text-xl text-white">
             Branches:
           </h2>

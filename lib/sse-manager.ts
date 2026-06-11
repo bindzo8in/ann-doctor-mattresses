@@ -14,7 +14,6 @@ class SSEManager {
   addClient(userId: string, role: string, controller: ReadableStreamDefaultController): string {
     const id = crypto.randomUUID();
     this.clients.set(id, { id, userId, role, controller });
-    console.log(`SSE Client added: ${id} (User: ${userId}, Role: ${role})`);
     return id;
   }
 
@@ -22,7 +21,6 @@ class SSEManager {
   removeClient(clientId: string) {
     if (this.clients.has(clientId)) {
       this.clients.delete(clientId);
-      console.log(`SSE Client removed: ${clientId}`);
     }
   }
 

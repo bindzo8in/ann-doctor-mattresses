@@ -178,17 +178,26 @@ export async function PUT(
 
     // Since a product has many relations (images, variants, specs, faqs, sections),
     // the safest way to update is to delete the existing relations and recreate them.
-    // Alternatively, we can use an interactive transaction to delete and then recreate.
-    const product = await prisma.$transaction(async (tx) => {
-      // 1. Delete all nested relations
-      await tx.productImage.deleteMany({ where: { productId: id } });
-      await tx.productVariant.deleteMany({ where: { productId: id } });
-      await tx.productSpecification.deleteMany({ where: { productId: id } });
-      await tx.productSection.deleteMany({ where: { productId: id } });
-      await tx.productFaq.deleteMany({ where: { productId: id } });
+    
+    // Explicitly find variant children to prevent foreign key constraint violations
+    const existingVariants = await prisma.productVariant.findMany({ where: { productId: id }, select: { id: true } });
+    const variantIds = existingVariants.map(v => v.id);
+    
+    const transactionOps: any[] = [];
+    
+    if (variantIds.length > 0) {
+      transactionOps.push(prisma.mattressVariant.deleteMany({ where: { variantId: { in: variantIds } } }));
+      transactionOps.push(prisma.sofaVariant.deleteMany({ where: { variantId: { in: variantIds } } }));
+    }
 
-      // 2. Update the main product and create new relations
-      return tx.product.update({
+    transactionOps.push(prisma.productImage.deleteMany({ where: { productId: id } }));
+    transactionOps.push(prisma.productVariant.deleteMany({ where: { productId: id } }));
+    transactionOps.push(prisma.productSpecification.deleteMany({ where: { productId: id } }));
+    transactionOps.push(prisma.productSection.deleteMany({ where: { productId: id } }));
+    transactionOps.push(prisma.productFaq.deleteMany({ where: { productId: id } }));
+
+    transactionOps.push(
+      prisma.product.update({
         where: { id },
         data: {
           name: data.name,
@@ -204,8 +213,6 @@ export async function PUT(
           firmness: data.firmness,
           comfortLevel: data.comfortLevel,
           healthBenefits: data.healthBenefits || [],
-          recommendedAgeGroups: data.recommendedAgeGroups || [],
-          recommendedWeightGroups: data.recommendedWeightGroups || [],
           recommendedPositions: data.recommendedPositions || [],
           allowCustomSize: data.allowCustomSize || false,
           minWidth: data.minWidth,
@@ -276,8 +283,14 @@ export async function PUT(
             })),
           },
         },
-      });
+      })
+    );
+
+    const results = await prisma.$transaction(transactionOps, {
+      timeout: 60000, // 60 seconds to allow for many variant inserts
+      maxWait: 15000, // 15 seconds to wait for connection
     });
+    const product = results[results.length - 1];
 
     // Delete orphaned images from Cloudinary after successful DB transaction
     if (publicIdsToDelete.length > 0) {

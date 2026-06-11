@@ -5,9 +5,7 @@ import {
   Firmness, 
   ComfortLevel, 
   HealthBenefit, 
-  SleepingPosition, 
-  AgeGroup, 
-  WeightGroup 
+  SleepingPosition
 } from "@/app/generated/prisma/browser";
 
 function parseArray<T>(value: string | string[] | undefined, validValues?: readonly string[]): T[] | undefined {
@@ -65,8 +63,6 @@ export function parseProductFilters(
     comfortLevel: parseArray<ComfortLevel>(searchParams.comfortLevel, Object.values(ComfortLevel)),
     healthBenefits: parseArray<HealthBenefit>(searchParams.healthBenefits, Object.values(HealthBenefit)),
     sleepingPosition: parseArray<SleepingPosition>(searchParams.sleepingPosition, Object.values(SleepingPosition)),
-    ageGroup: parseArray<AgeGroup>(searchParams.ageGroup, Object.values(AgeGroup)),
-    weightGroup: parseArray<WeightGroup>(searchParams.weightGroup, Object.values(WeightGroup)),
 
     // Sofa
     seatingCapacity: parseNumberArray(searchParams.seatingCapacity),

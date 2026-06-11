@@ -10,7 +10,7 @@ export const metadata = {
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  
+
   const product = await prisma.product.findUnique({
     where: { id },
     include: {
@@ -35,6 +35,8 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     notFound();
   }
 
+
+
   // Map the database product to the CreateProductInput format expected by the form
   const formattedProduct: CreateProductInput = {
     name: product.name,
@@ -51,9 +53,15 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     firmness: product.firmness || undefined,
     comfortLevel: product.comfortLevel || undefined,
     healthBenefits: product.healthBenefits || undefined,
-    recommendedAgeGroups: product.recommendedAgeGroups || undefined,
-    recommendedWeightGroups: product.recommendedWeightGroups || undefined,
+
     recommendedPositions: product.recommendedPositions || undefined,
+    availableColors: product.availableColors || undefined,
+    allowCustomSize: product.allowCustomSize,
+    minWidth: product.minWidth || undefined,
+    maxWidth: product.maxWidth || undefined,
+    minLength: product.minLength || undefined,
+    maxLength: product.maxLength || undefined,
+    customSizePricing: product.customSizePricing || undefined,
     images: product.images.map(img => ({
       url: img.url,
       publicId: img.publicId,
@@ -88,7 +96,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           thickness: v.mattressVariant.thickness,
         };
       }
-      
+
       if (product.type === "SOFA" && v.sofaVariant) {
         return {
           variantType: "SOFA",
@@ -101,10 +109,11 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
           shape: v.sofaVariant.shape || undefined,
         };
       }
-      
-      throw new Error("Invalid variant structure");
-    }) as CreateProductInput["variants"],
+
+      return null;
+    }).filter(Boolean) as CreateProductInput["variants"],
   };
+
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">

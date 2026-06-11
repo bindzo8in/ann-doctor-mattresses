@@ -141,16 +141,22 @@ export function MattressVariantSelector({
   // Dimension lists for non-custom
   const availableDimensions = useMemo(() => {
     if (tempIsCustom) return [];
-    const dims = new Map<string, { length: number; width: number }>();
+    const dims = new Map<string, { length: number; width: number; isDefault: boolean }>();
     variants.forEach(v => {
       if (v.mattressVariant?.sizeName === tempCategory && v.mattressVariant?.thickness === tempThickness) {
         const key = `${v.mattressVariant.length}x${v.mattressVariant.width}`;
         if (!dims.has(key)) {
-          dims.set(key, { length: v.mattressVariant.length, width: v.mattressVariant.width });
+          dims.set(key, { length: v.mattressVariant.length, width: v.mattressVariant.width, isDefault: v.isDefault });
+        } else if (v.isDefault) {
+          dims.set(key, { length: v.mattressVariant.length, width: v.mattressVariant.width, isDefault: true });
         }
       }
     });
-    return Array.from(dims.values());
+    return Array.from(dims.values()).sort((a, b) => {
+      if (a.isDefault && !b.isDefault) return -1;
+      if (!a.isDefault && b.isDefault) return 1;
+      return 0;
+    });
   }, [variants, tempCategory, tempThickness, tempIsCustom]);
 
   // Custom Data evaluation

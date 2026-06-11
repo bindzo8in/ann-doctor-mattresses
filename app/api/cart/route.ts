@@ -8,7 +8,14 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({
+      items: [],
+      subTotal: 0,
+      discountTotal: 0,
+      shippingTotal: 0,
+      totalAmount: 0,
+      pincode: null,
+    });
   }
 
   try {

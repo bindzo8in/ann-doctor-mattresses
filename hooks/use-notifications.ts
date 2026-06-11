@@ -42,7 +42,6 @@ export function useNotifications() {
 
       eventSource.onopen = () => {
         setIsConnected(true);
-        console.log("SSE Connected");
       };
 
       eventSource.addEventListener("notification", (e) => {

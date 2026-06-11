@@ -58,6 +58,8 @@ interface CartStore {
   removeFromCart: (cartItemId: string) => Promise<void>;
 }
 
+let cartFetchPromise: Promise<void> | null = null;
+
 const useCartStore = create<CartStore>((set, get) => ({
   cartItems: [],
   subTotal: 0,
@@ -73,32 +75,42 @@ const useCartStore = create<CartStore>((set, get) => ({
   hasLoaded: false,
 
   fetchCart: async () => {
-    // Avoid double loading indicators if already loaded once
-    set({ isLoading: !get().hasLoaded });
-    try {
-      const res = await fetch("/api/cart", { cache: "no-store" });
-      if (!res.ok) {
-        if (res.status === 401) {
-          set({ cartItems: [], subTotal: 0, discountTotal: 0, shippingTotal: 0, totalAmount: 0, pincode: null, isLoading: false, hasLoaded: true });
-          return;
-        }
-        throw new Error("Failed to fetch cart");
-      }
-      const data = await res.json();
-      set({ 
-        cartItems: data.items || [], 
-        subTotal: data.subTotal || 0,
-        discountTotal: data.discountTotal || 0,
-        shippingTotal: data.shippingTotal || 0,
-        totalAmount: data.totalAmount || 0,
-        pincode: data.pincode ?? null,
-        isLoading: false, 
-        error: null, 
-        hasLoaded: true 
-      });
-    } catch (err: any) {
-      set({ error: err, isLoading: false, hasLoaded: true });
+    if (cartFetchPromise) {
+      return cartFetchPromise;
     }
+
+    cartFetchPromise = (async () => {
+      // Avoid double loading indicators if already loaded once
+      set({ isLoading: !get().hasLoaded });
+      try {
+        const res = await fetch("/api/cart", { cache: "no-store" });
+        if (!res.ok) {
+          if (res.status === 401) {
+            set({ cartItems: [], subTotal: 0, discountTotal: 0, shippingTotal: 0, totalAmount: 0, pincode: null, isLoading: false, hasLoaded: true });
+            return;
+          }
+          throw new Error("Failed to fetch cart");
+        }
+        const data = await res.json();
+        set({ 
+          cartItems: data.items || [], 
+          subTotal: data.subTotal || 0,
+          discountTotal: data.discountTotal || 0,
+          shippingTotal: data.shippingTotal || 0,
+          totalAmount: data.totalAmount || 0,
+          pincode: data.pincode ?? null,
+          isLoading: false, 
+          error: null, 
+          hasLoaded: true 
+        });
+      } catch (err: any) {
+        set({ error: err, isLoading: false, hasLoaded: true });
+      } finally {
+        cartFetchPromise = null;
+      }
+    })();
+
+    return cartFetchPromise;
   },
 
   addToCart: async ({ productId, variantId, quantity, isCustom, customData, color }) => {

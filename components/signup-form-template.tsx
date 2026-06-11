@@ -20,15 +20,21 @@ import { Password } from "@/components/password";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { routes } from "@/lib/routes";
+import Image from "next/image";
+import Link from "next/link";
 
 const socialMediaButtons = [
   {
     src: "https://cdn.brandfetch.io/id6O2oGzv-/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1755835725776",
     label: "Continue with Google",
+    name: "Google",
+    href: "/api/auth/google",
   },
   {
     src: "https://cdn.brandfetch.io/idZAyF9rlg/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1719469980739",
     label: "Continue with GitHub",
+    name: "GitHub",
+    href: "/api/auth/github",
   },
 ];
 
@@ -53,7 +59,7 @@ export function SignupForm() {
   const {
     formState: { isSubmitting, isSubmitSuccessful },
   } = form;
-console.log(form.formState.errors)
+
   const handleSubmit = form.handleSubmit(async (data: Schema) => {
     setApiError("");
     setApiCode("");
@@ -238,16 +244,13 @@ console.log(form.formState.errors)
         <FieldSeparator className="my-4 col-span-full">OR</FieldSeparator>
         <div className="flex gap-3 justify-center w-full items-center flex-wrap pb-3 col-span-full">
           {socialMediaButtons.map((o) => (
-            <Button
-              key={o.label}
-              variant="outline"
-              type="button"
-              className="text-sm gap-2 px-2 h-10 grow "
-            >
-              <div className="place-items-center grid rounded-full bg-white size-6 p-0.5">
-                <img src={o.src} width={16} height={16} />
-              </div>
-              {o.label}
+            <Button key={o.name} variant="outline" className="w-full relative" asChild>
+              <Link href={o.href}>
+                <div className="relative w-4 h-4 mr-2">
+                  <Image src={o.src} fill alt={o.name} sizes="16px" />
+                </div>
+                {o.name}
+              </Link>
             </Button>
           ))}
         </div>

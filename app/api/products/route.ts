@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
   }
   try {
     const body = await req.json();
-    console.log("Received product data:", body);
 
     const parsed = createProductSchema.safeParse(body);
 
@@ -87,8 +86,6 @@ export async function POST(req: NextRequest) {
           firmness: data.firmness,
           comfortLevel: data.comfortLevel,
           healthBenefits: data.healthBenefits,
-          recommendedAgeGroups: data.recommendedAgeGroups,
-          recommendedWeightGroups: data.recommendedWeightGroups,
           recommendedPositions: data.recommendedPositions,
           allowCustomSize: data.allowCustomSize || false,
           minWidth: data.minWidth,

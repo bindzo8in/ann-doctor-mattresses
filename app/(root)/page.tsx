@@ -1,4 +1,16 @@
 import { Suspense } from "react";
+import { Metadata } from "next";
+
+export const revalidate = 3600; // ISR revalidation every 1 hour
+
+export const metadata: Metadata = {
+  title: "Doctor Mattresses | Premium Orthopedic Mattresses",
+  description: "Shop premium orthopedic mattresses, comfortable sofas, and sleep accessories.",
+  alternates: {
+    canonical: "https://doctormattresses.com",
+  },
+};
+
 import HomeHeroSection from "@/components/home/hero-section";
 import { ProductGridSection } from "@/components/home/product-grid-section";
 import { CategoriesSection } from "@/components/home/categories-section";
@@ -7,6 +19,8 @@ import { getFeaturedProducts, getNewLaunches, getCategories, getHeroBanners, get
 import { Skeleton } from "@/components/ui/skeleton";
 import AboutUs from "@/components/home/about-us";
 import { BranchesSection } from "@/components/home/branches-section";
+import { FeaturesMarquee } from "@/components/home/features-marquee";
+import { SleepEducationSection } from "@/components/home/sleep-education-section";
 
 // Loading skeleton for product grids
 function ProductGridSkeleton() {
@@ -84,6 +98,9 @@ export default async function Home() {
       {/* Hero */}
       <HomeHeroSection banners={heroBanners} />
 
+      {/* Features Marquee */}
+      <FeaturesMarquee />
+
       {/* Categories */}
       <Suspense
         fallback={
@@ -116,6 +133,8 @@ export default async function Home() {
       {/* About Us */}
       <AboutUs />
 
+      {/* Sleep Education */}
+      <SleepEducationSection />
       {/* New Launches */}
       <Suspense fallback={<ProductGridSkeleton />}>
         <NewLaunchesSection />

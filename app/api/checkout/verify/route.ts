@@ -56,8 +56,14 @@ export async function POST(req: NextRequest) {
       data: { status: OrderStatus.PENDING_ASSIGNMENT },
     });
 
-    // Send order confirmation email
-    await sendOrderConfirmationEmail(order.id);
+    // Send order confirmation email — fire-and-forget so checkout never fails because of email
+    sendOrderConfirmationEmail(order.id).catch((error) => {
+      console.error("[Checkout] Failed to send order confirmation email", {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        error,
+      });
+    });
 
     // Notify Admins
     try {

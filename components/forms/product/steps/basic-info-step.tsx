@@ -181,8 +181,6 @@ export function BasicInfoStep({ form, isEditMode }: BasicInfoStepProps) {
                   form.setValue("firmness", "" as any);
                   form.setValue("comfortLevel", "" as any);
                   form.setValue("healthBenefits", []);
-                  form.setValue("recommendedAgeGroups", []);
-                  form.setValue("recommendedWeightGroups", []);
                   form.setValue("recommendedPositions", []);
                 }
 

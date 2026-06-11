@@ -47,7 +47,6 @@ export function ProductForm({ initialData, productId }: ProductFormProps = {}) {
   });
   const router = useRouter();
 
-  console.log("initial data : ", initialData);
 
   const DRAFT_KEY = `product_form_draft_${productId || "new"}`;
   const [isRestored, setIsRestored] = useState(false);
@@ -153,8 +152,6 @@ export function ProductForm({ initialData, productId }: ProductFormProps = {}) {
           "firmness",
           "comfortLevel",
           "healthBenefits",
-          "recommendedAgeGroups",
-          "recommendedWeightGroups",
           "recommendedPositions"
         ],
         component: <MattressAttributesStep form={form as any} />,

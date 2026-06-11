@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import { login } from "@/lib/actions/auth";
 import { routes } from "@/lib/routes";
 import Link from "next/link";
+import Image from "next/image";
 
 const socialMediaButtons = [
   {
@@ -36,7 +37,7 @@ const socialMediaButtons = [
 
 type Schema = z.infer<typeof formSchema>;
 
-export function LoginForm() {
+export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
   const form = useForm<Schema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -50,12 +51,10 @@ export function LoginForm() {
   const {
     formState: { isSubmitting },
   } = form;
-  console.log(form.formState.errors);
 
   const handleSubmit = form.handleSubmit(async (data) => {
     try {
-      const result = await login(data.email, data.password, "/");
-      console.log(result);
+      const result = await login(data.email, data.password, callbackUrl);
 
       if (!result.success) {
         switch (result.code) {
@@ -85,7 +84,7 @@ export function LoginForm() {
       await signIn("credentials", {
         email: data.email,
         password: data.password,
-        callbackUrl: "/",
+        callbackUrl: callbackUrl,
       });
     } catch (error) {
       console.error(error);
@@ -168,8 +167,8 @@ export function LoginForm() {
               type="button"
               className="text-sm gap-2 px-2 h-10 grow "
             >
-              <div className="place-items-center grid rounded-full bg-white size-6 p-0.5">
-                <img src={o.src} width={16} height={16} />
+              <div className="relative place-items-center grid rounded-full bg-white size-6 p-0.5">
+                <Image src={o.src} alt={o.label} fill sizes="16px" />
               </div>
               {o.label}
             </Button>

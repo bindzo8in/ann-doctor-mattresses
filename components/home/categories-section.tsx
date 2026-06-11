@@ -29,7 +29,7 @@ export function CategoriesSection({ categories }: CategoriesSectionProps) {
 
   return (
     <section className="py-16 md:py-20 bg-muted/40">
-      <div className="container mx-auto px-6 md:px-12">
+      <div className="page-container">
         {/* Header */}
         <div className="text-center mb-10">
           <span className="inline-block text-xs font-bold tracking-widest uppercase text-destructive mb-2">
@@ -46,34 +46,40 @@ export function CategoriesSection({ categories }: CategoriesSectionProps) {
 
         {/* Category cards grid */}
         <div
-          className={`grid gap-6 ${
-            categories.length <= 2
-              ? "grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto"
+          className={`grid grid-cols-1 gap-6 ${categories.length <= 2
+              ? "sm:grid-cols-2 max-w-2xl mx-auto"
               : categories.length === 3
-              ? "grid-cols-1 sm:grid-cols-3"
-              : "grid-cols-2 lg:grid-cols-4"
-          }`}
+                ? "sm:grid-cols-3"
+                : "sm:grid-cols-2 lg:grid-cols-4"
+            }`}
         >
           {categories.map((cat) => (
             <Link
               key={cat.id}
-              href={`/products?categoryId=${cat.id}`}
-              className="group flex flex-col bg-white overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.1)] transition-all duration-300 border border-border/50"
+              href={`/products?category=${cat.slug}`}
+              className="group relative flex flex-col bg-white overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.1)] transition-all duration-300 border border-border/50 rounded-lg"
             >
               {/* Background image container */}
-              <div className="relative w-full aspect-[4/3] bg-muted/20">
+              <div className="relative w-full aspect-[4/3] bg-muted/20 overflow-hidden">
                 <Image
                   src={cat.thumbnailUrl || getCategoryImage(cat.slug, cat.name)}
                   alt={cat.name}
                   fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  className="object-cover transition-transform duration-500 group-hover:scale-110"
                   sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                 />
+
+                {/* Hover State Full Overlay */}
+                <div className="absolute inset-0 bg-[#e62a2d]/85 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center z-10">
+                  <h3 className="text-white font-bold text-3xl sm:text-4xl tracking-wide opacity-0 scale-95 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 delay-75 px-4 text-center">
+                    {cat.name}
+                  </h3>
+                </div>
               </div>
 
-              {/* Bottom bar */}
-              <div className="bg-[#e62a2d] py-3 sm:py-4 px-4 text-center mt-auto">
-                <h3 className="text-white font-medium text-base sm:text-lg">
+              {/* Bottom bar - Normal State */}
+              <div className="bg-[#e62a2d] py-3 sm:py-4 px-4 text-center mt-auto relative z-20 transition-all duration-300 group-hover:h-0 group-hover:py-0 group-hover:opacity-0 overflow-hidden">
+                <h3 className="text-white font-medium text-base sm:text-lg whitespace-nowrap">
                   {cat.name}
                 </h3>
               </div>

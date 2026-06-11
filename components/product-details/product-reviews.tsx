@@ -8,12 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import Image from "next/image";
 
 interface ProductReviewsProps {
   productId: string;
+  initialReviews: any[];
+  initialCanReview: boolean;
 }
 
-export function ProductReviews({ productId }: ProductReviewsProps) {
+export function ProductReviews({ productId, initialReviews, initialCanReview }: ProductReviewsProps) {
+
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
 
@@ -33,8 +37,13 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
         reviews: reviewsRes.success && reviewsRes.reviews ? reviewsRes.reviews : [],
         canReview: canReviewRes
       };
+    },
+    initialData: {
+      reviews: initialReviews,
+      canReview: initialCanReview
     }
   });
+
 
   const reviews = data?.reviews || [];
   const canReview = data?.canReview || false;
@@ -171,7 +180,9 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center border overflow-hidden">
                       {review.user?.image ? (
-                        <img src={review.user.image} alt={review.user.name} className="w-full h-full object-cover" />
+                        <div className="relative w-full h-full">
+                          <Image src={review.user.image} alt={review.user.name || "User"} fill className="object-cover" sizes="40px" />
+                        </div>
                       ) : (
                         <User className="w-5 h-5 text-slate-400" />
                       )}
@@ -185,13 +196,21 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                       </div>
                     </div>
                   </div>
-                  <div className="flex text-amber-500">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star 
-                        key={i} 
-                        className={`w-3.5 h-3.5 ${i < review.rating ? "fill-amber-500" : "fill-slate-200 text-slate-200"}`} 
-                      />
-                    ))}
+                  <div className="flex flex-col items-end gap-1.5">
+                    <div className="flex text-amber-500">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star 
+                          key={i} 
+                          className={`w-3.5 h-3.5 ${i < review.rating ? "fill-amber-500" : "fill-slate-200 text-slate-200"}`} 
+                        />
+                      ))}
+                    </div>
+                    {/* The any cast handles if TS doesn't know isApproved is returned, but we know Prisma returns all fields */}
+                    {!(review as any).isApproved && (
+                      <span className="text-[10px] font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200 whitespace-nowrap">
+                        Pending Approval
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div>

@@ -11,16 +11,24 @@ export const routes = {
     checkout: "/checkout",
     checkoutSuccess: "/checkout/success",
     help: "/help",
+    shippingPolicy: "/shipping-policy",
+    returnPolicy: "/return-policy",
+    privacyPolicy: "/privacy-policy",
+    termsAndConditions: "/terms-and-conditions",
+    aboutUs: "/#about-us",
+    branches: "/#branches",
 
     dashboard: "/dashboard",
     dashboard_hero: "/dashboard/hero",
     dashboard_products: "/dashboard/products",
     product_create: "/dashboard/products/create",
+    dashboard_categories: "/dashboard/products/categories",
     dashboard_orders: "/dashboard/orders",
     dashboard_promotions: "/dashboard/promotions",
     dashboard_reviews: "/dashboard/reviews",
     dashboard_audit: "/dashboard/audit",
     dashboard_security: "/dashboard/security",
+    dashboard_locked_accounts: "/dashboard/security/locked-accounts",
     dashboard_users: "/dashboard/users",
     dashboard_branches: "/dashboard/branches",
     dashboard_settings: "/dashboard/settings",
@@ -35,6 +43,17 @@ export const routes = {
     api_resend_verify_token: "/api/auth/resend-verify-token",
 
     api_upload: "/api/upload",
+    api_addresses: "/api/addresses",
+    api_admin: "/api/admin",
+    api_cart: "/api/cart",
+    api_categories: "/api/categories",
+    api_checkout: "/api/checkout",
+    api_notifications: "/api/notifications",
+    api_products: "/api/products",
+    api_push: "/api/push",
+    api_test: "/api/test",
+    api_webhooks: "/api/webhooks",
+    api_wishlist: "/api/wishlist",
 }
 
 // Routes in this array do not require user authentication (accessible by anyone)
@@ -50,4 +69,30 @@ export const publicRoutes = [
     routes.products,
     routes.checkout, // Checkout entry page is public, login check is performed inline during action
     routes.help,
-]
+    routes.shippingPolicy,
+    routes.returnPolicy,
+    routes.privacyPolicy,
+    routes.termsAndConditions,
+    routes.api_categories,
+    routes.api_webhooks,
+    routes.api_signup,
+    routes.api_signin,
+    routes.api_verify_token,
+    routes.api_resend_verify_token,
+    
+    // User data APIs (These handle their own session checking for GET vs POST)
+    routes.api_cart,
+    routes.api_wishlist,
+    routes.api_addresses,
+];
+
+// API Routes accessible to any authenticated user (regardless of role)
+export const commonApiRoutes = [
+    routes.api_cart,
+    routes.api_wishlist,
+    routes.api_addresses,
+    routes.api_checkout,
+    routes.api_push,
+    routes.api_notifications,
+    routes.api_upload,
+];

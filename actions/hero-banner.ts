@@ -5,13 +5,12 @@ import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { auditLogger } from "@/lib/audit";
 
-function checkAdmin() {
-  return auth().then(session => {
-    if (!session?.user?.role || !["SUPER_ADMIN", "BRANCH_ADMIN"].includes(session.user.role)) {
-      throw new Error("Unauthorized");
-    }
-    return session;
-  });
+async function checkAdmin() {
+  const session = await auth();
+  if (!session?.user?.role || !["SUPER_ADMIN", "BRANCH_ADMIN"].includes(session.user.role)) {
+    throw new Error("Unauthorized");
+  }
+  return session;
 }
 
 type HeroBannerInput = {

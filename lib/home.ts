@@ -1,5 +1,6 @@
 import prisma from "@/lib/prisma";
-
+import { cache } from "react";
+import { unstable_cache } from "next/cache";
 export type HomeProduct = {
   id: string;
   name: string;
@@ -44,53 +45,69 @@ function serializeProduct(p: any): HomeProduct {
   };
 }
 
-export async function getHeroBanners() {
-  const banners = await prisma.heroBanner.findMany({
-    where: { isActive: true },
-    orderBy: { order: "asc" },
-  });
-  return banners;
-}
+export const getHeroBanners = unstable_cache(
+  cache(async () => {
+    const banners = await prisma.heroBanner.findMany({
+      where: { isActive: true },
+      orderBy: { order: "asc" },
+    });
+    return banners;
+  }),
+  ["hero-banners"],
+  { revalidate: 3600, tags: ["banners"] }
+);
 
-export async function getFeaturedProducts(limit = 8): Promise<HomeProduct[]> {
-  const products = await prisma.product.findMany({
-    where: { isFeatured: true, isActive: true },
-    take: limit,
-    include: {
-      category: true,
-      variants: { orderBy: { salePrice: "asc" }, take: 1 },
-    },
-    orderBy: { featuredOrder: "asc" },
-  });
-  return products.map(serializeProduct);
-}
+export const getFeaturedProducts = unstable_cache(
+  cache(async (limit = 8): Promise<HomeProduct[]> => {
+    const products = await prisma.product.findMany({
+      where: { isFeatured: true, isActive: true },
+      take: limit,
+      include: {
+        category: true,
+        variants: { orderBy: { salePrice: "asc" }, take: 1 },
+      },
+      orderBy: { featuredOrder: "asc" },
+    });
+    return products.map(serializeProduct);
+  }),
+  ["featured-products"],
+  { revalidate: 3600, tags: ["products"] }
+);
 
-export async function getNewLaunches(limit = 8): Promise<HomeProduct[]> {
-  const products = await prisma.product.findMany({
-    where: { isActive: true },
-    take: limit,
-    include: {
-      category: true,
-      variants: { orderBy: { salePrice: "asc" }, take: 1 },
-    },
-    orderBy: { createdAt: "desc" },
-  });
-  return products.map(serializeProduct);
-}
+export const getNewLaunches = unstable_cache(
+  cache(async (limit = 8): Promise<HomeProduct[]> => {
+    const products = await prisma.product.findMany({
+      where: { isActive: true },
+      take: limit,
+      include: {
+        category: true,
+        variants: { orderBy: { salePrice: "asc" }, take: 1 },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return products.map(serializeProduct);
+  }),
+  ["new-launches"],
+  { revalidate: 3600, tags: ["products"] }
+);
 
-export async function getCategories(): Promise<HomeCategory[]> {
-  const categories = await prisma.category.findMany({
-    include: { _count: { select: { products: { where: { isActive: true } } } } },
-    orderBy: { name: "asc" },
-  });
-  return categories.map((c) => ({
-    id: c.id,
-    name: c.name,
-    slug: c.slug,
-    thumbnailUrl: c.thumbnailUrl,
-    productCount: c._count.products,
-  }));
-}
+export const getCategories = unstable_cache(
+  cache(async (): Promise<HomeCategory[]> => {
+    const categories = await prisma.category.findMany({
+      include: { _count: { select: { products: { where: { isActive: true } } } } },
+      orderBy: { name: "asc" },
+    });
+    return categories.map((c) => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      thumbnailUrl: c.thumbnailUrl,
+      productCount: c._count.products,
+    }));
+  }),
+  ["home-categories"],
+  { revalidate: 3600, tags: ["categories"] }
+);
 
 export type HomeBranchGroup = {
   state: string;
@@ -106,32 +123,36 @@ export type HomeBranchGroup = {
   }>;
 };
 
-export async function getActiveBranchesGroupedByState(): Promise<HomeBranchGroup[]> {
-  const branches = await prisma.branch.findMany({
-    where: { isActive: true },
-    orderBy: [{ state: "desc" }, { name: "asc" }],
-  });
-
-  const grouped = branches.reduce((acc, branch) => {
-    const state = (branch.state || "Other").toUpperCase() + " BRANCHES:";
-    if (!acc[state]) {
-      acc[state] = [];
-    }
-    acc[state].push({
-      id: branch.id,
-      district: (branch.district || branch.name).toUpperCase() + ":",
-      address: branch.address || "",
-      phone: branch.phone,
-      googleMapUrl: branch.googleMapUrl,
-      latitude: branch.latitude,
-      longitude: branch.longitude,
-      name: branch.name,
+export const getActiveBranchesGroupedByState = unstable_cache(
+  cache(async (): Promise<HomeBranchGroup[]> => {
+    const branches = await prisma.branch.findMany({
+      where: { isActive: true },
+      orderBy: [{ state: "desc" }, { name: "asc" }],
     });
-    return acc;
-  }, {} as Record<string, any[]>);
 
-  return Object.keys(grouped).map(state => ({
-    state,
-    branches: grouped[state]
-  }));
-}
+    const grouped = branches.reduce((acc, branch) => {
+      const state = (branch.state || "Other").toUpperCase() + " BRANCHES:";
+      if (!acc[state]) {
+        acc[state] = [];
+      }
+      acc[state].push({
+        id: branch.id,
+        district: (branch.district || branch.name).toUpperCase() + ":",
+        address: branch.address || "",
+        phone: branch.phone,
+        googleMapUrl: branch.googleMapUrl,
+        latitude: branch.latitude,
+        longitude: branch.longitude,
+        name: branch.name,
+      });
+      return acc;
+    }, {} as Record<string, any[]>);
+
+    return Object.keys(grouped).map(state => ({
+      state,
+      branches: grouped[state]
+    }));
+  }),
+  ["active-branches-grouped"],
+  { revalidate: 3600, tags: ["branches"] }
+);

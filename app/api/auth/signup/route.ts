@@ -9,6 +9,9 @@ import { UserRole, VerificationTokenType } from "@/app/generated/prisma/enums";
 import { getFieldErrors } from "@/lib/utils";
 import { Prisma } from "@/app/generated/prisma/client";
 import { registrationRateLimit } from "@/lib/security/rate-limit";
+import { sendEmail } from "@/lib/email";
+import { env } from "@/env";
+import EmailVerificationEmail from "@/emails/EmailVerificationEmail";
 
 export async function POST(req: Request) {
   try {
@@ -99,8 +102,22 @@ export async function POST(req: Request) {
       }
     })
 
-    // todo - send verification email with link
+    const verificationUrl = `${env.NEXT_PUBLIC_SITE_URL}/verify-email?token=${token}`;
 
+    // Fire-and-forget — signup must not fail because of email
+    sendEmail({
+      to: normalizedEmail,
+      subject: "Verify your email — Ann Doctor Mattresses",
+      react: EmailVerificationEmail({
+        customerName: cleanName,
+        verificationUrl,
+      }),
+    }).catch((err) => {
+      console.error("[Signup] Failed to send verification email", {
+        email: normalizedEmail,
+        err,
+      });
+    });
 
     return NextResponse.json(
       {

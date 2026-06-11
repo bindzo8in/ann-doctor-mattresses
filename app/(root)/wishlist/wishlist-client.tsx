@@ -7,11 +7,32 @@ import { Heart, LogIn, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { routes } from "@/lib/routes";
 
-export default function WishlistPage() {
-  const { wishlistItems, isLoading, isAuthenticated } = useWishlist();
+interface WishlistPageClientProps {
+  initialItems: {
+    id: string;
+    product: {
+      id: string;
+      name: string;
+      slug: string;
+      thumbnailUrl?: string | null;
+      variants: { isDefault: boolean, mrp: number | string, salePrice: number | string }[];
+      [key: string]: unknown;
+    }
+  }[];
+  initialIsAuthenticated: boolean;
+}
+
+
+export function WishlistPageClient({ initialItems, initialIsAuthenticated }: WishlistPageClientProps) {
+  const { wishlistItems, isLoading, isAuthenticated: storeIsAuthenticated, hasLoaded } = useWishlist();
   const router = useRouter();
 
-  if (isLoading) {
+  // Use store data if loaded, otherwise fallback to server initial data
+  const displayItems = hasLoaded ? wishlistItems : initialItems;
+  const isAuth = hasLoaded ? storeIsAuthenticated : initialIsAuthenticated;
+  const showLoading = isLoading && !hasLoaded;
+
+  if (showLoading && displayItems.length === 0) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center">
         <Loader2 className="animate-spin text-primary w-10 h-10" />
@@ -19,7 +40,7 @@ export default function WishlistPage() {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuth) {
     return (
       <div className="container mx-auto px-4 py-16 text-center max-w-md space-y-6">
         <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-400">
@@ -41,7 +62,7 @@ export default function WishlistPage() {
     );
   }
 
-  if (wishlistItems.length === 0) {
+  if (displayItems.length === 0) {
     return (
       <div className="container mx-auto px-4 py-16 text-center max-w-md space-y-6">
         <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-400">
@@ -71,16 +92,17 @@ export default function WishlistPage() {
           My Wishlist
         </h1>
         <p className="text-slate-500 text-sm mt-1">
-          You have {wishlistItems.length} {wishlistItems.length === 1 ? "item" : "items"} in your wishlist.
+          You have {displayItems.length} {displayItems.length === 1 ? "item" : "items"} in your wishlist.
         </p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {wishlistItems.map((item) => {
+        {displayItems.map((item) => {
           const product = item.product;
           // Calculate default variant price or cheapest variant price
-          const defaultVariant = product.variants.find((v) => v.isDefault) || product.variants[0];
+          const defaultVariant = product.variants.find((v: { isDefault: boolean, mrp: number | string, salePrice: number | string }) => v.isDefault) || product.variants[0];
           const price = defaultVariant ? Number(defaultVariant.salePrice) : 0;
+
           const compareAtPrice = defaultVariant && Number(defaultVariant.mrp) > Number(defaultVariant.salePrice) 
             ? Number(defaultVariant.mrp) 
             : undefined;
@@ -97,7 +119,7 @@ export default function WishlistPage() {
               rating={5}
               features={[]}
               slug={product.slug}
-              productData={product as any}
+              productData={product as unknown as Record<string, unknown>}
             />
           );
         })}

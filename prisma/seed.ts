@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, OrderStatus, ProductType, Firmness, AgeGroup, WeightGroup, SleepingPosition, ComfortLevel, HealthBenefit, MattressSize } from "../app/generated/prisma/client";
+import { PrismaClient, UserRole, OrderStatus, ProductType, Firmness, SleepingPosition, ComfortLevel, HealthBenefit, MattressSize } from "../app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";

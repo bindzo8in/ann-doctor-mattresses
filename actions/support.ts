@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
 import { auth } from "@/auth";
 import { auditLogger } from "@/lib/audit";
+import { env } from "@/env";
 import * as React from "react";
 import ContactMessageEmail from "@/emails/ContactMessageEmail";
 import ContactAutoReplyEmail from "@/emails/ContactAutoReplyEmail";
@@ -23,7 +24,7 @@ export async function submitContactMessage(data: { name: string; email: string; 
 
     // Notify Admin
     await sendEmail({
-      to: process.env.EMAIL_FROM || "admin@anndoctor.in",
+      to: env.ADMIN_EMAIL,
       subject: `New Contact Request from ${data.name}`,
       react: ContactMessageEmail({
         name: data.name,
@@ -89,7 +90,7 @@ export async function submitComplaint(formData: FormData) {
 
     // Notify Admin
     await sendEmail({
-      to: process.env.EMAIL_FROM || "admin@anndoctor.in",
+      to: env.ADMIN_EMAIL,
       subject: `New Complaint Logged: ${subject || "General"}`,
       react: ComplaintLoggedEmail({
         id: complaint.id,

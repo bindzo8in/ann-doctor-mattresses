@@ -19,10 +19,8 @@ import {
 import { MultiSelect } from "@/components/multi-select";
 
 import {
-  AGE_GROUP_OPTIONS,
   FIRMNESS_OPTIONS,
   SLEEPING_POSITION_OPTIONS,
-  WEIGHT_GROUP_OPTIONS,
   HEALTH_BENEFIT_OPTIONS,
   COMFORT_LEVEL_OPTIONS,
 } from "../constants";
@@ -107,39 +105,7 @@ export function MattressAttributesStep({ form }: MattressAttributesStepProps) {
           )}
         />
 
-        <Controller
-          control={form.control}
-          name="recommendedAgeGroups"
-          render={({ field, fieldState }) => (
-            <Field>
-              <FieldLabel>Recommended Age Groups</FieldLabel>
-              <MultiSelect
-                options={[...AGE_GROUP_OPTIONS]}
-                defaultValue={field.value ?? []}
-                onValueChange={field.onChange}
-                placeholder="Select Age Groups"
-              />
-              <FieldError errors={[fieldState.error]} />
-            </Field>
-          )}
-        />
 
-        <Controller
-          control={form.control}
-          name="recommendedWeightGroups"
-          render={({ field, fieldState }) => (
-            <Field>
-              <FieldLabel>Recommended Weight Groups</FieldLabel>
-              <MultiSelect
-                options={[...WEIGHT_GROUP_OPTIONS]}
-                defaultValue={field.value ?? []}
-                onValueChange={field.onChange}
-                placeholder="Select Weight Groups"
-              />
-              <FieldError errors={[fieldState.error]} />
-            </Field>
-          )}
-        />
 
         <Controller
           control={form.control}
