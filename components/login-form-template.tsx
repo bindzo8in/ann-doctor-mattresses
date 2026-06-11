@@ -22,18 +22,6 @@ import { useRouter } from "next/navigation";
 import { login } from "@/lib/actions/auth";
 import { routes } from "@/lib/routes";
 import Link from "next/link";
-import Image from "next/image";
-
-const socialMediaButtons = [
-  {
-    src: "https://cdn.brandfetch.io/id6O2oGzv-/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1755835725776",
-    label: "Continue with Google",
-  },
-  {
-    src: "https://cdn.brandfetch.io/idM8Hlme1a/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1668075051777",
-    label: "Continue with Discord",
-  },
-];
 
 type Schema = z.infer<typeof formSchema>;
 
@@ -159,20 +147,17 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
           Forgot password?
         </Link>
         <FieldSeparator className="my-4 col-span-full">OR</FieldSeparator>
-        <div className="flex gap-3 justify-center w-full items-center flex-wrap pb-3 col-span-full">
-          {socialMediaButtons.map((o) => (
-            <Button
-              key={o.label}
-              variant="outline"
-              type="button"
-              className="text-sm gap-2 px-2 h-10 grow "
-            >
-              <div className="relative place-items-center grid rounded-full bg-white size-6 p-0.5">
-                <Image src={o.src} alt={o.label} fill sizes="16px" />
-              </div>
-              {o.label}
-            </Button>
-          ))}
+        <div className="flex gap-3 justify-center w-full items-center pb-3 col-span-full">
+          <Button
+            variant="outline"
+            type="button"
+            className="w-full text-sm font-medium"
+            asChild
+          >
+            <Link href={routes.signup}>
+              Create an account
+            </Link>
+          </Button>
         </div>
       </FieldGroup>
       <div className="flex justify-end items-center w-full">

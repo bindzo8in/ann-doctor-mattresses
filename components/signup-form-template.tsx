@@ -20,23 +20,7 @@ import { Password } from "@/components/password";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { routes } from "@/lib/routes";
-import Image from "next/image";
 import Link from "next/link";
-
-const socialMediaButtons = [
-  {
-    src: "https://cdn.brandfetch.io/id6O2oGzv-/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1755835725776",
-    label: "Continue with Google",
-    name: "Google",
-    href: "/api/auth/google",
-  },
-  {
-    src: "https://cdn.brandfetch.io/idZAyF9rlg/theme/dark/symbol.svg?c=1bxid64Mup7aczewSAYMX&t=1719469980739",
-    label: "Continue with GitHub",
-    name: "GitHub",
-    href: "/api/auth/github",
-  },
-];
 
 type Schema = z.infer<typeof formSchema>;
 
@@ -242,17 +226,17 @@ export function SignupForm() {
           )}
         />
         <FieldSeparator className="my-4 col-span-full">OR</FieldSeparator>
-        <div className="flex gap-3 justify-center w-full items-center flex-wrap pb-3 col-span-full">
-          {socialMediaButtons.map((o) => (
-            <Button key={o.name} variant="outline" className="w-full relative" asChild>
-              <Link href={o.href}>
-                <div className="relative w-4 h-4 mr-2">
-                  <Image src={o.src} fill alt={o.name} sizes="16px" />
-                </div>
-                {o.name}
-              </Link>
-            </Button>
-          ))}
+        <div className="flex gap-3 justify-center w-full items-center pb-3 col-span-full">
+          <Button
+            variant="outline"
+            type="button"
+            className="w-full text-sm font-medium"
+            asChild
+          >
+            <Link href={routes.login}>
+              Log in to existing account
+            </Link>
+          </Button>
         </div>
         <Controller
           name="agree"
