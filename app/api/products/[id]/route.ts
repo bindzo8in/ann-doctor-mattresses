@@ -14,6 +14,8 @@ cloudinary.config({
   api_secret: env.CLOUDINARY_API_SECRET,
 });
 
+export const maxDuration = 60; // Allow up to 60 seconds for slow Prisma transactions with many variants
+
 interface RouteProps {
   params: Promise<{ id: string }>;
 }

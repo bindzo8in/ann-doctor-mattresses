@@ -9,6 +9,8 @@ import { getFieldErrors } from "@/lib/utils";
 import { auth } from "@/auth";
 import { userHasPermission } from "@/lib/rbac";
 
+export const maxDuration = 60; // Allow up to 60 seconds for slow Prisma transactions with many variants
+
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!userHasPermission(session?.user, "products.create")) {
