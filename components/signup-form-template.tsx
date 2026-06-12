@@ -4,7 +4,7 @@ import { formSchema } from "@/lib/schema/signup-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { motion } from "motion/react";
-import { Check } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import {
   Field,
   FieldGroup,
@@ -89,35 +89,11 @@ export function SignupForm() {
 
   if (isSubmitSuccessful) {
     return (
-      <div className="p-2 sm:p-5 md:p-8 w-full rounded-md gap-2 border">
-        <motion.div
-          initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, stiffness: 300, damping: 25 }}
-          className="h-full py-6 px-3"
-        >
-          <motion.div
-            initial={{ scale: 0.5 }}
-            animate={{ scale: 1 }}
-            transition={{
-              delay: 0.3,
-              type: "spring",
-              stiffness: 500,
-              damping: 15,
-            }}
-            className="mb-4 flex justify-center border rounded-full w-fit mx-auto p-2"
-          >
-            <Check className="size-8" />
-          </motion.div>
-          <h2 className="text-center text-2xl font-bold mb-2">
-            Account Created
-          </h2>
-
-          <p className="text-center text-muted-foreground">
-            We've sent a verification email to your inbox. Please verify your
-            email before signing in.
-          </p>
-        </motion.div>
+      <div className="p-2 sm:p-5 md:p-8 w-full rounded-md gap-2 border flex flex-col items-center justify-center min-h-[300px]">
+        <Loader2 className="size-8 animate-spin text-muted-foreground mb-4" />
+        <h2 className="text-center text-xl font-bold mb-2">
+          Redirecting to Verification...
+        </h2>
       </div>
     );
   }
