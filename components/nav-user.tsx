@@ -21,6 +21,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { EllipsisVerticalIcon, LogOutIcon } from "lucide-react"
+import { signOut } from "next-auth/react"
+import { routes } from "@/lib/routes"
 
 export function NavUser({
   user,
@@ -76,9 +78,14 @@ export function NavUser({
               </div>
             </DropdownMenuLabel>
 
-            <DropdownMenuItem>
-              <LogOutIcon
-              />
+            <DropdownMenuItem
+              onClick={async () => {
+                await signOut({ redirect: false });
+                window.location.href = routes.home;
+              }}
+              className="cursor-pointer"
+            >
+              <LogOutIcon className="mr-2 h-4 w-4" />
               Log out
             </DropdownMenuItem>
           </DropdownMenuContent>

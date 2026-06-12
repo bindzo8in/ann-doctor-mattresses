@@ -32,7 +32,8 @@ export function ProfileSidebar({ userRole }: { userRole?: string }) {
   }
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: routes.home });
+    await signOut({ redirect: false });
+    window.location.href = routes.home;
   };
 
   return (
