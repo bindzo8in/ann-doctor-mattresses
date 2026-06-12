@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
-import { ProductForm } from "@/components/forms/product/product-form";
+import { ProductEditForm } from "@/components/forms/product/product-edit-form";
 import { CreateProductInput } from "@/lib/schema/product-form-schema";
 
 export const metadata = {
@@ -63,22 +63,26 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     maxLength: product.maxLength || undefined,
     customSizePricing: product.customSizePricing || undefined,
     images: product.images.map(img => ({
+      id: img.id,
       url: img.url,
       publicId: img.publicId,
       sortOrder: img.sortOrder,
     })),
     specifications: product.specifications.map(spec => ({
+      id: spec.id,
       label: spec.label,
       value: spec.value,
     })),
     sectionsHeading: product.sectionHeading,
     sections: product.sections.map(section => ({
+      id: section.id,
       title: "",
       type: section.type,
       content: section.content,
       sortOrder: section.sortOrder,
     })) as CreateProductInput["sections"],
     faqs: product.faqs.map(faq => ({
+      id: faq.id,
       question: faq.question,
       answer: faq.answer,
     })),
@@ -121,7 +125,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         <h2 className="text-3xl font-bold tracking-tight">Edit Product</h2>
       </div>
       <div className="mx-auto mt-6 bg-white p-6 rounded-lg shadow-sm border border-border">
-        <ProductForm initialData={formattedProduct} productId={product.id} />
+        <ProductEditForm initialData={formattedProduct} productId={product.id} />
       </div>
     </div>
   );

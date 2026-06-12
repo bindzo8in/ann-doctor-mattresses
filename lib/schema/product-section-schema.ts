@@ -7,6 +7,7 @@ export const productSectionSchema = z.discriminatedUnion(
   "type",
   [
     z.object({
+      id: z.string().optional(),
       type: z.literal("FEATURES_WITH_IMAGE"),
 
       title: z.string().optional(),
@@ -17,6 +18,7 @@ export const productSectionSchema = z.discriminatedUnion(
     }),
 
     z.object({
+      id: z.string().optional(),
       type: z.literal("IMAGE_COMPARISON"),
 
       title: z.string().optional(),
@@ -27,6 +29,7 @@ export const productSectionSchema = z.discriminatedUnion(
     }),
 
     z.object({
+      id: z.string().optional(),
       type: z.literal("SLEEPER_GUIDE"),
 
       title: z.string().optional(),
@@ -37,6 +40,7 @@ export const productSectionSchema = z.discriminatedUnion(
     }),
 
     z.object({
+      id: z.string().optional(),
       type: z.literal("CUSTOM"),
 
       title: z.string().optional(),

@@ -34,7 +34,7 @@ const MultiStepFormContext = createContext<MultiStepFormContextType | null>(
 interface MultiStepFormProviderProps {
 	children: ReactNode
 	stepsFields: Stepfields[]
-	onStepValidation?: (step: Stepfields) => Promise<boolean> | boolean
+	onStepValidation?: (step: Stepfields, stepIndex: number) => Promise<boolean> | boolean
 }
 
 // Provider component
@@ -57,7 +57,7 @@ export function MultiStepFormProvider({
 		const currentStepData = steps[currentStepIndex - 1]
 
 		if (onStepValidation) {
-			const isValid = await onStepValidation(currentStepData)
+			const isValid = await onStepValidation(currentStepData, currentStepIndex)
 			if (!isValid) return false
 		}
 

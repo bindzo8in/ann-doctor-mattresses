@@ -4,10 +4,12 @@ import { Controller, type UseFormReturn } from "react-hook-form";
 
 import type { CreateProductInput } from "@/lib/schema/product-form-schema";
 
-import { FeaturesSectionForm } from "../sections/features-section-form";
-import { ComparisonSectionForm } from "../sections/comparison-section-form";
-import { SleeperGuideSectionForm } from "../sections/sleeper-guide-section-form";
+import dynamic from "next/dynamic";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+
+const FeaturesSectionForm = dynamic(() => import("../sections/features-section-form").then(mod => mod.FeaturesSectionForm), { ssr: false, loading: () => <div className="h-[200px] bg-slate-50 animate-pulse rounded-md" /> });
+const ComparisonSectionForm = dynamic(() => import("../sections/comparison-section-form").then(mod => mod.ComparisonSectionForm), { ssr: false, loading: () => <div className="h-[200px] bg-slate-50 animate-pulse rounded-md" /> });
+const SleeperGuideSectionForm = dynamic(() => import("../sections/sleeper-guide-section-form").then(mod => mod.SleeperGuideSectionForm), { ssr: false, loading: () => <div className="h-[200px] bg-slate-50 animate-pulse rounded-md" /> });
 import { Input } from "@/components/ui/input";
 
 interface SectionsStepProps {

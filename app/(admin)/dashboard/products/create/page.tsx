@@ -1,10 +1,10 @@
-import { ProductForm } from "@/components/forms/product/product-form";
+import { ProductCreateForm } from "@/components/forms/product/product-create-form";
 import { DashboardContent } from "../../dashboard-content";
 
 const Page = () => {
   return (
     <DashboardContent>
-      <ProductForm />
+      <ProductCreateForm />
     </DashboardContent>
   );
 };

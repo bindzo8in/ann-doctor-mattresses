@@ -9,14 +9,13 @@ export const sleeperGuideSectionSchema = z.object({
   guides: z
     .array(
       z.object({
-        title: z.string().min(1),
+        title: z.string(),
 
-        mattressType: z.string().min(1),
+        mattressType: z.string(),
 
-        supportNeeded: z.string().min(1),
+        supportNeeded: z.string(),
 
-        features: z.array(tagSchema).min(1),
+        features: z.array(tagSchema),
       }),
     )
-    .min(1),
 });

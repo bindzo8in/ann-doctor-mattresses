@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Copy, Trash2, Plus } from "lucide-react";
+import React from "react";
 
 import {
   Table,
@@ -126,179 +127,15 @@ export function SofaVariantArray({ form }: SofaVariantArrayProps) {
           </TableHeader>
           <TableBody>
             {fields.map((item, index) => (
-              <TableRow key={item.id}>
-                <TableCell className="text-center align-top pt-4">
-                  <Controller
-                    name={`variants.${index}.isDefault`}
-                    control={form.control}
-                    render={({ field }) => (
-                      <div className="flex justify-center items-center h-[40px]">
-                        <input
-                          type="radio"
-                          className="w-4 h-4 accent-primary cursor-pointer"
-                          checked={field.value}
-                          onChange={() => handleDefaultChange(index)}
-                        />
-                      </div>
-                    )}
-                  />
-                </TableCell>
-
-                <TableCell className="align-top pt-4">
-                  <Controller
-                    name={`variants.${index}.seatCount`}
-                    control={form.control}
-                    render={({ field, fieldState }) => (
-                      <div className="space-y-1">
-                        <div className="flex flex-col gap-1 relative mt-1">
-                          <Input
-                            type="number"
-                            value={field.value ?? ""}
-                            onChange={(e) =>
-                              field.onChange(
-                                e.target.value === ""
-                                  ? undefined
-                                  : Number(e.target.value),
-                              )
-                            }
-                            className={fieldState.invalid ? "border-destructive w-full" : "w-full"}
-                          />
-                          {form.watch(`variants.${index}.isDefault`) && (
-                            <Badge variant="default" className="text-[10px] px-1.5 h-4 absolute -top-2.5 -right-2 z-10 pointer-events-none">Default</Badge>
-                          )}
-                        </div>
-                        {fieldState.error && (
-                          <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
-                        )}
-                      </div>
-                    )}
-                  />
-                </TableCell>
-
-                <TableCell className="align-top pt-4">
-                  <Controller
-                    name={`variants.${index}.material`}
-                    control={form.control}
-                    render={({ field, fieldState }) => (
-                      <div className="space-y-1">
-                        <Input 
-                          {...field} 
-                          className={fieldState.invalid ? "border-destructive" : ""} 
-                        />
-                        {fieldState.error && (
-                          <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
-                        )}
-                      </div>
-                    )}
-                  />
-                </TableCell>
-
-                <TableCell className="align-top pt-4">
-                  <Controller
-                    name={`variants.${index}.shape`}
-                    control={form.control}
-                    render={({ field, fieldState }) => (
-                      <div className="space-y-1">
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className={fieldState.invalid ? "border-destructive" : ""}>
-                            <SelectValue placeholder="Shape" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectGroup>
-                              {SOFA_SHAPES.map((shapes) => (
-                                <SelectItem key={shapes.value} value={shapes.value}>
-                                  {shapes.label}
-                                </SelectItem>
-                              ))}
-                            </SelectGroup>
-                          </SelectContent>
-                        </Select>
-                        {fieldState.error && (
-                          <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
-                        )}
-                      </div>
-                    )}
-                  />
-                </TableCell>
-
-                <TableCell className="align-top pt-4">
-                  <Controller
-                    name={`variants.${index}.mrp`}
-                    control={form.control}
-                    render={({ field, fieldState }) => (
-                      <div className="space-y-1">
-                        <Input
-                          type="number"
-                          value={field.value ?? ""}
-                          onChange={(e) =>
-                            field.onChange(
-                              e.target.value === ""
-                                ? undefined
-                                : Number(e.target.value),
-                            )
-                          }
-                          className={fieldState.invalid ? "border-destructive" : ""}
-                        />
-                        {fieldState.error && (
-                          <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
-                        )}
-                      </div>
-                    )}
-                  />
-                </TableCell>
-
-                <TableCell className="align-top pt-4">
-                  <Controller
-                    name={`variants.${index}.salePrice`}
-                    control={form.control}
-                    render={({ field, fieldState }) => (
-                      <div className="space-y-1">
-                        <Input
-                          type="number"
-                          value={field.value ?? ""}
-                          onChange={(e) =>
-                            field.onChange(
-                              e.target.value === ""
-                                ? undefined
-                                : Number(e.target.value),
-                            )
-                          }
-                          className={fieldState.invalid ? "border-destructive" : ""}
-                        />
-                        {fieldState.error && (
-                          <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
-                        )}
-                      </div>
-                    )}
-                  />
-                </TableCell>
-
-                <TableCell className="align-top pt-4">
-                  <div className="flex items-center justify-center gap-1 h-[40px]">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      onClick={() => handleDuplicate(index)}
-                      title="Duplicate"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 disabled:opacity-50"
-                      onClick={() => handleDelete(index)}
-                      disabled={fields.length === 1}
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
+              <SofaVariantRow
+                key={item.id}
+                index={index}
+                form={form}
+                fieldsLength={fields.length}
+                handleDefaultChange={handleDefaultChange}
+                handleDuplicate={handleDuplicate}
+                handleDelete={handleDelete}
+              />
             ))}
           </TableBody>
         </Table>
@@ -306,3 +143,191 @@ export function SofaVariantArray({ form }: SofaVariantArrayProps) {
     </div>
   );
 }
+
+interface SofaVariantRowProps {
+  index: number;
+  form: UseFormReturn<CreateProductInput>;
+  fieldsLength: number;
+  handleDefaultChange: (index: number) => void;
+  handleDuplicate: (index: number) => void;
+  handleDelete: (index: number) => void;
+}
+
+const SofaVariantRow = React.memo(function SofaVariantRow({
+  index,
+  form,
+  fieldsLength,
+  handleDefaultChange,
+  handleDuplicate,
+  handleDelete,
+}: SofaVariantRowProps) {
+  return (
+    <TableRow>
+      <TableCell className="text-center align-top pt-4">
+        <Controller
+          name={`variants.${index}.isDefault`}
+          control={form.control}
+          render={({ field }) => (
+            <div className="flex justify-center items-center h-[40px]">
+              <input
+                type="radio"
+                className="w-4 h-4 accent-primary cursor-pointer"
+                checked={field.value}
+                onChange={() => handleDefaultChange(index)}
+              />
+            </div>
+          )}
+        />
+      </TableCell>
+
+      <TableCell className="align-top pt-4">
+        <Controller
+          name={`variants.${index}.seatCount`}
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <div className="space-y-1">
+              <div className="flex flex-col gap-1 relative mt-1">
+                <Input
+                  type="number"
+                  value={field.value ?? ""}
+                  onChange={(e) =>
+                    field.onChange(
+                      e.target.value === "" ? undefined : Number(e.target.value)
+                    )
+                  }
+                  className={fieldState.invalid ? "border-destructive w-full" : "w-full"}
+                />
+                {form.watch(`variants.${index}.isDefault`) && (
+                  <Badge variant="default" className="text-[10px] px-1.5 h-4 absolute -top-2.5 -right-2 z-10 pointer-events-none">Default</Badge>
+                )}
+              </div>
+              {fieldState.error && (
+                <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
+              )}
+            </div>
+          )}
+        />
+      </TableCell>
+
+      <TableCell className="align-top pt-4">
+        <Controller
+          name={`variants.${index}.material`}
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <div className="space-y-1">
+              <Input 
+                {...field} 
+                className={fieldState.invalid ? "border-destructive" : ""} 
+              />
+              {fieldState.error && (
+                <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
+              )}
+            </div>
+          )}
+        />
+      </TableCell>
+
+      <TableCell className="align-top pt-4">
+        <Controller
+          name={`variants.${index}.shape`}
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <div className="space-y-1">
+              <Select value={field.value} onValueChange={field.onChange}>
+                <SelectTrigger className={fieldState.invalid ? "border-destructive" : ""}>
+                  <SelectValue placeholder="Shape" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {SOFA_SHAPES.map((shapes) => (
+                      <SelectItem key={shapes.value} value={shapes.value}>
+                        {shapes.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              {fieldState.error && (
+                <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
+              )}
+            </div>
+          )}
+        />
+      </TableCell>
+
+      <TableCell className="align-top pt-4">
+        <Controller
+          name={`variants.${index}.mrp`}
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <div className="space-y-1">
+              <Input
+                type="number"
+                value={field.value ?? ""}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value === "" ? undefined : Number(e.target.value)
+                  )
+                }
+                className={fieldState.invalid ? "border-destructive" : ""}
+              />
+              {fieldState.error && (
+                <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
+              )}
+            </div>
+          )}
+        />
+      </TableCell>
+
+      <TableCell className="align-top pt-4">
+        <Controller
+          name={`variants.${index}.salePrice`}
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <div className="space-y-1">
+              <Input
+                type="number"
+                value={field.value ?? ""}
+                onChange={(e) =>
+                  field.onChange(
+                    e.target.value === "" ? undefined : Number(e.target.value)
+                  )
+                }
+                className={fieldState.invalid ? "border-destructive" : ""}
+              />
+              {fieldState.error && (
+                <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
+              )}
+            </div>
+          )}
+        />
+      </TableCell>
+
+      <TableCell className="align-top pt-4">
+        <div className="flex items-center justify-center gap-1 h-[40px]">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            onClick={() => handleDuplicate(index)}
+            title="Duplicate"
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10 disabled:opacity-50"
+            onClick={() => handleDelete(index)}
+            disabled={fieldsLength === 1}
+            title="Delete"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+});

@@ -2,18 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { basicInfoStepSchema } from "@/lib/schema/product-step-schemas";
 import { getFieldErrors } from "@/lib/utils";
-import { ZodError } from "zod";
 
-export const maxDuration = 30;
+interface RouteProps {
+  params: Promise<{ id: string }>;
+}
 
-export async function POST(req: NextRequest) {
+export async function PATCH(req: NextRequest, { params }: RouteProps) {
   try {
+    const { id } = await params;
     const body = await req.json();
 
     const parsed = basicInfoStepSchema.safeParse(body);
-
     if (!parsed.success) {
-      console.error("Validation errors:", parsed.error);
       return NextResponse.json(
         { success: false, errors: getFieldErrors(parsed.error) },
         { status: 400 }
@@ -22,9 +22,12 @@ export async function POST(req: NextRequest) {
 
     const data = parsed.data;
 
-    // Check slug uniqueness
-    const existing = await prisma.product.findUnique({ where: { slug: data.slug } });
-    if (existing) {
+    // Check slug uniqueness (exclude self)
+    const existing = await prisma.product.findUnique({
+      where: { slug: data.slug },
+      select: { id: true },
+    });
+    if (existing && existing.id !== id) {
       return NextResponse.json(
         {
           success: false,
@@ -36,9 +39,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create a minimal product — relations (images, variants, specs, faqs, sections)
-    // are saved individually via PATCH /api/products/[id]/[step]
-    const product = await prisma.product.create({
+    const product = await prisma.product.update({
+      where: { id },
       data: {
         name: data.name,
         slug: data.slug,
@@ -47,24 +49,15 @@ export async function POST(req: NextRequest) {
         categoryId: data.categoryId,
         isFeatured: data.isFeatured,
         isActive: data.isActive,
-        // Required non-nullable fields with safe defaults until media step
-        thumbnailUrl: "",
-        thumbnailPublicId: "",
-        sectionHeading: "",
       },
+      select: { id: true },
     });
 
     return NextResponse.json({ success: true, data: { id: product.id } });
   } catch (error: any) {
-    console.error("Create product error:", error);
-    if (error instanceof ZodError) {
-      return NextResponse.json(
-        { success: false, errors: getFieldErrors(error) },
-        { status: 400 }
-      );
-    }
+    console.error("PATCH basic-info error:", error);
     return NextResponse.json(
-      { success: false, message: error.message || "Something went wrong" },
+      { success: false, message: error.message || "Failed to save basic info" },
       { status: 500 }
     );
   }

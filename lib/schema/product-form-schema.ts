@@ -32,10 +32,7 @@ export const createProductSchema = z
 
     categoryId: z.string().nonempty("Please select a category"),
 
-    thumbnail: imageSchema.refine(
-      (data) => data.url !== null && data.publicId !== null,
-      { message: "Thumbnail is required" }
-    ),
+    thumbnail: imageSchema.nullable().optional(),
     // thumbnailUrl: z.url(),
 
     // thumbnailPublicId: z.string(),
@@ -44,11 +41,11 @@ export const createProductSchema = z
 
     isActive: z.boolean(),
 
-    images: z.array(productImageSchema).refine((data) => data.length > 0, "At least one image is required"),
+    images: z.array(productImageSchema).default([]),
 
     specifications: z.array(productSpecificationSchema),
 
-    sectionsHeading: z.string().nonempty(),
+    sectionsHeading: z.string().optional(),
 
     sections: z.array(productSectionSchema),
 
@@ -70,7 +67,7 @@ export const createProductSchema = z
 
     variants: z
       .array(productVariantSchema)
-      .min(1, "At least one variant is required"),
+      .default([]),
   })
   .superRefine((data, ctx) => {
 
@@ -92,12 +89,12 @@ export const createProductSchema = z
       if (!data.comfortLevel) {
         ctx.addIssue({ code: "custom", path: ["comfortLevel"], message: "Comfort Level is required for mattresses" });
       }
-      if (!data.healthBenefits || data.healthBenefits.length === 0) {
-        ctx.addIssue({ code: "custom", path: ["healthBenefits"], message: "At least one health benefit must be selected" });
-      }
-      if (!data.recommendedPositions || data.recommendedPositions.length === 0) {
-        ctx.addIssue({ code: "custom", path: ["recommendedPositions"], message: "At least one sleeping position must be selected" });
-      }
+      // if (!data.healthBenefits || data.healthBenefits.length === 0) {
+      //   ctx.addIssue({ code: "custom", path: ["healthBenefits"], message: "At least one health benefit must be selected" });
+      // }
+      // if (!data.recommendedPositions || data.recommendedPositions.length === 0) {
+      //   ctx.addIssue({ code: "custom", path: ["recommendedPositions"], message: "At least one sleeping position must be selected" });
+      // }
     }
 
     if (
@@ -121,7 +118,7 @@ export const createProductSchema = z
 
     const defaultCount = data.variants.filter((v) => v.isDefault).length;
 
-    if (defaultCount !== 1) {
+    if (data.variants.length > 0 && defaultCount !== 1) {
       ctx.addIssue({
         code: "custom",
         path: ["variants"],

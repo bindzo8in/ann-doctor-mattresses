@@ -142,6 +142,16 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
     const newVariants: any[] = [];
     let isFirst = true;
 
+    // Create a map of existing IDs to prevent recreating variants unnecessarily
+    const existingMap = new Map<string, string>();
+    if (existingVariants && Array.isArray(existingVariants)) {
+      existingVariants.forEach(v => {
+        if (v.variantType === "MATTRESS" && v.width && v.length && v.thickness && v.id) {
+          existingMap.set(`${v.width}x${v.length}-${v.thickness}`, v.id);
+        }
+      });
+    }
+
     // Only process thicknesses that have a defined Sale rate
     const activeThicknesses = Object.keys(customPricing).map(Number).filter(t => !isNaN(t) && customPricing[t.toString()] > 0);
 
@@ -170,7 +180,10 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
             isDefault = defaultVariantKey === key;
         }
 
+        const existingId = existingMap.get(key);
+
         newVariants.push({
+          ...(existingId ? { id: existingId } : {}),
           isDefault: isDefault,
           variantType: "MATTRESS",
           mrp: mrpPrice,

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { imageSchema } from "./image-schema";
 
 export const productImageSchema = imageSchema.extend({
+  id: z.string().optional(),
   sortOrder: z.number(),
 });
 
