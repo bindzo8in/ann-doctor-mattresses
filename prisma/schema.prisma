@@ -115,7 +115,7 @@ enum VerificationTokenType {
 
 model VerificationToken {
   identifier String
-  token      String                @unique
+  token      String
   type       VerificationTokenType
   expires    DateTime
 

@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const token = crypto.randomBytes(32).toString("hex");
+    const token = crypto.randomInt(100000, 999999).toString();
 
     await prisma.verificationToken.create({
       data: {
@@ -74,22 +74,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const resetUrl = `${env.NEXT_PUBLIC_SITE_URL}/reset-password?token=${token}`;
-
-    // Fire-and-forget — a failed email must not expose enumeration via error codes
-    sendEmail({
+    await sendEmail({
       to: email,
       subject: "Reset your password — Ann Doctor Mattresses",
       react: ForgotPasswordEmail({
         customerName: user.name,
-        resetUrl,
+        otpCode: token,
       }),
-    }).catch((err) => {
-      console.error("[ForgotPassword] Failed to send reset email", {
-        email,
-        err,
-      });
-    });
+    })
 
     return NextResponse.json({
       success: true,

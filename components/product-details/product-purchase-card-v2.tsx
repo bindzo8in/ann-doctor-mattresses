@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { formatPrice, roundPrice } from "@/lib/price";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { routes } from "@/lib/routes";
 import { useCheckoutStore } from "@/hooks/use-checkout";
 import { CheckoutSource } from "@/app/generated/prisma/enums";
@@ -52,6 +53,7 @@ export function ProductPurchaseCardV2({ product }: Props) {
   const { addToCart, isAddingToCart } = useCart();
   const [isBuyingNow, setIsBuyingNow] = useState(false);
   const router = useRouter();
+  const { status } = useSession();
 
   const actualReviewCount = product.reviews?.length || 0;
   const reviewCount = actualReviewCount > 0 ? actualReviewCount : 100;
@@ -116,6 +118,12 @@ export function ProductPurchaseCardV2({ product }: Props) {
   const setCheckoutSession = useCheckoutStore(state => state.setCheckoutSession);
 
   const handleBuyNow = async () => {
+    if (status === "unauthenticated") {
+      toast.error("Please login to proceed to checkout");
+      router.push(`${routes.login}?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+
     setIsBuyingNow(true);
     try {
       // Dynamic auth check using cart API status

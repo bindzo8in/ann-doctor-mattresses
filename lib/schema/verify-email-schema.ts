@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const verifyEmailSchema = z.object({
-  // email: z.email().trim(),
-  token: z.string().trim().min(1, "Token is required"),
+  email: z.string().email().trim(),
+  token: z.string().trim().length(6, "OTP must be 6 characters"),
   type: z.enum(["EMAIL_VERIFICATION", "PASSWORD_RESET"]),
 });
 

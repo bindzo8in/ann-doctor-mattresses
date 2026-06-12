@@ -66,7 +66,7 @@ export default async function RootLayout({
             <TooltipProvider>
               {children}
             </TooltipProvider>
-            <Toaster />
+            <Toaster expand richColors position="top-right" />
             <PushManager />
           </AppSessionProvider>
         </QueryProvider>

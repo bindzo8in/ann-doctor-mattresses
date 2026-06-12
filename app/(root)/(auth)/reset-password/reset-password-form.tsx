@@ -15,11 +15,18 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+  InputOTPSeparator,
+} from "@/components/ui/input-otp";
 
 export const resetPasswordSchema = z
   .object({
+    email: z.string().email(),
+    token: z.string().length(6, "OTP must be 6 characters"),
     password: z.string().min(8, "Password must be at least 8 characters"),
-
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -33,11 +40,13 @@ export function ResetPasswordForm() {
 
   const searchParams = useSearchParams();
 
-  const token = searchParams.get("token");
+  const email = searchParams.get("email");
 
   const form = useForm<Schema>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
+      email: email ?? "",
+      token: "",
       password: "",
       confirmPassword: "",
     },
@@ -48,9 +57,8 @@ export function ResetPasswordForm() {
   } = form;
 
   const handleSubmit = form.handleSubmit(async (data) => {
-    if (!token) {
-      toast.error("Invalid reset link");
-
+    if (!data.email) {
+      toast.error("Missing email address");
       return;
     }
 
@@ -61,7 +69,8 @@ export function ResetPasswordForm() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          token,
+          email: data.email,
+          token: data.token,
           password: data.password,
         }),
       });
@@ -94,14 +103,17 @@ export function ResetPasswordForm() {
     }
   });
 
-  if (!token) {
+  if (!email) {
     return (
       <div className="max-w-lg mx-auto border rounded-md p-8">
-        <h1 className="text-2xl font-bold">Invalid Reset Link</h1>
+        <h1 className="text-2xl font-bold">Invalid Request</h1>
 
         <p className="mt-2 text-muted-foreground">
-          This password reset link is invalid or missing.
+          Email address is missing from the request.
         </p>
+        <Button className="mt-4" onClick={() => router.push("/forgot-password")}>
+          Back to Forgot Password
+        </Button>
       </div>
     );
   }
@@ -116,9 +128,35 @@ export function ResetPasswordForm() {
           <h1 className="text-3xl font-bold">Reset Password</h1>
 
           <p className="mt-2 text-sm text-muted-foreground">
-            Enter your new password.
+            Enter the 6-digit code sent to {email} and your new password.
           </p>
         </div>
+
+        <Controller
+          name="token"
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid} className="gap-1 flex flex-col items-center">
+              <FieldLabel>Verification Code</FieldLabel>
+
+              <InputOTP maxLength={6} {...field}>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                </InputOTPGroup>
+                <InputOTPSeparator />
+                <InputOTPGroup>
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          )}
+        />
 
         <Controller
           name="password"

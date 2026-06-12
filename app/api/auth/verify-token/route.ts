@@ -23,10 +23,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { token } = result.data;
+    const { token, email } = result.data;
 
     const verificationToken = await prisma.verificationToken.findFirst({
       where: {
+        identifier: email,
         token,
         type: VerificationTokenType.EMAIL_VERIFICATION,
       },
@@ -48,7 +49,10 @@ export async function POST(req: NextRequest) {
     if (verificationToken.expires < new Date()) {
       await prisma.verificationToken.delete({
         where: {
-          token,
+          identifier_token: {
+            identifier: email,
+            token,
+          },
         },
       });
 
@@ -86,7 +90,10 @@ export async function POST(req: NextRequest) {
     if (user.emailVerified) {
       await prisma.verificationToken.delete({
         where: {
-          token,
+          identifier_token: {
+            identifier: email,
+            token,
+          },
         },
       });
 
@@ -114,7 +121,10 @@ export async function POST(req: NextRequest) {
 
       prisma.verificationToken.delete({
         where: {
-          token,
+          identifier_token: {
+            identifier: email,
+            token,
+          },
         },
       }),
     ]);

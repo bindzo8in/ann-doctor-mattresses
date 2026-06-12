@@ -28,11 +28,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { token, password } = result.data;
+    const { token, password, email } = result.data;
 
     const verificationToken =
-      await prisma.verificationToken.findUnique({
+      await prisma.verificationToken.findFirst({
         where: {
+          identifier: email,
           token,
         },
       });
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
     if (
       !verificationToken ||
       verificationToken.type !==
-        VerificationTokenType.PASSWORD_RESET
+      VerificationTokenType.PASSWORD_RESET
     ) {
       return NextResponse.json(
         {
@@ -56,7 +57,10 @@ export async function POST(req: NextRequest) {
     if (verificationToken.expires < new Date()) {
       await prisma.verificationToken.delete({
         where: {
-          token,
+          identifier_token: {
+            identifier: email,
+            token,
+          },
         },
       });
 
@@ -103,7 +107,10 @@ export async function POST(req: NextRequest) {
 
       prisma.verificationToken.delete({
         where: {
-          token,
+          identifier_token: {
+            identifier: email,
+            token,
+          },
         },
       }),
 
@@ -123,20 +130,14 @@ export async function POST(req: NextRequest) {
       await redis.set(`jwtRevokedBefore:${user.id}`, Math.floor(Date.now() / 1000));
     }
 
-    // Fire-and-forget — password is already changed; email failure must not surface as an error
-    sendEmail({
+    await sendEmail({
       to: user.email,
       subject: "Your password has been reset — Ann Doctor Mattresses",
       react: PasswordResetSuccessEmail({
         customerName: user.name,
         signinUrl: `${env.NEXT_PUBLIC_SITE_URL}/signin`,
       }),
-    }).catch((err) => {
-      console.error("[ResetPassword] Failed to send success email", {
-        email: user.email,
-        err,
-      });
-    });
+    })
 
     return NextResponse.json({
       success: true,

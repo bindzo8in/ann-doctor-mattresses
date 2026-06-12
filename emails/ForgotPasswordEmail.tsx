@@ -15,13 +15,13 @@ import { z } from "zod";
 
 export const ForgotPasswordSchema = z.object({
   customerName: z.string().min(1),
-  resetUrl: z.string().url(),
+  otpCode: z.string().length(6),
 });
 
 type ForgotPasswordProps = z.infer<typeof ForgotPasswordSchema>;
 
 export const ForgotPasswordEmail = (props: ForgotPasswordProps) => {
-  const { customerName, resetUrl } = ForgotPasswordSchema.parse(props);
+  const { customerName, otpCode } = ForgotPasswordSchema.parse(props);
 
   return (
     <Html>
@@ -44,25 +44,15 @@ export const ForgotPasswordEmail = (props: ForgotPasswordProps) => {
               password.
             </Text>
 
-            <Section style={btnContainer}>
-              <Button style={button} href={resetUrl}>
-                Reset Password
-              </Button>
+            <Section style={otpContainer}>
+              <Text style={otpText}>{otpCode}</Text>
             </Section>
 
             <Text style={hint}>
-              This link is valid for <strong>15 minutes</strong>. If you
+              This code is valid for <strong>15 minutes</strong>. If you
               didn&apos;t request a password reset, please ignore this email —
               your password will remain unchanged.
             </Text>
-
-            <Hr style={hr} />
-
-            <Text style={fallback}>
-              If the button above doesn&apos;t work, copy and paste this URL
-              into your browser:
-            </Text>
-            <Text style={urlText}>{resetUrl}</Text>
           </Section>
 
           <Section style={footer}>
@@ -131,20 +121,21 @@ const paragraph = {
   margin: "0 0 16px",
 };
 
-const btnContainer = {
+const otpContainer = {
   margin: "28px 0",
   textAlign: "center" as const,
+  backgroundColor: "#f8fafc",
+  padding: "20px",
+  borderRadius: "6px",
+  border: "1px solid #e2e8f0",
 };
 
-const button = {
-  backgroundColor: "#dc2626",
-  color: "#ffffff",
-  fontSize: "15px",
-  fontWeight: "600",
-  textDecoration: "none",
-  padding: "14px 32px",
-  borderRadius: "6px",
-  display: "inline-block",
+const otpText = {
+  fontSize: "32px",
+  fontWeight: "700",
+  letterSpacing: "4px",
+  color: "#0f172a",
+  margin: "0",
 };
 
 const hint = {
@@ -152,24 +143,6 @@ const hint = {
   lineHeight: "1.5",
   color: "#94a3b8",
   margin: "0 0 24px",
-};
-
-const hr = {
-  borderColor: "#e6ebf1",
-  margin: "24px 0",
-};
-
-const fallback = {
-  fontSize: "12px",
-  color: "#94a3b8",
-  margin: "0 0 8px",
-};
-
-const urlText = {
-  fontSize: "12px",
-  color: "#64748b",
-  wordBreak: "break-all" as const,
-  margin: "0",
 };
 
 const footer = {

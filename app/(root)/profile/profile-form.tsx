@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck, Mail, User, Lock } from "lucide-react";
 import { updateCustomerProfile } from "@/actions/profile";
+import Link from "next/link";
 
 interface ProfileFormProps {
   initialUser: {
@@ -93,9 +94,14 @@ export function ProfileForm({ initialUser }: ProfileFormProps) {
 
         {/* Current Password Input */}
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
-            <Lock className="w-4 h-4 text-slate-400" /> Current Password
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <Lock className="w-4 h-4 text-slate-400" /> Current Password
+            </label>
+            <Link href="/forgot-password" className="text-xs font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900 transition-colors">
+              Forgot Password?
+            </Link>
+          </div>
           <Input
             type="password"
             value={currentPassword}

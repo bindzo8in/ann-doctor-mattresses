@@ -15,13 +15,13 @@ import { z } from "zod";
 
 export const EmailVerificationSchema = z.object({
   customerName: z.string().min(1),
-  verificationUrl: z.string().url(),
+  otpCode: z.string().length(6),
 });
 
 type EmailVerificationProps = z.infer<typeof EmailVerificationSchema>;
 
 export const EmailVerificationEmail = (props: EmailVerificationProps) => {
-  const { customerName, verificationUrl } =
+  const { customerName, otpCode } =
     EmailVerificationSchema.parse(props);
 
   return (
@@ -44,24 +44,14 @@ export const EmailVerificationEmail = (props: EmailVerificationProps) => {
               account and start shopping.
             </Text>
 
-            <Section style={btnContainer}>
-              <Button style={button} href={verificationUrl}>
-                Verify Email Address
-              </Button>
+            <Section style={otpContainer}>
+              <Text style={otpText}>{otpCode}</Text>
             </Section>
 
             <Text style={hint}>
-              This link expires in <strong>24 hours</strong>. If you didn&apos;t
+              This code expires in <strong>24 hours</strong>. If you didn&apos;t
               create an account, you can safely ignore this email.
             </Text>
-
-            <Hr style={hr} />
-
-            <Text style={fallback}>
-              If the button above doesn&apos;t work, copy and paste this URL
-              into your browser:
-            </Text>
-            <Text style={urlText}>{verificationUrl}</Text>
           </Section>
 
           <Section style={footer}>
@@ -126,20 +116,21 @@ const paragraph = {
   margin: "0 0 16px",
 };
 
-const btnContainer = {
+const otpContainer = {
   margin: "28px 0",
   textAlign: "center" as const,
+  backgroundColor: "#f8fafc",
+  padding: "20px",
+  borderRadius: "6px",
+  border: "1px solid #e2e8f0",
 };
 
-const button = {
-  backgroundColor: "#0f172a",
-  color: "#ffffff",
-  fontSize: "15px",
-  fontWeight: "600",
-  textDecoration: "none",
-  padding: "14px 32px",
-  borderRadius: "6px",
-  display: "inline-block",
+const otpText = {
+  fontSize: "32px",
+  fontWeight: "700",
+  letterSpacing: "4px",
+  color: "#0f172a",
+  margin: "0",
 };
 
 const hint = {
@@ -147,24 +138,6 @@ const hint = {
   lineHeight: "1.5",
   color: "#94a3b8",
   margin: "0 0 24px",
-};
-
-const hr = {
-  borderColor: "#e6ebf1",
-  margin: "24px 0",
-};
-
-const fallback = {
-  fontSize: "12px",
-  color: "#94a3b8",
-  margin: "0 0 8px",
-};
-
-const urlText = {
-  fontSize: "12px",
-  color: "#64748b",
-  wordBreak: "break-all" as const,
-  margin: "0",
 };
 
 const footer = {

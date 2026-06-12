@@ -15,6 +15,7 @@ import { CheckoutSource } from "@/app/generated/prisma/enums";
 import { formatPrice } from "@/lib/price";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { routes } from "@/lib/routes";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import Image from "next/image";
@@ -44,6 +45,7 @@ export function QuickBuyModal({ product, trigger }: Props) {
   const { addToCart, isAddingToCart } = useCart();
   const [isBuyingNow, setIsBuyingNow] = useState(false);
   const router = useRouter();
+  const { status } = useSession();
 
   const handleAddToCart = async () => {
     if (isCustomMode && (!customData || !customData.isValid)) {
@@ -61,6 +63,12 @@ export function QuickBuyModal({ product, trigger }: Props) {
   };
 
   const handleBuyNow = () => {
+    if (status === "unauthenticated") {
+      toast.error("Please login to proceed to checkout");
+      router.push(`${routes.login}?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+
     if (isCustomMode && (!customData || !customData.isValid)) {
       toast.error("Please enter valid custom dimensions.");
       return;

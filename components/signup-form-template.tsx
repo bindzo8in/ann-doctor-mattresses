@@ -21,10 +21,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
 import { routes } from "@/lib/routes";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 type Schema = z.infer<typeof formSchema>;
 
 export function SignupForm() {
+  const router = useRouter();
   const [apiError, setApiError] = useState("");
   const [apiCode, setApiCode] = useState("");
   const [userEmail, setUserEmail] = useState("");
@@ -77,11 +79,13 @@ export function SignupForm() {
         return;
       }
 
-      form.reset();
-    } catch {
-      setApiError("Something went wrong. Please try again.");
+        setUserEmail(data.email);
+        router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+      } catch {
+        setApiError("Something went wrong. Please try again.");
+      }
     }
-  });
+  );
 
   if (isSubmitSuccessful) {
     return (

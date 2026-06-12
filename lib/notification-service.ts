@@ -1,5 +1,4 @@
 import prisma from "@/lib/prisma";
-import { sseManager } from "./sse-manager";
 import { webpush } from "./web-push";
 
 interface CreateNotificationParams {
@@ -55,14 +54,7 @@ export const NotificationService = {
       },
     });
 
-    // 2. Immediately push SSE event
-    if (notification.userId) {
-      sseManager.sendToUser(notification.userId, notification);
-    } else {
-      sseManager.broadcastToAdmins(notification);
-    }
-
-    // 3. Send Web Push
+    // 2. Send Web Push
     const pushPayload = {
       title: notification.title,
       body: notification.message,

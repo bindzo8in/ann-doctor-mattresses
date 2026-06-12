@@ -16,10 +16,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import { forgotPasswordSchema } from "@/lib/schema/forgot-password-schema";
+import { useRouter } from "next/navigation";
 
 type Schema = z.infer<typeof forgotPasswordSchema>;
 
 export function ForgotPasswordForm() {
+  const router = useRouter();
   const form = useForm<Schema>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
@@ -74,7 +76,7 @@ export function ForgotPasswordForm() {
 
       toast.success(result.message);
 
-      form.reset();
+      router.push(`/reset-password?email=${encodeURIComponent(data.email)}`);
     } catch (error) {
       console.error(error);
 

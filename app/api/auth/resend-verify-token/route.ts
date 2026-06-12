@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const token = crypto.randomBytes(32).toString("hex");
+    const token = crypto.randomInt(100000, 999999).toString();
 
     await prisma.verificationToken.create({
       data: {
@@ -115,21 +115,13 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    const verificationUrl = `${env.NEXT_PUBLIC_SITE_URL}/verify-email?token=${token}`;
-
-    // Fire-and-forget — resend must not fail the response
-    sendEmail({
+    await sendEmail({
       to: email,
       subject: "Verify your email — Ann Doctor Mattresses",
       react: EmailVerificationEmail({
         customerName: user.name,
-        verificationUrl,
+        otpCode: token,
       }),
-    }).catch((err) => {
-      console.error("[ResendVerify] Failed to send verification email", {
-        email,
-        err,
-      });
     });
 
     return NextResponse.json({
