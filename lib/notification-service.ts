@@ -81,6 +81,27 @@ export const NotificationService = {
     return this.createNotification({ userId, title, message, type, url });
   },
 
+  async notifyUsers(userIds: string[], title: string, message: string, type: string = "INFO", url?: string) {
+    if (userIds.length === 0) return;
+
+    await prisma.notification.createMany({
+      data: userIds.map(userId => ({
+        userId,
+        title,
+        message,
+        type,
+      })),
+    });
+
+    const pushPayload = {
+      title,
+      body: message,
+      url: url || "/", 
+    };
+
+    sendWebPush(userIds, pushPayload).catch(console.error);
+  },
+
   async notifyAdmins(title: string, message: string, type: string = "INFO", url?: string) {
     return this.createNotification({ title, message, type, url });
   },

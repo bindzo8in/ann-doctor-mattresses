@@ -94,11 +94,11 @@ export async function PUT(
 ) {
   return measure("PUT /api/products/[id]", async () => {
     try {
-      // const session = await auth();
-      // if (!userHasPermission(session?.user, "products.update")) {
-      //   console.log("no permission", session?.user.role)
-      //   return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-      // }
+      const session = await auth();
+      if (!userHasPermission(session?.user, "products.update")) {
+        console.log("no permission", session?.user?.role)
+        return NextResponse.json({ message: "Forbidden" }, { status: 403 });
+      }
 
       const { id } = await params;
       const body = await req.json();

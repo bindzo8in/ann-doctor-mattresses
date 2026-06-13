@@ -165,49 +165,35 @@ export async function getChartData(period: PeriodFilter = "all_time") {
   } : {};
 
   try {
-    const orders = await prisma.order.findMany({
-      where: dateFilter,
-      select: {
-        createdAt: true,
-        totalAmount: true,
-        status: true,
-      },
-      orderBy: {
-        createdAt: 'asc'
-      }
-    });
+    let rawData: any[];
 
-    // Group by date (format: Jan 12)
-    const grouped: Record<string, { revenue: number; orders: number }> = {};
+    if (start && end) {
+      rawData = await prisma.$queryRaw`
+        SELECT 
+          DATE_TRUNC('day', "createdAt") as date,
+          COUNT(*)::int as orders,
+          SUM(CASE WHEN status::text IN ('PAID', 'PENDING_ASSIGNMENT', 'ASSIGNED', 'PROCESSING', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED') THEN "totalAmount" ELSE 0 END) as revenue
+        FROM "Order"
+        WHERE "createdAt" >= ${start} AND "createdAt" <= ${end}
+        GROUP BY DATE_TRUNC('day', "createdAt")
+        ORDER BY date ASC
+      `;
+    } else {
+      rawData = await prisma.$queryRaw`
+        SELECT 
+          DATE_TRUNC('day', "createdAt") as date,
+          COUNT(*)::int as orders,
+          SUM(CASE WHEN status::text IN ('PAID', 'PENDING_ASSIGNMENT', 'ASSIGNED', 'PROCESSING', 'SHIPPED', 'OUT_FOR_DELIVERY', 'DELIVERED') THEN "totalAmount" ELSE 0 END) as revenue
+        FROM "Order"
+        GROUP BY DATE_TRUNC('day', "createdAt")
+        ORDER BY date ASC
+      `;
+    }
 
-    orders.forEach(order => {
-      const dateKey = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(order.createdAt));
-      
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = { revenue: 0, orders: 0 };
-      }
-      
-      grouped[dateKey].orders += 1;
-      
-      const isPaidStatus = ([
-        OrderStatus.PAID, 
-        OrderStatus.PENDING_ASSIGNMENT, 
-        OrderStatus.ASSIGNED, 
-        OrderStatus.PROCESSING, 
-        OrderStatus.SHIPPED, 
-        OrderStatus.OUT_FOR_DELIVERY, 
-        OrderStatus.DELIVERED
-      ] as OrderStatus[]).includes(order.status as OrderStatus);
-
-      if (isPaidStatus) {
-        grouped[dateKey].revenue += Number(order.totalAmount);
-      }
-    });
-
-    return Object.entries(grouped).map(([date, data]) => ({
-      name: date,
-      revenue: data.revenue,
-      orders: data.orders
+    return rawData.map(row => ({
+      name: new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(new Date(row.date)),
+      revenue: Number(row.revenue || 0),
+      orders: Number(row.orders)
     }));
   } catch (error) {
     console.error("Error fetching chart data:", error);

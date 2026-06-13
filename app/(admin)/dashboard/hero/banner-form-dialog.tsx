@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -58,6 +58,32 @@ export function BannerFormDialog({
       buttonLink: initialData?.buttonLink || "",
     },
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      reset({
+        title: initialData?.title || "",
+        subtitle: initialData?.subtitle || "",
+        buttonText: initialData?.buttonText || "",
+        buttonLink: initialData?.buttonLink || "",
+      });
+      setBgImage(
+        initialData?.backgroundImageUrl
+          ? { url: initialData.backgroundImageUrl, publicId: initialData.backgroundPublicId }
+          : null
+      );
+      setMobileBgImage(
+        initialData?.mobileBackgroundImageUrl
+          ? { url: initialData.mobileBackgroundImageUrl, publicId: initialData.mobileBackgroundPublicId }
+          : null
+      );
+      setFgImage(
+        initialData?.foregroundImageUrl
+          ? { url: initialData.foregroundImageUrl, publicId: initialData.foregroundPublicId }
+          : null
+      );
+    }
+  }, [isOpen, initialData, reset]);
 
   const onSubmit = async (data: BannerFormData) => {
     if (!bgImage) {

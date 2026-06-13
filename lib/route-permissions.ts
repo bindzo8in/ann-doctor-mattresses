@@ -37,11 +37,8 @@ export const roleRoutes: Record<UserRole, RouteConfig> = {
   [UserRole.BRANCH_ADMIN]: {
     exact: [routes.dashboard],
     nested: [
-      routes.dashboard_hero,
       routes.dashboard_orders,
-      routes.dashboard_products,
       routes.dashboard_reviews,
-      routes.dashboard_settings,
       routes.checkout,
       routes.checkoutSuccess,
       routes.profile,

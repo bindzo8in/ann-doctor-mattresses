@@ -9,8 +9,16 @@ cloudinary.config({
   api_secret: env.CLOUDINARY_API_SECRET,
 });
 
+import { auth } from "@/auth";
+import { userHasPermission } from "@/lib/rbac";
+
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    if (!userHasPermission(session?.user, "products.create") && !userHasPermission(session?.user, "products.update")) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 });
+    }
+
     const formData = await request.formData();
 
     const file = formData.get("file");
@@ -63,6 +71,11 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const session = await auth();
+    if (!userHasPermission(session?.user, "products.delete") && !userHasPermission(session?.user, "products.update")) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 });
+    }
+
     const body = await request.json();
 
     const publicIds: string[] = body.publicIds

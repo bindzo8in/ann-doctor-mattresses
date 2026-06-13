@@ -6,8 +6,16 @@ import { ZodError } from "zod";
 
 export const maxDuration = 30;
 
+import { auth } from "@/auth";
+import { userHasPermission } from "@/lib/rbac";
+
 export async function POST(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!userHasPermission(session?.user, "products.create")) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 });
+    }
+
     const body = await req.json();
 
     const parsed = basicInfoStepSchema.safeParse(body);

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
+import Script from "next/script";
 
 export const revalidate = 3600; // ISR revalidation every 1 hour
 
@@ -90,11 +91,25 @@ async function BranchesData() {
   return <BranchesSection branchGroups={branchGroups} />;
 }
 
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Doctor Mattresses",
+  url: "https://doctormattresses.com",
+  logo: "https://doctormattresses.com/logo.png",
+  contactPoint: {
+    "@type": "ContactPoint",
+    telephone: "+91-1234567890", // Update with actual phone number
+    contactType: "customer service"
+  }
+};
+
 export default async function Home() {
   const heroBanners = await getHeroBanners();
 
   return (
     <main>
+      <Script id="org-schema" type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }} />
       {/* Hero */}
       <HomeHeroSection banners={heroBanners} />
 

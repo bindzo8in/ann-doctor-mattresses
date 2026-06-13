@@ -7,8 +7,16 @@ interface RouteProps {
   params: Promise<{ id: string }>;
 }
 
+import { auth } from "@/auth";
+import { userHasPermission } from "@/lib/rbac";
+
 export async function PATCH(req: NextRequest, { params }: RouteProps) {
   try {
+    const session = await auth();
+    if (!userHasPermission(session?.user, "products.update")) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 });
+    }
+
     const { id } = await params;
     const body = await req.json();
 

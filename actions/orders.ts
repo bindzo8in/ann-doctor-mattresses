@@ -210,15 +210,15 @@ export async function assignOrderToBranch(orderId: string, branchId: string | nu
         });
 
         const { NotificationService } = await import("@/lib/notification-service");
-        for (const admin of branchAdmins) {
-          await NotificationService.notifyUser(
-            admin.id,
-            "New Order Assigned",
-            `Order #${order.orderNumber} has been assigned to your branch.`,
-            "ORDER",
-            "/dashboard/orders"
-          );
-        }
+        const adminIds = branchAdmins.map(admin => admin.id);
+        
+        await NotificationService.notifyUsers(
+          adminIds,
+          "New Order Assigned",
+          `Order #${order.orderNumber} has been assigned to your branch.`,
+          "ORDER",
+          "/dashboard/orders"
+        );
       } catch (err) {
         console.error("Failed to notify branch admin:", err);
       }
