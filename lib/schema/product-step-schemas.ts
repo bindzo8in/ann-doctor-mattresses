@@ -22,6 +22,7 @@ export const basicInfoStepSchema = z.object({
   shortDescription: z.array(tagSchema).nonempty("Add at least one short description"),
   isFeatured: z.boolean(),
   isActive: z.boolean(),
+  availableColors: z.array(z.string()).optional(),
 });
 
 export type BasicInfoStepInput = z.infer<typeof basicInfoStepSchema>;

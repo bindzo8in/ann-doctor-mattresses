@@ -76,6 +76,7 @@ export function ProductCreateForm() {
         shortDescription: values.shortDescription,
         isFeatured: values.isFeatured,
         isActive: values.isActive,
+        availableColors: values.availableColors,
       };
 
       if (!productId) {
@@ -241,6 +242,7 @@ export function ProductCreateForm() {
           "shortDescription",
           "isFeatured",
           "isActive",
+          "availableColors",
         ],
         component: <BasicInfoStep form={form as any} isEditMode={false} />,
       },

@@ -49,6 +49,7 @@ export async function PATCH(req: NextRequest, { params }: RouteProps) {
         categoryId: data.categoryId,
         isFeatured: data.isFeatured,
         isActive: data.isActive,
+        availableColors: data.availableColors || [],
       },
       select: { id: true },
     });

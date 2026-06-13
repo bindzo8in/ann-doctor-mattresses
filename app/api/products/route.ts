@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
         categoryId: data.categoryId,
         isFeatured: data.isFeatured,
         isActive: data.isActive,
+        availableColors: data.availableColors || [],
         // Required non-nullable fields with safe defaults until media step
         thumbnailUrl: "",
         thumbnailPublicId: "",

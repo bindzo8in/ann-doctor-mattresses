@@ -84,6 +84,7 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
         shortDescription: values.shortDescription,
         isFeatured: values.isFeatured,
         isActive: values.isActive,
+        availableColors: values.availableColors,
       });
       if (!result.success) {
         applyServerErrors(result.errors);
@@ -210,6 +211,7 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
           "shortDescription",
           "isFeatured",
           "isActive",
+          "availableColors",
         ],
         component: <BasicInfoStep form={form as any} isEditMode={true} />,
       },

@@ -43,7 +43,7 @@ export async function saveBasicInfo(
   productId: string,
   values: Pick<
     CreateProductInput,
-    "name" | "slug" | "type" | "categoryId" | "shortDescription" | "isFeatured" | "isActive"
+    "name" | "slug" | "type" | "categoryId" | "shortDescription" | "isFeatured" | "isActive" | "availableColors"
   >
 ): Promise<StepApiResult<{ id: string }>> {
   return patchStep(productId, "basic-info", values);
@@ -54,7 +54,7 @@ export async function saveBasicInfo(
 export async function createProduct(
   values: Pick<
     CreateProductInput,
-    "name" | "slug" | "type" | "categoryId" | "shortDescription" | "isFeatured" | "isActive"
+    "name" | "slug" | "type" | "categoryId" | "shortDescription" | "isFeatured" | "isActive" | "availableColors"
   >
 ): Promise<StepApiResult<{ id: string }>> {
   try {
