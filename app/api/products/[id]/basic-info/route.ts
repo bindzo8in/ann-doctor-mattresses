@@ -60,6 +60,6 @@ export async function PATCH(req: NextRequest, { params }: RouteProps) {
     return NextResponse.json(
       { success: false, message: error.message || "Failed to save basic info" },
       { status: 500 }
-    );
+  );
   }
 }

@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { ProductEditForm } from "@/components/forms/product/product-edit-form";
 import { CreateProductInput } from "@/lib/schema/product-form-schema";
 
+import { defaultValues } from "@/components/forms/product/constants";
+
 export const metadata = {
   title: "Edit Product",
   description: "Edit existing product",
@@ -74,13 +76,19 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
       value: spec.value,
     })),
     sectionsHeading: product.sectionHeading,
-    sections: product.sections.map(section => ({
-      id: section.id,
-      title: "",
-      type: section.type,
-      content: section.content,
-      sortOrder: section.sortOrder,
-    })) as CreateProductInput["sections"],
+    sections: defaultValues.sections.map(defaultSection => {
+      const existingSection = product.sections.find(s => s.type === defaultSection.type);
+      if (existingSection) {
+        return {
+          id: existingSection.id,
+          title: "",
+          type: existingSection.type,
+          content: existingSection.content,
+          sortOrder: existingSection.sortOrder,
+        };
+      }
+      return defaultSection;
+    }) as CreateProductInput["sections"],
     faqs: product.faqs.map(faq => ({
       id: faq.id,
       question: faq.question,

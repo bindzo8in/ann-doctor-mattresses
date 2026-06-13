@@ -71,10 +71,11 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
       });
     });
   }
+  console.log(form.getValues())
 
   async function handleStepSave(stepIndex: number): Promise<boolean> {
     const values = form.getValues();
-
+    console.log(form.formState.errors)
     if (stepIndex === 1) {
       const result = await saveBasicInfo(productId, {
         name: values.name,
