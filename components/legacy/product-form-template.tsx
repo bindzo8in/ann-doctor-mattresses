@@ -69,7 +69,7 @@ export function ProductForm() {
   const handleSubmit = form.handleSubmit(async (data: ProductInput) => {
     try {
       // TODO: implement form submission
-      console.log(data);
+      // console.log(data);
       form.reset();
     } catch (error) {
       // TODO: handle error
