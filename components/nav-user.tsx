@@ -81,7 +81,7 @@ export function NavUser({
 
             <DropdownMenuItem
               onClick={async () => {
-                await signOut({ redirect: false })
+                await logoutAction()
                 window.location.href = routes.login
               }}
               className="cursor-pointer"

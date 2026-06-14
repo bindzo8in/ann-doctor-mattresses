@@ -2,7 +2,6 @@
 
 import { cookies } from "next/headers";
 import { signOut } from "@/auth";
-import { routes } from "@/lib/routes";
 
 export async function logoutAction() {
   try {
@@ -12,7 +11,7 @@ export async function logoutAction() {
     cookieStore.delete("next-auth.session-token");
     cookieStore.delete("__Secure-next-auth.session-token");
 
-    await signOut({ redirectTo: routes.login });
+    await signOut({ redirect: false });
   } catch (error) {
     console.error("Error during logout:", error);
   }

@@ -33,6 +33,7 @@ export function ProfileSidebar({ userRole }: { userRole?: string }) {
 
   const handleLogout = async () => {
     await logoutAction();
+    window.location.href = routes.login;
   };
 
   return (
