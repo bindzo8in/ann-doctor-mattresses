@@ -23,6 +23,7 @@ import {
 import { EllipsisVerticalIcon, LogOutIcon } from "lucide-react"
 import { routes } from "@/lib/routes"
 import { logoutAction } from "@/actions/logout"
+import { signOut } from "next-auth/react"
 
 export function NavUser({
   user,
@@ -80,7 +81,8 @@ export function NavUser({
 
             <DropdownMenuItem
               onClick={async () => {
-                await logoutAction();
+                await signOut({ redirect: false })
+                window.location.href = routes.login
               }}
               className="cursor-pointer"
             >

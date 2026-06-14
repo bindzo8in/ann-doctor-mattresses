@@ -2,10 +2,10 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { User, ClipboardList, LogOut, Home } from "lucide-react";
 import { routes } from "@/lib/routes";
-import { logoutAction } from "@/actions/logout";
+import { signOut } from "next-auth/react";
 
 export function ProfileSidebar({ userRole }: { userRole?: string }) {
   const pathname = usePathname();
@@ -32,7 +32,9 @@ export function ProfileSidebar({ userRole }: { userRole?: string }) {
   }
 
   const handleLogout = async () => {
-    await logoutAction();
+    // await logoutAction();
+    await signOut({ redirect: false })
+    window.location.href = routes.login
   };
 
   return (
