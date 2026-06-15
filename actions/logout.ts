@@ -1,10 +1,8 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { signOut } from "@/auth";
 
 export async function logoutAction() {
-  // 1. Clear cookies FIRST, before signOut() can throw a NEXT_REDIRECT
   const cookieStore = await cookies();
 
   const cookieNames = [
@@ -19,10 +17,6 @@ export async function logoutAction() {
   ];
 
   for (const name of cookieNames) {
-    // Delete with default attributes
-    cookieStore.delete(name);
-
-    // Also force-expire with explicit production attributes
     cookieStore.set(name, "", {
       maxAge: 0,
       expires: new Date(0),
@@ -32,8 +26,4 @@ export async function logoutAction() {
       httpOnly: true,
     });
   }
-
-  // 2. Now call signOut — let the NEXT_REDIRECT throw propagate naturally
-  //    (do NOT wrap in try/catch, Next.js needs this throw to work)
-  await signOut({ redirect: false });
 }

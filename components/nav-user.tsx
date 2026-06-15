@@ -23,6 +23,7 @@ import {
 import { EllipsisVerticalIcon, LogOutIcon } from "lucide-react"
 import { routes } from "@/lib/routes"
 import { logoutAction } from "@/actions/logout"
+import { signOut } from "next-auth/react"
 
 
 export function NavUser({
@@ -82,11 +83,13 @@ export function NavUser({
             <DropdownMenuItem
               onClick={async () => {
                 try {
-                  await logoutAction()
+                  // await logoutAction()
+                  await signOut({ redirect: false })
+
                 } catch {
                   // signOut() may throw NEXT_REDIRECT — that's expected
                 }
-                window.location.href = routes.login
+                window.location.href = routes.home
               }}
               className="cursor-pointer"
             >

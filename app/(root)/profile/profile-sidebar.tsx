@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { User, ClipboardList, LogOut, Home } from "lucide-react";
 import { routes } from "@/lib/routes";
 import { logoutAction } from "@/actions/logout";
+import { signOut } from "next-auth/react";
 
 export function ProfileSidebar({ userRole }: { userRole?: string }) {
   const pathname = usePathname();
@@ -33,11 +34,12 @@ export function ProfileSidebar({ userRole }: { userRole?: string }) {
 
   const handleLogout = async () => {
     try {
-      await logoutAction();
+      // await logoutAction();
+      await signOut({ redirect: false })
     } catch {
       // signOut() may throw NEXT_REDIRECT — that's expected
     }
-    window.location.href = routes.login;
+    window.location.href = routes.home;
   };
 
   return (
@@ -48,11 +50,10 @@ export function ProfileSidebar({ userRole }: { userRole?: string }) {
         return (
           <Link key={item.href} href={item.href}>
             <div
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${
-                isActive
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${isActive
                   ? "bg-slate-900 text-white shadow-sm"
                   : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-              }`}
+                }`}
             >
               <Icon className="w-4 h-4" />
               {item.label}
@@ -60,9 +61,9 @@ export function ProfileSidebar({ userRole }: { userRole?: string }) {
           </Link>
         );
       })}
-      
+
       <hr className="my-2 border-slate-100" />
-      
+
       <button
         onClick={handleLogout}
         className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-all text-left"
