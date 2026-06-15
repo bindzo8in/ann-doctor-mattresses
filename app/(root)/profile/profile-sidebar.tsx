@@ -32,7 +32,11 @@ export function ProfileSidebar({ userRole }: { userRole?: string }) {
   }
 
   const handleLogout = async () => {
-    await logoutAction();
+    try {
+      await logoutAction();
+    } catch {
+      // signOut() may throw NEXT_REDIRECT — that's expected
+    }
     window.location.href = routes.login;
   };
 
