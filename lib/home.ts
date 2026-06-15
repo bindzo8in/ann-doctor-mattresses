@@ -1,5 +1,4 @@
 import prisma from "@/lib/prisma";
-import { cache } from "react";
 import { unstable_cache } from "next/cache";
 export type HomeProduct = {
   id: string;
@@ -46,19 +45,19 @@ function serializeProduct(p: any): HomeProduct {
 }
 
 export const getHeroBanners = unstable_cache(
-  cache(async () => {
+  async () => {
     const banners = await prisma.heroBanner.findMany({
       where: { isActive: true },
       orderBy: { order: "asc" },
     });
     return banners;
-  }),
+  },
   ["hero-banners"],
   { revalidate: 3600, tags: ["banners"] }
 );
 
 export const getFeaturedProducts = unstable_cache(
-  cache(async (limit = 8): Promise<HomeProduct[]> => {
+  async (limit = 8): Promise<HomeProduct[]> => {
     const products = await prisma.product.findMany({
       where: { isFeatured: true, isActive: true },
       take: limit,
@@ -69,13 +68,13 @@ export const getFeaturedProducts = unstable_cache(
       orderBy: { featuredOrder: "asc" },
     });
     return products.map(serializeProduct);
-  }),
+  },
   ["featured-products"],
   { revalidate: 3600, tags: ["products"] }
 );
 
 export const getNewLaunches = unstable_cache(
-  cache(async (limit = 8): Promise<HomeProduct[]> => {
+  async (limit = 8): Promise<HomeProduct[]> => {
     const products = await prisma.product.findMany({
       where: { isActive: true },
       take: limit,
@@ -86,13 +85,13 @@ export const getNewLaunches = unstable_cache(
       orderBy: { createdAt: "desc" },
     });
     return products.map(serializeProduct);
-  }),
+  },
   ["new-launches"],
   { revalidate: 3600, tags: ["products"] }
 );
 
 export const getCategories = unstable_cache(
-  cache(async (): Promise<HomeCategory[]> => {
+  async (): Promise<HomeCategory[]> => {
     const categories = await prisma.category.findMany({
       include: { _count: { select: { products: { where: { isActive: true } } } } },
       orderBy: { name: "asc" },
@@ -104,7 +103,7 @@ export const getCategories = unstable_cache(
       thumbnailUrl: c.thumbnailUrl,
       productCount: c._count.products,
     }));
-  }),
+  },
   ["home-categories"],
   { revalidate: 3600, tags: ["categories"] }
 );
@@ -124,7 +123,7 @@ export type HomeBranchGroup = {
 };
 
 export const getActiveBranchesGroupedByState = unstable_cache(
-  cache(async (): Promise<HomeBranchGroup[]> => {
+  async (): Promise<HomeBranchGroup[]> => {
     const branches = await prisma.branch.findMany({
       where: { isActive: true },
       orderBy: [{ state: "desc" }, { name: "asc" }],
@@ -152,7 +151,7 @@ export const getActiveBranchesGroupedByState = unstable_cache(
       state,
       branches: grouped[state]
     }));
-  }),
+  },
   ["active-branches-grouped"],
   { revalidate: 3600, tags: ["branches"] }
 );
