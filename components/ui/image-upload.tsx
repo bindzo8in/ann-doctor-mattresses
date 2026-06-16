@@ -8,6 +8,7 @@ import {
   Trash2,
   Images,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 
@@ -89,9 +90,12 @@ export function ImageUpload({
           !Array.isArray(value) &&
           value.publicId
         ) {
-          await deleteImage(
-            value.publicId,
-          );
+          try {
+            await deleteImage(value.publicId);
+          } catch (error) {
+            console.error(error);
+            toast.error("Failed to delete old image from Cloudinary");
+          }
         }
 
         onChange(uploaded);
@@ -139,9 +143,12 @@ export function ImageUpload({
     try {
       setDeleting(true);
 
-      await deleteImage(
-        image.publicId,
-      );
+      try {
+        await deleteImage(image.publicId);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to delete image from Cloudinary");
+      }
 
       if (!multiple) {
         onChange(null);
@@ -168,12 +175,17 @@ export function ImageUpload({
     try {
       setDeleting(true);
 
-      await deleteImages(
-        images.map(
-          (image) =>
-            image.publicId,
-        ),
-      );
+      try {
+        await deleteImages(
+          images.map(
+            (image) =>
+              image.publicId,
+          ),
+        );
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to delete images from Cloudinary");
+      }
 
       onChange(
         multiple ? [] : null,

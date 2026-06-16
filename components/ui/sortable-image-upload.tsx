@@ -13,8 +13,8 @@ import {
 } from "@dnd-kit/sortable";
 
 import { CSS } from "@dnd-kit/utilities";
-
 import { CloudUpload, Loader2, Trash2, Images } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 
@@ -169,7 +169,12 @@ export function SortableImageUpload({
     try {
       setDeleting(true);
 
-      await deleteImage(image.publicId);
+      try {
+        await deleteImage(image.publicId);
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to delete image from Cloudinary");
+      }
 
       const updated = value
         .filter((item) => item.publicId !== image.publicId)
@@ -192,7 +197,12 @@ export function SortableImageUpload({
     try {
       setDeleting(true);
 
-      await deleteImages(value.map((image) => image.publicId));
+      try {
+        await deleteImages(value.map((image) => image.publicId));
+      } catch (error) {
+        console.error(error);
+        toast.error("Failed to delete images from Cloudinary");
+      }
 
       onChange([]);
     } catch (error) {
