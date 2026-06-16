@@ -25,8 +25,9 @@ import { CSS } from "@dnd-kit/utilities";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { deleteHeroBanner, reorderHeroBanners, toggleHeroBannerStatus } from "@/actions/hero-banner";
+import { deleteHeroBanner, reorderHeroBanners, toggleHeroBannerStatus, getAdminHeroBanners } from "@/actions/hero-banner";
 import { BannerFormDialog } from "./banner-form-dialog";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 type BannerRow = {
   id: string;
@@ -99,7 +100,13 @@ function SortableBannerRow({
 }
 
 export function HeroTable({ initialBanners }: { initialBanners: BannerRow[] }) {
-  const [banners, setBanners] = useState(initialBanners);
+  const queryClient = useQueryClient();
+  const { data: banners = initialBanners } = useQuery({
+    queryKey: ["adminHeroBanners"],
+    queryFn: () => getAdminHeroBanners() as Promise<BannerRow[]>,
+    initialData: initialBanners,
+  });
+  
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<BannerRow | null>(null);
 
@@ -110,11 +117,13 @@ export function HeroTable({ initialBanners }: { initialBanners: BannerRow[] }) {
 
   const handleToggle = async (id: string, isActive: boolean) => {
     // Optimistic update
-    setBanners(prev => prev.map(b => b.id === id ? { ...b, isActive } : b));
+    queryClient.setQueryData<BannerRow[]>(["adminHeroBanners"], (old) => 
+      old?.map(b => b.id === id ? { ...b, isActive } : b)
+    );
     const result = await toggleHeroBannerStatus(id, isActive);
     if (!result.success) {
       toast.error("Failed to update status");
-      setBanners(initialBanners); // Revert
+      queryClient.invalidateQueries({ queryKey: ["adminHeroBanners"] }); // Revert
     } else {
       toast.success(isActive ? "Banner activated" : "Banner deactivated");
     }
@@ -124,7 +133,9 @@ export function HeroTable({ initialBanners }: { initialBanners: BannerRow[] }) {
     if (confirm("Are you sure you want to delete this banner?")) {
       const result = await deleteHeroBanner(id);
       if (result.success) {
-        setBanners(prev => prev.filter(b => b.id !== id));
+        queryClient.setQueryData<BannerRow[]>(["adminHeroBanners"], (old) => 
+          old?.filter(b => b.id !== id)
+        );
         toast.success("Banner deleted");
       } else {
         toast.error("Failed to delete banner");
@@ -141,7 +152,7 @@ export function HeroTable({ initialBanners }: { initialBanners: BannerRow[] }) {
       
       const newBanners = arrayMove(banners, oldIndex, newIndex);
       
-      setBanners(newBanners);
+      queryClient.setQueryData(["adminHeroBanners"], newBanners);
 
       const orderedIds = newBanners.map(b => b.id);
       const result = await reorderHeroBanners(orderedIds);
@@ -149,6 +160,7 @@ export function HeroTable({ initialBanners }: { initialBanners: BannerRow[] }) {
         toast.success("Banner order updated!");
       } else {
         toast.error("Failed to update order");
+        queryClient.invalidateQueries({ queryKey: ["adminHeroBanners"] });
       }
     }
   };

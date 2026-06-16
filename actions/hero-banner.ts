@@ -24,6 +24,7 @@ type HeroBannerInput = {
   mobileBackgroundPublicId?: string;
   foregroundImageUrl?: string;
   foregroundPublicId?: string;
+  type: "DYNAMIC" | "STATIC";
 };
 
 export async function createHeroBanner(data: HeroBannerInput) {
@@ -145,4 +146,10 @@ export async function toggleHeroBannerStatus(id: string, isActive: boolean) {
   revalidatePath("/");
   revalidatePath("/dashboard/hero");
   return { success: true };
+}
+export async function getAdminHeroBanners() {
+  await checkAdmin();
+  return prisma.heroBanner.findMany({
+    orderBy: { order: "asc" }
+  });
 }

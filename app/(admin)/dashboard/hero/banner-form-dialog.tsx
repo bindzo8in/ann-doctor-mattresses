@@ -15,13 +15,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { createHeroBanner, updateHeroBanner } from "@/actions/hero-banner";
+import { Controller } from "react-hook-form";
+import { useQueryClient } from "@tanstack/react-query";
 
 type BannerFormData = {
   title: string;
   subtitle?: string;
   buttonText?: string;
   buttonLink?: string;
+  type: "DYNAMIC" | "STATIC";
 };
 
 export function BannerFormDialog({
@@ -33,6 +43,7 @@ export function BannerFormDialog({
   setIsOpen: (v: boolean) => void;
   initialData?: any;
 }) {
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [bgImage, setBgImage] = useState<UploadedImage | null>(
     initialData?.backgroundImageUrl
@@ -50,12 +61,13 @@ export function BannerFormDialog({
       : null
   );
 
-  const { register, handleSubmit, reset } = useForm<BannerFormData>({
+  const { register, handleSubmit, reset, control } = useForm<BannerFormData>({
     defaultValues: {
       title: initialData?.title || "",
       subtitle: initialData?.subtitle || "",
       buttonText: initialData?.buttonText || "",
       buttonLink: initialData?.buttonLink || "",
+      type: initialData?.type || "DYNAMIC",
     },
   });
 
@@ -66,6 +78,7 @@ export function BannerFormDialog({
         subtitle: initialData?.subtitle || "",
         buttonText: initialData?.buttonText || "",
         buttonLink: initialData?.buttonLink || "",
+        type: initialData?.type || "DYNAMIC",
       });
       setBgImage(
         initialData?.backgroundImageUrl
@@ -112,6 +125,7 @@ export function BannerFormDialog({
 
       if (res.success) {
         toast.success(initialData?.id ? "Banner updated" : "Banner created");
+        queryClient.invalidateQueries({ queryKey: ["adminHeroBanners"] });
         setIsOpen(false);
         reset();
         setBgImage(null);
@@ -136,6 +150,24 @@ export function BannerFormDialog({
         
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 pt-4">
           <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2 col-span-2">
+              <Label>Type</Label>
+              <Controller
+                control={control}
+                name="type"
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="DYNAMIC">Dynamic</SelectItem>
+                      <SelectItem value="STATIC">Static</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+            </div>
             <div className="space-y-2 col-span-2">
               <Label>Main Title *</Label>
               <Input {...register("title", { required: true })} placeholder="e.g., Spring Mega Sale!" />

@@ -23,7 +23,7 @@ export default async function HeroAdminPage() {
         <div>
           <h5 className="font-semibold text-amber-800 mb-1">Recommendation</h5>
           <p className="text-sm">
-            For optimal display quality in the hero section, please ensure <strong>Background Images</strong> have a dimension of <strong>1920x1080 (16:9 ratio)</strong>.
+            For optimal display quality, ensure <strong>Desktop Backgrounds</strong> are <strong>1920x1080 (16:9)</strong> and <strong>Mobile Backgrounds</strong> are <strong>1080x960</strong>.
             For <strong>Foreground Images</strong>, use a transparent PNG format.
           </p>
         </div>

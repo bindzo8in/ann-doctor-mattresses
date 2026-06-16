@@ -581,6 +581,11 @@ model Review {
   @@index([userId])
 }
 
+enum HeroBannerType {
+  DYNAMIC
+  STATIC
+}
+
 model HeroBanner {
   id                 String   @id @default(cuid())
   title              String
@@ -597,6 +602,7 @@ model HeroBanner {
   foregroundImageUrl       String?
   foregroundPublicId String?
   
+  type               HeroBannerType @default(DYNAMIC)
   order              Int      @default(0)
   isActive           Boolean  @default(true)
   

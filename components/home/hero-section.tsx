@@ -150,7 +150,7 @@ export default function HomeHeroSection({
   const current = banners[currentIndex];
 
   return (
-    <section className="relative min-h-[70vh] md:min-h-[92vh] flex items-center overflow-hidden bg-background">
+    <section className="relative w-full aspect-1080/960 md:aspect-auto md:min-h-[92vh] flex items-center overflow-hidden bg-background">
 
       {/* ── Background image layers ── */}
       {banners.map((banner, idx) => {
@@ -176,18 +176,18 @@ export default function HomeHeroSection({
                   alt={banner.title}
                   fill
                   priority={idx === 0}
-                  className="object-cover object-center hidden md:block"
+                  className={`hidden md:block w-full ${banner.type === 'STATIC' ? 'object-cover object-top' : 'object-cover object-center'}`}
                   sizes="100vw"
-                  style={{ opacity: 0.55 }}
+                  style={{ opacity: banner.type === 'STATIC' ? 1 : 0.55 }}
                 />
                 <Image
                   src={banner.mobileBackgroundImageUrl}
                   alt={banner.title}
                   fill
                   priority={idx === 0}
-                  className="object-cover object-center block md:hidden"
+                  className={`block md:hidden w-full ${banner.type === 'STATIC' ? 'object-cover object-top' : 'object-cover object-center'}`}
                   sizes="100vw"
-                  style={{ opacity: 0.55 }}
+                  style={{ opacity: banner.type === 'STATIC' ? 1 : 0.55 }}
                 />
               </>
             ) : (
@@ -196,9 +196,9 @@ export default function HomeHeroSection({
                 alt={banner.title}
                 fill
                 priority={idx === 0}
-                className="object-cover object-center"
+                className={`w-full ${banner.type === 'STATIC' ? 'object-cover object-top' : 'object-cover object-center'}`}
                 sizes="100vw"
-                style={{ opacity: 0.55 }}
+                style={{ opacity: banner.type === 'STATIC' ? 1 : 0.55 }}
               />
             )}
           </div>
@@ -208,7 +208,7 @@ export default function HomeHeroSection({
       {/* ── Gradient overlays ── */}
       {/* Left */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className={`absolute inset-0 pointer-events-none ${current.type === 'STATIC' ? 'hidden' : ''}`}
         style={{
           zIndex: 2,
           background:
@@ -217,7 +217,7 @@ export default function HomeHeroSection({
       />
       {/* Bottom */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className={`absolute inset-0 pointer-events-none ${current.type === 'STATIC' ? 'hidden' : ''}`}
         style={{
           zIndex: 2,
           background: "linear-gradient(to top, var(--background) 0%, transparent 40%)",
@@ -225,7 +225,7 @@ export default function HomeHeroSection({
       />
       {/* Ambient glow */}
       <div
-        className="absolute pointer-events-none rounded-full blur-[110px]"
+        className={`absolute pointer-events-none rounded-full blur-[110px] ${current.type === 'STATIC' ? 'hidden' : ''}`}
         style={{
           top: "-5%",
           right: "8%",
@@ -237,15 +237,15 @@ export default function HomeHeroSection({
       />
 
       {/* ── Content ── */}
-      <div className="relative z-10 w-full max-w-[1280px] mx-auto px-5 py-12 pb-16 md:px-14 md:py-28 md:pb-32 flex items-center gap-12">
+      <div className="relative z-10 w-full max-w-[1280px] mx-auto px-5 py-6 pb-8 md:px-14 md:py-28 md:pb-32 flex items-center gap-12">
 
         {/* Left: text */}
-        <div className="flex-1 max-w-[620px]">
+        <div className={`flex-1 max-w-[620px] ${current.type === 'STATIC' ? 'hidden' : ''}`}>
           <HeroEyebrow label="Special Offer" />
 
           <h1
             key={`h-${currentIndex}`}
-            className="font-serif text-[clamp(2.2rem,5.5vw,5.25rem)] md:text-[clamp(2.8rem,5.5vw,5.25rem)] font-bold leading-[1.05] tracking-[-0.02em] text-foreground mt-0 mb-4 md:mb-6 animate-[heroSlideUp_0.65s_cubic-bezier(0.4,0,0.2,1)_both]"
+            className="font-serif text-[clamp(1.8rem,5.5vw,5.25rem)] md:text-[clamp(2.8rem,5.5vw,5.25rem)] font-bold leading-[1.05] tracking-[-0.02em] text-foreground mt-0 mb-3 md:mb-6 animate-[heroSlideUp_0.65s_cubic-bezier(0.4,0,0.2,1)_both]"
           >
             {splitHeadline(current.title)}
           </h1>
@@ -253,7 +253,7 @@ export default function HomeHeroSection({
           {current.subtitle && (
             <p
               key={`p-${currentIndex}`}
-              className="text-[clamp(0.875rem,1.35vw,1.05rem)] text-muted-foreground leading-[1.8] max-w-[480px] mb-6 md:mb-10 animate-[heroSlideUp_0.65s_0.14s_cubic-bezier(0.4,0,0.2,1)_both]"
+              className="text-sm md:text-[1.05rem] text-muted-foreground leading-[1.6] md:leading-[1.8] max-w-[480px] mb-4 md:mb-10 animate-[heroSlideUp_0.65s_0.14s_cubic-bezier(0.4,0,0.2,1)_both] line-clamp-3 md:line-clamp-none"
             >
               {current.subtitle}
             </p>
@@ -261,7 +261,7 @@ export default function HomeHeroSection({
 
           <div
             key={`cta-${currentIndex}`}
-            className="flex flex-wrap gap-3 mb-6 md:mb-12 animate-[heroSlideUp_0.65s_0.26s_cubic-bezier(0.4,0,0.2,1)_both]"
+            className="flex flex-row flex-wrap items-center gap-2 md:gap-3 mb-2 md:mb-12 animate-[heroSlideUp_0.65s_0.26s_cubic-bezier(0.4,0,0.2,1)_both]"
           >
             <HeroPrimaryBtn
               href={current.buttonLink || routes.products}
@@ -274,7 +274,7 @@ export default function HomeHeroSection({
         </div>
 
         {/* Right: foreground product image */}
-        <div className="flex-1 relative min-h-[480px] hidden [display:none] lg:block animate-[heroImageReveal_0.9s_0.35s_cubic-bezier(0.4,0,0.2,1)_both]">
+        <div className="flex-1 relative min-h-[480px] hidden lg:block animate-[heroImageReveal_0.9s_0.35s_cubic-bezier(0.4,0,0.2,1)_both]">
           {/* Product glow */}
           <div
             className="absolute rounded-full blur-[50px] pointer-events-none z-0"
@@ -290,13 +290,26 @@ export default function HomeHeroSection({
             return (
               <div
                 key={`fg-${banner.id}`}
-                className="absolute z-[1]"
+                className="absolute z-1"
+                // style={{
+                //   inset: "-8% 0",
+                //   opacity: isActive ? 1 : 0,
+                //   transform: isActive
+                //     ? "translateY(0) scale(1)"
+                //     : "translateY(28px) scale(0.95)",
+                //   transition:
+                //     "opacity 0.8s cubic-bezier(0.4,0,0.2,1), transform 0.8s cubic-bezier(0.4,0,0.2,1)",
+                //   transitionDelay: isActive ? "0.3s" : "0s",
+                //   pointerEvents: isActive ? "auto" : "none",
+                // }}
                 style={{
                   inset: "-8% 0",
                   opacity: isActive ? 1 : 0,
                   transform: isActive
-                    ? "translateY(0) scale(1)"
-                    : "translateY(28px) scale(0.95)",
+                    ? "translateX(0)"
+                    : idx > currentIndex
+                      ? "translateX(100%)"
+                      : "translateX(100%)",
                   transition:
                     "opacity 0.8s cubic-bezier(0.4,0,0.2,1), transform 0.8s cubic-bezier(0.4,0,0.2,1)",
                   transitionDelay: isActive ? "0.3s" : "0s",
@@ -318,7 +331,7 @@ export default function HomeHeroSection({
 
       {/* ── Slide counter ── */}
       {banners.length > 1 && (
-        <div className="absolute bottom-14 left-6 md:left-14 z-20 flex items-center gap-[10px]">
+        <div className="absolute bottom-14 left-6 md:left-14 z-20 hidden md:flex items-center gap-[10px]">
           <span
             className="font-serif text-[1.75rem] font-semibold text-primary leading-none"
           >
@@ -333,7 +346,7 @@ export default function HomeHeroSection({
 
       {/* ── Vertical slide indicators ── */}
       {banners.length > 1 && (
-        <div className="absolute right-5 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2">
+        <div className="absolute right-5 top-1/2 -translate-y-1/2 z-30 hidden md:flex flex-col gap-2">
           {banners.map((_, idx) => (
             <button
               key={idx}
@@ -342,7 +355,7 @@ export default function HomeHeroSection({
               className="relative w-[3px] h-9 bg-border rounded-full border-0 cursor-pointer p-0 overflow-hidden transition-colors duration-300 hover:bg-[color-mix(in_oklab,var(--primary)_40%,transparent)]"
             >
               <span
-                className="block absolute inset-0 rounded-full bg-primary origin-top transition-transform duration-[400ms] ease-[cubic-bezier(0.4,0,0.2,1)]"
+                className="block absolute inset-0 rounded-full bg-primary origin-top transition-transform duration-400 ease-[cubic-bezier(0.4,0,0.2,1)]"
                 style={{
                   transform: idx === currentIndex ? "scaleY(1)" : "scaleY(0)",
                 }}
@@ -354,7 +367,7 @@ export default function HomeHeroSection({
 
       {/* ── Bottom page-blend fade ── */}
       <div
-        className="absolute bottom-0 left-0 right-0 h-[140px] pointer-events-none z-20"
+        className={`absolute bottom-0 left-0 right-0 h-[140px] pointer-events-none z-20 ${current.type === 'STATIC' ? 'hidden' : ''}`}
         style={{ background: "linear-gradient(to top, var(--background), transparent)" }}
       />
 
@@ -387,7 +400,7 @@ export default function HomeHeroSection({
 function HeroEyebrow({ label }: { label: string }) {
   return (
     <span
-      className="inline-flex items-center gap-2 rounded-full px-4 py-[6px] text-[0.68rem] font-bold tracking-[0.14em] uppercase text-primary mb-4 md:mb-7 border backdrop-blur-sm"
+      className="inline-flex items-center gap-1.5 md:gap-2 rounded-full px-3 md:px-4 py-1 md:py-[6px] text-[0.6rem] md:text-[0.68rem] font-bold tracking-[0.14em] uppercase text-primary mb-3 md:mb-7 border backdrop-blur-sm"
       style={{
         background: "color-mix(in oklab, var(--primary) 12%, transparent)",
         borderColor: "color-mix(in oklab, var(--primary) 30%, transparent)",
@@ -406,9 +419,9 @@ function HeroPrimaryBtn({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-2 h-[50px] px-8 rounded-full bg-primary text-primary-foreground text-sm font-bold tracking-[0.01em] no-underline transition-[opacity,transform,box-shadow] duration-200 hover:opacity-[0.88] hover:-translate-y-0.5 hover:shadow-[0_10px_30px_color-mix(in_oklab,var(--primary)_40%,transparent)] active:translate-y-0 active:opacity-100"
+      className="inline-flex items-center gap-1.5 md:gap-2 h-10 md:h-[50px] px-5 md:px-8 rounded-full bg-primary text-primary-foreground text-xs md:text-sm font-bold tracking-[0.01em] no-underline transition-[opacity,transform,box-shadow] duration-200 hover:opacity-[0.88] hover:-translate-y-0.5 hover:shadow-[0_10px_30px_color-mix(in_oklab,var(--primary)_40%,transparent)] active:translate-y-0 active:opacity-100"
     >
-      {label} <ArrowRight size={16} />
+      {label} <ArrowRight size={14} className="md:w-4 md:h-4" />
     </Link>
   );
 }
@@ -417,7 +430,7 @@ function HeroGhostBtn({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="inline-flex items-center h-[50px] px-7 rounded-full border border-border text-foreground text-sm font-semibold no-underline transition-[background,border-color] duration-200 hover:bg-secondary hover:border-ring"
+      className="inline-flex items-center h-10 md:h-[50px] px-4 md:px-7 rounded-full border border-border text-foreground text-xs md:text-sm font-semibold no-underline transition-[background,border-color] duration-200 hover:bg-secondary hover:border-ring"
     >
       {label}
     </Link>
@@ -430,7 +443,7 @@ function TrustBadges() {
       {TRUST_BADGES.map(({ icon: Icon, label }) => (
         <div key={label} className="flex items-center gap-2 text-muted-foreground text-[0.78rem] font-medium">
           <div
-            className="flex items-center justify-center w-[30px] h-[30px] rounded-full border flex-shrink-0 text-primary"
+            className="flex items-center justify-center w-[30px] h-[30px] rounded-full border shrink-0 text-primary"
             style={{
               background: "color-mix(in oklab, var(--primary) 12%, transparent)",
               borderColor: "color-mix(in oklab, var(--primary) 25%, transparent)",
@@ -458,7 +471,7 @@ function splitHeadline(title: string) {
       <span className="text-primary">{last}</span>
     </>
   );
-} 
+}
 
 // "use client";
 
