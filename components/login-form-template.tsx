@@ -143,6 +143,7 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
         <Link
           href={routes.forgotPassword}
           className="text-sm text-primary text-nowrap hover:underline"
+          scroll
         >
           Forgot password?
         </Link>
@@ -154,7 +155,7 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
             className="w-full text-sm font-medium"
             asChild
           >
-            <Link href={routes.signup}>
+            <Link href={routes.signup} scroll>
               Create an account
             </Link>
           </Button>

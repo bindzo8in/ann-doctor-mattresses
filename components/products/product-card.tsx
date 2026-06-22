@@ -173,10 +173,10 @@ export function ProductCard({
   );
 
   const innerCard = (
-    <Card className="relative overflow-hidden rounded-2xl border p-0 flex flex-col h-full hover:shadow-md transition min-w-[280px]">
+    <Card className="relative overflow-hidden rounded-2xl border p-0 flex flex-col h-full hover:shadow-md transition">
       {/* OVERLAY LINK */}
       {slug && (
-        <Link href={`/products/${slug}`} className="absolute inset-0 z-10" aria-hidden="true">
+        <Link href={`/products/${slug}`} className="absolute inset-0 z-10" aria-hidden="true" scroll>
           <span className="sr-only">View Details</span>
         </Link>
       )}
@@ -217,7 +217,7 @@ export function ProductCard({
             asChild
             className="w-full rounded-lg text-xs sm:text-sm h-9 sm:h-10 font-semibold"
           >
-            <Link href={`/products/${slug}`}>View Details</Link>
+            <Link href={`/products/${slug}`} scroll>View Details</Link>
           </Button>
         ) : (
           <Button

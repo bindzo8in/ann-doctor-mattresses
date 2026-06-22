@@ -664,7 +664,7 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
                         {status === "DELIVERED" && (
                           <div className="mt-3 flex justify-end">
                             <Button variant="outline" size="sm" asChild className="gap-1.5 h-8 text-xs font-medium border-slate-200">
-                              <Link href={`/products/${item.product.slug}#reviews`}>
+                              <Link href={`/products/${item.product.slug}#reviews`} scroll>
                                 <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" /> Write a Review
                               </Link>
                             </Button>

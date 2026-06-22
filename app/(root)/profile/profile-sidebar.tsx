@@ -48,7 +48,7 @@ export function ProfileSidebar({ userRole }: { userRole?: string }) {
         const Icon = item.icon;
         const isActive = pathname === item.href;
         return (
-          <Link key={item.href} href={item.href}>
+          <Link key={item.href} href={item.href} scroll>
             <div
               className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all cursor-pointer ${isActive
                   ? "bg-slate-900 text-white shadow-sm"

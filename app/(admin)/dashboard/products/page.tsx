@@ -34,7 +34,7 @@ export default async function ProductsPage() {
         <h2 className="text-3xl font-bold tracking-tight">Products</h2>
         <div className="flex items-center space-x-2">
           <Button asChild>
-            <Link href="/dashboard/products/create">
+            <Link href="/dashboard/products/create" scroll>
               <Plus className="mr-2 h-4 w-4" /> Add New
             </Link>
           </Button>

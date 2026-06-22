@@ -37,10 +37,10 @@ function CheckoutSuccessContent() {
       
       <div className="flex gap-4">
         <Button asChild variant="outline">
-          <Link href="/profile/orders">View Orders</Link>
+          <Link href="/profile/orders" scroll>View Orders</Link>
         </Button>
         <Button asChild>
-          <Link href="/products">Continue Shopping</Link>
+          <Link href="/products" scroll>Continue Shopping</Link>
         </Button>
       </div>
     </div>

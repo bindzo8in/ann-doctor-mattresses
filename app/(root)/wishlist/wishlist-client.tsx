@@ -112,8 +112,7 @@ export function WishlistPageClient({ initialItems, initialIsAuthenticated }: Wis
               key={item.id}
               id={product.id}
               name={product.name}
-              image={product.thumbnailUrl || "/products/mattress.webp"}
-              badge="Buy 1 Get 1 Free"
+              image={item.product.thumbnailUrl || "/products/mattress.webp"}
               price={price}
               compareAtPrice={compareAtPrice}
               rating={5}

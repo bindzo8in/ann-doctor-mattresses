@@ -3,7 +3,7 @@ import { Layers, Wind, ShieldBan } from "lucide-react";
 
 export function SleepEducationSection() {
   return (
-    <section className="py-10 md:py-16 bg-white">
+    <section className="py-[80px] md:py-[120px] lg:py-[150px] bg-white">
       <div className="page-container">
         <div className="border border-slate-200 rounded-3xl lg:rounded-[2.5rem] p-4 sm:p-6 lg:p-10 xl:p-12">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-10">
@@ -71,19 +71,23 @@ export function SleepEducationSection() {
               </div>
 
               {/* Sleeping Position */}
-              <div className="overflow-hidden rounded-3xl bg-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-[334px_1fr]">
-                {/* Image — 334:237 ratio always preserved */}
-                <div className="relative w-full aspect-[334/237]">
+              <div className="overflow-hidden rounded-3xl bg-slate-50 border border-slate-100 shadow-sm flex flex-col md:flex-row">
+                {/* Image */}
+                <div className="relative w-full md:w-5/12 min-h-[220px] md:min-h-[240px] shrink-0">
                   <Image
                     src="/sleeping.png"
                     alt="Sleeping Positions"
                     fill
-                    className="object-cover object-center"
+                    className="object-contain object-center"
                   />
                 </div>
 
-                <div className="flex items-center p-6 md:p-8 lg:p-10">
-                  <p className="text-sm sm:text-base lg:text-lg leading-relaxed text-slate-800">
+                {/* Content */}
+                <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-10 md:w-7/12">
+                  <h4 className="text-xs sm:text-sm font-bold tracking-widest uppercase text-[#e3282c] mb-2 sm:mb-3">
+                    Sleep Posture Guide
+                  </h4>
+                  <p className="text-sm sm:text-base leading-relaxed text-slate-700">
                     The healthiest sleeping positions are on your side or back,
                     as they help maintain proper spinal alignment and reduce
                     pressure points. The ideal position ultimately depends on

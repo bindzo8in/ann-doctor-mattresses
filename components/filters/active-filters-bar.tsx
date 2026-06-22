@@ -50,7 +50,7 @@ export function ActiveFiltersBar({ dictionaries }: ActiveFiltersBarProps) {
   if (activeChips.length === 0) return null;
 
   return (
-    <div className="bg-muted/50 border-y border-border px-4 sm:px-6 lg:px-8 py-3">
+    <div className="bg-muted/50 border-y border-border px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 py-3">
       <div className="container mx-auto flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium text-foreground mr-2">
           Active filters:

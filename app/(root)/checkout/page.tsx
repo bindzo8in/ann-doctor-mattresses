@@ -97,7 +97,7 @@ export default function CheckoutPage() {
 
   if (!hasItems) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50/50 p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50/50 p-4 font-montserrat">
         <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 max-w-md w-full text-center space-y-6">
           <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-slate-400">
             <ShoppingCart className="w-8 h-8" />

@@ -15,6 +15,8 @@ export const metadata: Metadata = {
     canonical: "https://doctormattresses.com/products",
   },
 };
+import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
+
 export default async function ProductsPage(
   props: {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -24,16 +26,39 @@ export default async function ProductsPage(
   const typeParam = typeof searchParams.type === "string" ? searchParams.type : undefined;
   const type = typeParam === "MATTRESS" ? ProductType.MATTRESS : typeParam === "SOFA" ? ProductType.SOFA : undefined;
 
+  // Replicate what the client does: Object.fromEntries(useSearchParams().entries())
+  const searchParamsEntries: [string, string][] = [];
+  for (const [k, v] of Object.entries(searchParams || {})) {
+    if (Array.isArray(v)) {
+      v.forEach(val => searchParamsEntries.push([k, val]));
+    } else if (v !== undefined) {
+      searchParamsEntries.push([k, String(v)]);
+    }
+  }
+  const searchParamsObj = Object.fromEntries(new URLSearchParams(searchParamsEntries).entries());
+
   const filters = parseProductFilters(searchParams as Record<string, string | string[] | undefined>);
-  const [dynamicFacets, initialProducts] = await Promise.all([
+  
+  const queryClient = new QueryClient();
+
+  const [dynamicFacets] = await Promise.all([
     getDynamicFilterFacets(type),
-    getProducts({ ...filters, limit: 12 }),
+    queryClient.prefetchInfiniteQuery({
+      queryKey: ["products", searchParamsObj], // Must match client exactly!
+      queryFn: async ({ pageParam }) => {
+        return getProducts({ ...filters, cursor: pageParam as string | undefined, limit: 12 });
+      },
+      initialPageParam: undefined,
+      getNextPageParam: (lastPage: any) => lastPage.nextCursor ?? undefined,
+      staleTime: 1000 * 60 * 5, // 5 minutes to prevent immediate refetch
+    }),
   ]);
 
   return (
-    <main className="min-h-screen bg-background">
-      <ProductsPageClientWrapper dynamicFacets={dynamicFacets} initialProducts={initialProducts} />
+    <main className="min-h-screen bg-background font-montserrat">
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <ProductsPageClientWrapper dynamicFacets={dynamicFacets} />
+      </HydrationBoundary>
     </main>
   );
-
 }

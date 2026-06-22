@@ -15,7 +15,7 @@ export default function AboutUs() {
     const badges = [badge1, badge2, badge3];
 
     const sectionRef = useRef<HTMLElement>(null);
-    const overlayRef = useRef<HTMLDivElement>(null);
+    const stripsContainerRef = useRef<HTMLDivElement>(null);
     const contentRef = useRef<HTMLDivElement>(null);
     const headingRef = useRef<HTMLHeadingElement>(null);
     const para1Ref = useRef<HTMLParagraphElement>(null);
@@ -32,13 +32,19 @@ export default function AboutUs() {
                 },
             });
 
-            // Darken overlay
-            tl.fromTo(
-                overlayRef.current,
-                { backgroundColor: "rgba(0,0,0,0.2)" },
-                { backgroundColor: "rgba(0,0,0,0.6)", duration: 0.8, ease: "power2.out" },
-                0
-            );
+            // Split overlay sliding in
+            const strips = stripsContainerRef.current?.children;
+            if (strips) {
+                Array.from(strips).forEach((strip, index) => {
+                    const fromX = index % 2 === 0 ? -100 : 100;
+                    tl.fromTo(
+                        strip,
+                        { xPercent: fromX },
+                        { xPercent: 0, duration: 0.8, ease: "power2.out" },
+                        0
+                    );
+                });
+            }
 
             // Heading slides up + fades in
             tl.fromTo(
@@ -76,17 +82,24 @@ export default function AboutUs() {
                 relative
                 overflow-hidden
                 bg-cover bg-center bg-no-repeat
-                py-12 sm:py-16 lg:py-24
+                section-padding
                 text-white
                 font-montserrat-alternates
             "
         >
-            {/* Overlay */}
-            <div
-                ref={overlayRef}
-                className="absolute inset-0"
-                style={{ backgroundColor: "rgba(0,0,0,0.2)" }}
-            />
+            {/* Split Overlays */}
+            <div className="absolute inset-0 pointer-events-none flex flex-col">
+                <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.2)" }} />
+                <div ref={stripsContainerRef} className="absolute inset-0 flex flex-col">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                        <div
+                            key={i}
+                            className="flex-1 w-full"
+                            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+                        />
+                    ))}
+                </div>
+            </div>
 
             {/* Content */}
             <div

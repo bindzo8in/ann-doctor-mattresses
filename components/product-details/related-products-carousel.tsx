@@ -34,12 +34,11 @@ export function RelatedProductsCarousel({ products }: Props) {
               : undefined;
 
             return (
-              <CarouselItem key={product.id} className="pl-2 md:pl-4 basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
+              <CarouselItem key={product.id} className="pl-2 md:pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
                 <ProductCard
                   id={product.id}
                   name={product.name}
                   image={product.images[0]?.url || "/products/mattress.webp"}
-                  badge="Buy 1 Get 1 Free"
                   price={price}
                   compareAtPrice={compareAtPrice}
                   rating={5}
@@ -53,8 +52,8 @@ export function RelatedProductsCarousel({ products }: Props) {
         </CarouselContent>
         {products.length > 4 && (
           <div className="hidden md:block">
-            <CarouselPrevious className="-left-12" />
-            <CarouselNext className="-right-12" />
+            <CarouselPrevious className="left-0 xl:-left-6" />
+            <CarouselNext className="right-0 xl:-right-6" />
           </div>
         )}
       </Carousel>

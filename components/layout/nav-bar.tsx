@@ -27,7 +27,7 @@ export default function NavBar() {
     <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-sm border-b border-border shadow-sm">
       <nav className="page-container flex items-center justify-between h-16 gap-4">
         {/* Logo */}
-        <Link href={routes.home} className="shrink-0">
+        <Link href={routes.home} className="shrink-0" scroll>
           <Image
             src="/logo.webp"
             className="object-contain w-auto h-10"
@@ -51,6 +51,7 @@ export default function NavBar() {
                     ? "bg-destructive/10 text-destructive"
                     : "text-foreground hover:bg-muted hover:text-foreground"
                 }`}
+                scroll
               >
                 {link.label}
               </Link>
@@ -85,6 +86,7 @@ export default function NavBar() {
               aria-label="Wishlist"
               href={routes.wishlist}
               className="p-2 rounded-md hover:bg-muted transition-colors"
+              scroll
             >
               <Heart className="w-5 h-5" />
             </Link>
@@ -93,6 +95,7 @@ export default function NavBar() {
               aria-label="Profile"
               href={routes.profile}
               className="p-2 rounded-md hover:bg-muted transition-colors"
+              scroll
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

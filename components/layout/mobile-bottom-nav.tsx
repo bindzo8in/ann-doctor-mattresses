@@ -29,6 +29,7 @@ export default function MobileBottomNav() {
                 className={`flex flex-col items-center justify-center h-full gap-1 transition-colors ${
                   active ? "text-destructive" : "text-muted-foreground hover:text-foreground"
                 }`}
+                scroll
               >
                 <Icon
                   className={`w-5 h-5 transition-transform duration-200 ${active ? "scale-110" : ""}`}

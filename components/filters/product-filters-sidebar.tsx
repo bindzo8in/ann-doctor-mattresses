@@ -148,6 +148,7 @@ export function ProductFiltersSidebar({ dynamicFacets }: ProductFiltersSidebarPr
                 ? "bg-primary/10 text-primary"
                 : "hover:bg-muted text-muted-foreground"
             )}
+            scroll
           >
             All Products
           </Link>
@@ -159,6 +160,7 @@ export function ProductFiltersSidebar({ dynamicFacets }: ProductFiltersSidebarPr
                 ? "bg-primary/10 text-primary"
                 : "hover:bg-muted text-muted-foreground"
             )}
+            scroll
           >
             Mattresses
           </Link>
@@ -170,6 +172,7 @@ export function ProductFiltersSidebar({ dynamicFacets }: ProductFiltersSidebarPr
                 ? "bg-primary/10 text-primary"
                 : "hover:bg-muted text-muted-foreground"
             )}
+            scroll
           >
             Sofas
           </Link>

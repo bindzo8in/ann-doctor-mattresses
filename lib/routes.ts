@@ -85,6 +85,8 @@ export const publicRoutes = [
     routes.api_cart,
     routes.api_wishlist,
     routes.api_addresses,
+
+    "/categories"
 ];
 
 // API Routes accessible to any authenticated user (regardless of role)

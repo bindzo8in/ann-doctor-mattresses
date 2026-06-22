@@ -28,7 +28,7 @@ export function CategoriesSection({ categories }: CategoriesSectionProps) {
   if (!categories.length) return null;
 
   return (
-    <section className="py-16 md:py-20 bg-muted/40">
+    <section className="py-[80px] md:py-[120px] lg:py-[150px] bg-muted/40">
       <div className="page-container">
         {/* Header */}
         <div className="text-center mb-10">
@@ -56,8 +56,9 @@ export function CategoriesSection({ categories }: CategoriesSectionProps) {
           {categories.map((cat) => (
             <Link
               key={cat.id}
-              href={`/products?category=${cat.slug}`}
+              href={`/categories/${cat.slug}`}
               className="group relative flex flex-col bg-white overflow-hidden shadow-[0_4px_12px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.1)] transition-all duration-300 border border-border/50 rounded-lg"
+              scroll
             >
               {/* Background image container */}
               <div className="relative w-full aspect-[4/3] bg-muted/20 overflow-hidden">

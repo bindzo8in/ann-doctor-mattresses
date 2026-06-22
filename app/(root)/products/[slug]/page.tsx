@@ -1,6 +1,8 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import { getProductBySlug, getRelatedProducts } from "@/actions/product-details";
+import { getActiveBranchesGroupedByState } from "@/lib/home";
 import { ProductGallery } from "@/components/product-details/product-gallery";
 import { ProductPurchaseCardV2 } from "@/components/product-details/product-purchase-card-v2";
 import { SpecificationTableV2 } from "@/components/product-details/specification-table-v2";
@@ -54,10 +56,11 @@ export default async function ProductDetailsPage({ params }: Props) {
     notFound();
   }
 
-  const [relatedProducts, reviewsRes, canReviewRes] = await Promise.all([
+  const [relatedProducts, reviewsRes, canReviewRes, branchGroups] = await Promise.all([
     getRelatedProducts(product.categoryId, product.id),
     getApprovedReviews(product.id),
-    canUserReviewProduct(product.id)
+    canUserReviewProduct(product.id),
+    getActiveBranchesGroupedByState()
   ]);
 
   const initialReviews = reviewsRes.success && reviewsRes.reviews ? reviewsRes.reviews : [];
@@ -83,7 +86,7 @@ export default async function ProductDetailsPage({ params }: Props) {
   };
 
   return (
-    <div className="bg-background min-h-screen">
+    <div className="bg-background min-h-screen font-montserrat">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -92,9 +95,9 @@ export default async function ProductDetailsPage({ params }: Props) {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <MobileBackButton />
         {/* Top Section: Purchase Card (Left) & Gallery (Right) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:gap-16 px-4 md:px-8 lg:px-12 xl:px-20">
           <div className="w-full order-2 lg:order-1">
-            <ProductPurchaseCardV2 product={product} />
+            <ProductPurchaseCardV2 product={product} branchGroups={branchGroups} />
           </div>
           <div className="w-full order-1 lg:order-2">
             <ProductGallery images={product.images} />
@@ -130,10 +133,7 @@ export default async function ProductDetailsPage({ params }: Props) {
               </div>
               <div className="hidden md:flex justify-center items-center">
                 <div className="relative w-80 h-80 flex items-center justify-center">
-                   <HelpCircle className="w-64 h-64 text-red-100 drop-shadow-xl" />
-                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                     <span className="text-6xl font-black text-red-600 opacity-80">?</span>
-                   </div>
+                   <Image src="/faq.png" alt="FAQ" fill className="object-contain drop-shadow-xl" />
                 </div>
               </div>
             </div>
@@ -151,7 +151,7 @@ export default async function ProductDetailsPage({ params }: Props) {
         {relatedProducts.length > 0 && (
           <>
             <Separator className="my-12" />
-            <div>
+            <div className="px-4 md:px-8 lg:px-12 xl:px-20">
               <h2 className="text-2xl font-bold tracking-tight mb-6">You May Also Like</h2>
               <RelatedProductsCarousel products={relatedProducts} />
             </div>

@@ -10,11 +10,6 @@ import { ProductFiltersSidebar } from "@/components/filters/product-filters-side
 import { ActiveFiltersBar } from "@/components/filters/active-filters-bar";
 import { useProductFilters } from "@/lib/filters/use-product-filters";
 import { parseProductFilters } from "@/lib/filters/parsers";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { routes } from "@/lib/routes";
 import {
   FIRMNESS_OPTIONS,
   COMFORT_LEVEL_OPTIONS,
@@ -30,19 +25,6 @@ interface ProductsPageClientProps {
     shapeOptions: { value: string; label: string }[];
     categoryOptions: { value: string; label: string }[];
   };
-  initialProducts: {
-    products: {
-      id: string;
-      name: string;
-      slug: string;
-      images: { url: string }[];
-      shortDescription: string[];
-      variants: { isDefault: boolean, mrp: number | string, salePrice: number | string }[];
-      [key: string]: unknown;
-    }[];
-    nextCursor?: string;
-  };
-
 }
 
 const MATTRESS_SIZE_OPTIONS = [
@@ -53,15 +35,13 @@ const MATTRESS_SIZE_OPTIONS = [
   { value: "CUSTOM", label: "Custom" },
 ];
 
-export function ProductsPageClient({ dynamicFacets, initialProducts }: ProductsPageClientProps) {
+export function ProductsPageClient({ dynamicFacets }: ProductsPageClientProps) {
   const { searchParams } = useProductFilters();
 
   const { ref, inView } = useInView();
-  const router = useRouter();
 
   const searchParamsObj = Object.fromEntries(searchParams.entries());
   const filters = parseProductFilters(searchParamsObj);
-  const currentType = filters.type;
 
   const {
     data,
@@ -73,14 +53,10 @@ export function ProductsPageClient({ dynamicFacets, initialProducts }: ProductsP
   } = useInfiniteQuery({
     queryKey: ["products", searchParamsObj],
     queryFn: async ({ pageParam }) => {
-      return getProducts({ ...filters, cursor: pageParam, limit: 12 });
+      return getProducts({ ...filters, cursor: pageParam as string | undefined, limit: 12 });
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    initialData: {
-      pages: [initialProducts],
-      pageParams: [undefined],
-    },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
@@ -110,15 +86,18 @@ export function ProductsPageClient({ dynamicFacets, initialProducts }: ProductsP
 
       <ActiveFiltersBar dictionaries={dictionaries} />
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           <ProductFiltersSidebar dynamicFacets={dynamicFacets} />
           
           <div className="flex-1">
-            {status === "error" ? (
+            {status === "pending" || !data ? (
+              <div className="flex h-64 items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : status === "error" ? (
               <div className="flex h-64 flex-col items-center justify-center text-destructive">
                 <p>Error loading products.</p>
-
                 <p className="text-sm">{(error as Error).message}</p>
               </div>
             ) : (
@@ -154,17 +133,23 @@ export function ProductsPageClient({ dynamicFacets, initialProducts }: ProductsP
                             ? Number(displayVariant.mrp) 
                             : undefined;
 
+                          const reviews = (product as any).reviews || [];
+                          const actualReviewCount = reviews.length;
+                          const reviewCount = actualReviewCount > 0 ? actualReviewCount : 100;
+                          const rating = actualReviewCount > 0 
+                            ? reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / actualReviewCount
+                            : 5;
+
                           return (
                             <ProductCard
                               key={product.id}
                               id={product.id}
                               name={product.name}
                               image={product.images[0]?.url || "/products/mattress.webp"}
-                              badge="Buy 1 Get 1 Free"
                               price={price}
                               compareAtPrice={compareAtPrice}
-                              rating={5}
-                              reviewCount={0}
+                              rating={rating}
+                              reviewCount={reviewCount}
                               features={product.shortDescription}
                               slug={product.slug}
                               productData={product as unknown as Record<string, unknown>}

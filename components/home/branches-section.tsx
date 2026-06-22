@@ -22,7 +22,7 @@ export function BranchesSection({
 
   return (
     <>
-      <section className="bg-[#005814] py-16">
+      <section className="bg-[#005814] section-padding">
         <div className="page-container">
           <h2 className="mb-8 text-xl text-white">
             Branches:
@@ -40,11 +40,10 @@ export function BranchesSection({
                 {branchGroups.map((group, index) => (
                   <div
                     key={group.state}
-                    className={`p-6 ${
-                      index !== branchGroups.length - 1
+                    className={`p-6 ${index !== branchGroups.length - 1
                         ? "border-r border-neutral-400"
                         : ""
-                    }`}
+                      }`}
                   >
                     <h3 className="mb-8 text-[11px] font-bold uppercase tracking-wide text-red-600">
                       {group.state}
@@ -52,7 +51,12 @@ export function BranchesSection({
 
                     <div className="space-y-8">
                       {group.branches.map((branch) => (
-                        <div key={branch.id}>
+                        <div key={branch.id} onClick={() =>
+                          setSelectedBranch(branch)
+                          
+                        }
+                        className="cursor-pointer"
+                        >
                           <div className="mb-2 flex items-start gap-2">
                             <MapPin
                               className="mt-0.5 h-4 w-4 shrink-0 text-red-600"
@@ -61,16 +65,14 @@ export function BranchesSection({
 
                             <button
                               type="button"
-                              onClick={() =>
-                                setSelectedBranch(branch)
-                              }
+
                               className="cursor-pointer text-left text-xs font-bold uppercase text-black transition-colors hover:text-red-600"
                             >
                               {branch.name}
                             </button>
                           </div>
 
-                          <p className="pl-6 text-[11px] leading-relaxed text-neutral-600">
+                          <p className="pl-6 cursor-pointer text-[11px] leading-relaxed text-neutral-600">
                             {branch.address}
                           </p>
                         </div>

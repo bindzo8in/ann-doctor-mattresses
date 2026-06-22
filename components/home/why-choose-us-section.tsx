@@ -41,7 +41,7 @@ const FEATURES = [
 
 export function WhyChooseUsSection() {
   return (
-    <section className="py-16 md:py-20">
+    <section className="section-padding">
       <div className="container mx-auto px-6 md:px-12">
         {/* Header */}
         <div className="text-center mb-12">

@@ -26,7 +26,7 @@ export function ProductGridSection({
   if (!products.length) return null;
 
   return (
-    <section className="py-16 md:py-20">
+    <section className="py-20 md:py-28 lg:py-32">
       <div className="page-container">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
@@ -46,32 +46,33 @@ export function ProductGridSection({
             )}
           </div>
           <Button asChild variant="outline" className="shrink-0 rounded-full">
-            <Link href={viewAllHref} className="flex items-center gap-2">
+            <Link href={viewAllHref} className="flex items-center gap-2" scroll>
               {viewAllLabel} <ArrowRight className="size-4" />
             </Link>
           </Button>
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+        <div className="flex flex-wrap justify-center gap-4 lg:gap-6">
           {products.map((product) => {
             const defaultVariant =
               product.variants.find((v) => v.isDefault) ?? product.variants[0];
             return (
-              <ProductCard
-                key={product.id}
-                id={product.id}
-                name={product.name}
-                image={product.thumbnailUrl}
-                price={defaultVariant?.salePrice ?? 0}
-                compareAtPrice={
-                  defaultVariant && defaultVariant.mrp > defaultVariant.salePrice
-                    ? defaultVariant.mrp
-                    : undefined
-                }
-                features={product.shortDescription.slice(0, 3)}
-                slug={product.slug}
-              />
+              <div key={product.id} className="w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.66rem)] lg:w-[calc(33.333%-1rem)] max-w-[420px]">
+                <ProductCard
+                  id={product.id}
+                  name={product.name}
+                  image={product.thumbnailUrl}
+                  price={defaultVariant?.salePrice ?? 0}
+                  compareAtPrice={
+                    defaultVariant && defaultVariant.mrp > defaultVariant.salePrice
+                      ? defaultVariant.mrp
+                      : undefined
+                  }
+                  features={product.shortDescription.slice(0, 3)}
+                  slug={product.slug}
+                />
+              </div>
             );
           })}
         </div>

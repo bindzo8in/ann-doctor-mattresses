@@ -12,8 +12,9 @@ import { getCategories, createCategory, updateCategory, deleteCategory } from "@
 import { ImageUpload, UploadedImage } from "@/components/ui/image-upload";
 import Image from "next/image";
 import { z } from "zod";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Textarea } from "@/components/ui/textarea";
 
 type Category = {
   id: string;
@@ -21,15 +22,32 @@ type Category = {
   slug: string;
   thumbnailUrl: string | null;
   thumbnailPublicId: string | null;
-  _count?: {
-    products: number;
-  };
+  description?: string | null;
+  features?: any;
+  layerImageUrl?: string | null;
+  layerImagePublicId?: string | null;
+  layerVideoUrl?: string | null;
+  layerVideoPublicId?: string | null;
+  coverImageUrl?: string | null;
+  coverImagePublicId?: string | null;
+  productCount?: number;
 };
 
 const categorySchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Name is required"),
   slug: z.string().min(1, "Slug is required"),
+  description: z.string().nullable().optional(),
+  features: z.array(z.object({
+    title: z.string().min(1, "Title is required"),
+    description: z.string().min(1, "Description is required"),
+  })).optional(),
+  layerImageUrl: z.string().nullable().optional(),
+  layerImagePublicId: z.string().nullable().optional(),
+  layerVideoUrl: z.string().nullable().optional(),
+  layerVideoPublicId: z.string().nullable().optional(),
+  coverImageUrl: z.string().nullable().optional(),
+  coverImagePublicId: z.string().nullable().optional(),
   thumbnailUrl: z.string().nullable().optional(),
   thumbnailPublicId: z.string().nullable().optional(),
 });
@@ -42,14 +60,28 @@ export default function CategoriesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
       name: "",
       slug: "",
+      description: null,
+      features: [],
+      layerImageUrl: null,
+      layerImagePublicId: null,
+      layerVideoUrl: null,
+      layerVideoPublicId: null,
+      coverImageUrl: null,
+      coverImagePublicId: null,
       thumbnailUrl: null,
       thumbnailPublicId: null,
     },
+  });
+
+  const { fields: featureFields, append: appendFeature, remove: removeFeature } = useFieldArray({
+    control: form.control,
+    name: "features" as never // typescript workaround for optional array
   });
 
   const isEditing = !!form.watch("id");
@@ -76,6 +108,14 @@ export default function CategoriesPage() {
         id: category.id,
         name: category.name,
         slug: category.slug,
+        description: category.description,
+        features: Array.isArray(category.features) ? category.features : [],
+        layerImageUrl: category.layerImageUrl,
+        layerImagePublicId: category.layerImagePublicId,
+        layerVideoPublicId: category.layerVideoPublicId,
+        layerVideoUrl: category.layerVideoUrl,
+        coverImageUrl: category.coverImageUrl,
+        coverImagePublicId: category.coverImagePublicId,
         thumbnailUrl: category.thumbnailUrl,
         thumbnailPublicId: category.thumbnailPublicId,
       });
@@ -84,6 +124,12 @@ export default function CategoriesPage() {
         id: undefined,
         name: "",
         slug: "",
+        description: null,
+        features: [],
+        layerImageUrl: null,
+        layerImagePublicId: null,
+        coverImageUrl: null,
+        coverImagePublicId: null,
         thumbnailUrl: null,
         thumbnailPublicId: null,
       });
@@ -94,27 +140,32 @@ export default function CategoriesPage() {
   const onSubmit = async (values: CategoryFormValues) => {
     try {
       setIsSaving(true);
+      const dataToSave = {
+        name: values.name,
+        slug: values.slug,
+        description: values.description || null,
+        features: values.features || [],
+        layerImageUrl: values.layerImageUrl || null,
+        layerImagePublicId: values.layerImagePublicId || null,
+        layerVideoUrl: values.layerVideoUrl || null,
+        layerVideoPublicId: values.layerVideoPublicId || null,
+        coverImageUrl: values.coverImageUrl || null,
+        coverImagePublicId: values.coverImagePublicId || null,
+        thumbnailUrl: values.thumbnailUrl || null,
+        thumbnailPublicId: values.thumbnailPublicId || null,
+      };
+
       if (values.id) {
-        await updateCategory(values.id, {
-          name: values.name,
-          slug: values.slug,
-          thumbnailUrl: values.thumbnailUrl || null,
-          thumbnailPublicId: values.thumbnailPublicId || null,
-        });
+        await updateCategory(values.id, dataToSave);
         toast.success("Category updated");
       } else {
-        await createCategory({
-          name: values.name,
-          slug: values.slug,
-          thumbnailUrl: values.thumbnailUrl || null,
-          thumbnailPublicId: values.thumbnailPublicId || null,
-        });
+        await createCategory(dataToSave);
         toast.success("Category created");
       }
       setIsModalOpen(false);
       fetchCategories();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to save category");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to save category");
     } finally {
       setIsSaving(false);
     }
@@ -132,8 +183,8 @@ export default function CategoriesPage() {
       await deleteCategory(id);
       toast.success("Category deleted");
       fetchCategories();
-    } catch (error: any) {
-      toast.error(error.message || "Failed to delete category");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete category");
     }
   };
 
@@ -188,7 +239,7 @@ export default function CategoriesPage() {
                   <TableCell className="text-slate-600 font-mono text-sm">{category.slug}</TableCell>
                   <TableCell className="text-slate-600">
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {category._count?.products || 0} products
+                      {category.productCount || 0} products
                     </span>
                   </TableCell>
                   <TableCell className="text-right">
@@ -196,14 +247,14 @@ export default function CategoriesPage() {
                       <Button variant="ghost" size="icon" onClick={() => handleOpenModal(category)}>
                         <PencilIcon className="w-4 h-4 text-slate-600" />
                       </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => handleDeleteCategory(category.id, category._count?.products || 0)}
-                        disabled={(category._count?.products || 0) > 0}
-                        title={(category._count?.products || 0) > 0 ? "Cannot delete category with products" : "Delete category"}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDeleteCategory(category.id, category.productCount || 0)}
+                        disabled={(category.productCount || 0) > 0}
+                        title={(category.productCount || 0) > 0 ? "Cannot delete category with products" : "Delete category"}
                       >
-                        <TrashIcon className={`w-4 h-4 ${((category._count?.products || 0) > 0) ? 'text-slate-300' : 'text-red-500'}`} />
+                        <TrashIcon className={`w-4 h-4 ${((category.productCount || 0) > 0) ? 'text-slate-300' : 'text-red-500'}`} />
                       </Button>
                     </div>
                   </TableCell>
@@ -222,73 +273,207 @@ export default function CategoriesPage() {
       </div>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{isEditing ? "Edit Category" : "New Category"}</DialogTitle>
           </DialogHeader>
-          
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Controller
+                control={form.control}
+                name="name"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>Category Name</FieldLabel>
+                    <Input
+                      placeholder="e.g., Spring Mattresses"
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        if (!isEditing) {
+                          form.setValue(
+                            "slug",
+                            e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''),
+                            { shouldValidate: true }
+                          );
+                        }
+                      }}
+                    />
+                    <FieldError errors={[fieldState.error]} />
+                  </Field>
+                )}
+              />
+
+              <Controller
+                control={form.control}
+                name="slug"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>Slug</FieldLabel>
+                    <Input placeholder="e.g., spring-mattresses" {...field} />
+                    <FieldDescription>Unique identifier used in URLs.</FieldDescription>
+                    <FieldError errors={[fieldState.error]} />
+                  </Field>
+                )}
+              />
+            </div>
+
             <Controller
               control={form.control}
-              name="name"
+              name="description"
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel>Category Name</FieldLabel>
-                  <Input
-                    placeholder="e.g., Spring Mattresses"
-                    {...field}
-                    onChange={(e) => {
-                      field.onChange(e);
-                      if (!isEditing) {
-                        form.setValue(
-                          "slug", 
-                          e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, ''), 
-                          { shouldValidate: true }
-                        );
+                  <FieldLabel>Description</FieldLabel>
+                  <Textarea placeholder="Category description..." {...field} value={field.value || ""} />
+                  <FieldError errors={[fieldState.error]} />
+                </Field>
+              )}
+            />
+
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <FieldLabel className="mb-0">Features</FieldLabel>
+                <Button type="button" variant="outline" size="sm" onClick={() => appendFeature({ title: "", description: "" })}>
+                  <PlusIcon className="w-4 h-4 mr-1" /> Add Feature
+                </Button>
+              </div>
+              {featureFields.map((field, index) => (
+                <div key={field.id} className="p-4 border rounded-md relative space-y-4 bg-slate-50/50">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 text-slate-400 hover:text-red-500"
+                    onClick={() => removeFeature(index)}
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                  </Button>
+                  <Controller
+                    control={form.control}
+                    name={`features.${index}.title` as const}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel>Title</FieldLabel>
+                        <Input placeholder="e.g., Quilted Cotton Cover" {...field} />
+                        <FieldError errors={[fieldState.error]} />
+                      </Field>
+                    )}
+                  />
+                  <Controller
+                    control={form.control}
+                    name={`features.${index}.description` as const}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel>Description</FieldLabel>
+                        <Input placeholder="e.g., Soft and breathable for a smooth surface." {...field} />
+                        <FieldError errors={[fieldState.error]} />
+                      </Field>
+                    )}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Controller
+                control={form.control}
+                name="thumbnailUrl"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>Thumbnail</FieldLabel>
+                    <ImageUpload
+                      value={
+                        field.value && form.getValues("thumbnailPublicId")
+                          ? { url: field.value, publicId: form.getValues("thumbnailPublicId")! }
+                          : null
                       }
-                    }}
-                  />
-                  <FieldError errors={[fieldState.error]} />
-                </Field>
-              )}
-            />
+                      onChange={(value) => {
+                        const uploaded = value as UploadedImage | null;
+                        field.onChange(uploaded?.url || null);
+                        form.setValue("thumbnailPublicId", uploaded?.publicId || null, { shouldValidate: true });
+                      }}
+                      maxFiles={1}
+                    />
+                    <FieldError errors={[fieldState.error]} />
+                  </Field>
+                )}
+              />
 
-            <Controller
-              control={form.control}
-              name="slug"
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel>Slug</FieldLabel>
-                  <Input placeholder="e.g., spring-mattresses" {...field} />
-                  <FieldDescription>Unique identifier used in URLs.</FieldDescription>
-                  <FieldError errors={[fieldState.error]} />
-                </Field>
-              )}
-            />
+              <Controller
+                control={form.control}
+                name="layerImageUrl"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>Layer Image</FieldLabel>
+                    <ImageUpload
+                      value={
+                        field.value && form.getValues("layerImagePublicId")
+                          ? { url: field.value, publicId: form.getValues("layerImagePublicId")! }
+                          : null
+                      }
+                      onChange={(value) => {
+                        const uploaded = value as UploadedImage | null;
+                        field.onChange(uploaded?.url || null);
+                        form.setValue("layerImagePublicId", uploaded?.publicId || null, { shouldValidate: true });
+                      }}
+                      maxFiles={1}
+                      accept="image/*,video/*"
+                    />
+                    <FieldError errors={[fieldState.error]} />
+                  </Field>
+                )}
+              />
 
-            <Controller
-              control={form.control}
-              name="thumbnailUrl"
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel>Thumbnail Image</FieldLabel>
-                  <ImageUpload
-                    value={
-                      field.value && form.getValues("thumbnailPublicId")
-                        ? { url: field.value, publicId: form.getValues("thumbnailPublicId")! }
-                        : null
-                    }
-                    onChange={(value) => {
-                      const uploaded = value as UploadedImage | null;
-                      field.onChange(uploaded?.url || null);
-                      form.setValue("thumbnailPublicId", uploaded?.publicId || null, { shouldValidate: true });
-                    }}
-                    maxFiles={1}
-                  />
-                  <FieldError errors={[fieldState.error]} />
-                </Field>
-              )}
-            />
+              <Controller
+                control={form.control}
+                name="layerVideoUrl"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>Layer Video (Optional)</FieldLabel>
+                    <ImageUpload
+                      value={
+                        field.value && form.getValues("layerVideoPublicId")
+                          ? { url: field.value, publicId: form.getValues("layerVideoPublicId")! }
+                          : null
+                      }
+                      onChange={(value) => {
+                        const uploaded = value as UploadedImage | null;
+                        field.onChange(uploaded?.url || null);
+                        form.setValue("layerVideoPublicId", uploaded?.publicId || null, { shouldValidate: true });
+                      }}
+                      maxFiles={1}
+                      accept="video/*"
+                    />
+                    <FieldError errors={[fieldState.error]} />
+                  </Field>
+                )}
+              />
+
+              <Controller
+                control={form.control}
+                name="coverImageUrl"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>Cover Image</FieldLabel>
+                    <ImageUpload
+                      value={
+                        field.value && form.getValues("coverImagePublicId")
+                          ? { url: field.value, publicId: form.getValues("coverImagePublicId")! }
+                          : null
+                      }
+                      onChange={(value) => {
+                        const uploaded = value as UploadedImage | null;
+                        field.onChange(uploaded?.url || null);
+                        form.setValue("coverImagePublicId", uploaded?.publicId || null, { shouldValidate: true });
+                      }}
+                      maxFiles={1}
+                    />
+                    <FieldError errors={[fieldState.error]} />
+                  </Field>
+                )}
+              />
+            </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>

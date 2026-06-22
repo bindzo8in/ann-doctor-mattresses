@@ -25,7 +25,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, RotateCcw } from "lucide-react";
+
+const DEFAULT_SPECIFICATIONS = [
+  { label: "Size", value: "30\" x 72\" (Sofa type)" },
+  { label: "Thickness", value: "6 Inches" },
+  { label: "Mattress Type", value: "Softy Comfort" },
+  { label: "Comfort Level", value: "Medium Firm" },
+  { label: "Fabric", value: "Soft, Breathable Satton Fabric" },
+  { label: "Support Type", value: "Spinal Alignment" },
+  { label: "Cooling Feature", value: "None" },
+  { label: "Durability", value: "10 Years" },
+  { label: "Warranty", value: "1 Year" },
+  { label: "Ideal For", value: "Daily Use, Couples, and Luxury Sleep Experience" }
+];
 
 interface SpecificationsStepProps {
   form: UseFormReturn<CreateProductInput>;
@@ -47,6 +60,10 @@ export function SpecificationsStep({
     });
   }
 
+  function resetToDefaults() {
+    form.setValue("specifications", DEFAULT_SPECIFICATIONS, { shouldValidate: true });
+  }
+
   useEffect(() => {
     if (form.getValues("specifications").length === 0) {
       addSpecification();
@@ -58,10 +75,16 @@ export function SpecificationsStep({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Specifications</h3>
-        <Button type="button" onClick={addSpecification} size="sm" variant="outline">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Specification
-        </Button>
+        <div className="flex gap-2">
+          <Button type="button" onClick={resetToDefaults} size="sm" variant="outline" className="text-slate-600">
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Reset Defaults
+          </Button>
+          <Button type="button" onClick={addSpecification} size="sm" variant="outline">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Specification
+          </Button>
+        </div>
       </div>
 
       <div className="rounded-md border overflow-x-auto max-w-full w-full">

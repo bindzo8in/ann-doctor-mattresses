@@ -9,7 +9,7 @@ export default async function WishlistPage() {
   const { items, isAuthenticated } = await getUserWishlist();
 
   return (
-    <Suspense fallback={<div className="min-h-[60vh] flex flex-col items-center justify-center"><Loader2 className="animate-spin text-primary w-10 h-10" /></div>}>
+    <Suspense fallback={<div className="min-h-[60vh] flex flex-col items-center justify-center font-montserrat"><Loader2 className="animate-spin text-primary w-10 h-10" /></div>}>
       <WishlistPageClient initialItems={items} initialIsAuthenticated={isAuthenticated} />
     </Suspense>
   );

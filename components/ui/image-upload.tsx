@@ -287,17 +287,32 @@ export function ImageUpload({
                     border
                   "
                 >
-                  <Image
-                    src={image.url}
-                    alt="Uploaded image"
-                    width={300}
-                    height={300}
-                    className="
-                      aspect-square
-                      w-full
-                      object-cover
-                    "
-                  />
+                  {image.url.match(/\.(mp4|webm|mov|mkv)$/i) ? (
+                    <video
+                      src={image.url}
+                      className="
+                        aspect-square
+                        w-full
+                        object-cover
+                      "
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                    />
+                  ) : (
+                    <Image
+                      src={image.url}
+                      alt="Uploaded media"
+                      width={300}
+                      height={300}
+                      className="
+                        aspect-square
+                        w-full
+                        object-cover
+                      "
+                    />
+                  )}
 
                   <Button
                     type="button"

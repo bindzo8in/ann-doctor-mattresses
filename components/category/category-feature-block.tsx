@@ -7,12 +7,13 @@ export interface FeatureItem {
 
 export interface CategoryFeatureBlockProps {
   features: FeatureItem[];
-  layerImageUrl: string;
+  layerImageUrl?: string | null;
+  layerVideoUrl?: string | null;
 }
 
-export function CategoryFeatureBlock({ features, layerImageUrl }: CategoryFeatureBlockProps) {
+export function CategoryFeatureBlock({ features, layerImageUrl, layerVideoUrl }: CategoryFeatureBlockProps) {
   return (
-    <section className="w-full max-w-6xl mx-auto px-4 py-16">
+    <section className="w-full max-w-6xl mx-auto px-4 section-padding">
       <div className="flex flex-col md:flex-row w-full min-h-[400px] shadow-sm rounded-lg overflow-hidden">
         
         {/* Left Side: Gray background with list */}
@@ -34,14 +35,35 @@ export function CategoryFeatureBlock({ features, layerImageUrl }: CategoryFeatur
 
         {/* Right Side: Pink background with image */}
         <div className="w-full md:w-1/2 bg-[#fbe7e7] p-10 flex items-center justify-center relative min-h-[300px]">
-          <div className="relative w-4/5 h-4/5 max-w-[300px] max-h-[300px]">
-            <Image 
-              src={layerImageUrl} 
-              alt="Mattress Layers" 
-              fill 
-              className="object-contain"
-              sizes="(max-width: 768px) 100vw, 50vw"
-            />
+          <div className="relative w-full max-w-[450px] aspect-[9/6]">
+            {layerVideoUrl ? (
+              <video 
+                src={layerVideoUrl} 
+                poster={layerImageUrl || undefined}
+                autoPlay 
+                loop 
+                muted 
+                playsInline 
+                className="object-cover w-full h-full rounded-lg"
+              />
+            ) : layerImageUrl?.match(/\.(mp4|webm|mov|mkv)$/i) ? (
+              <video 
+                src={layerImageUrl} 
+                autoPlay 
+                loop 
+                muted 
+                playsInline 
+                className="object-cover w-full h-full rounded-lg"
+              />
+            ) : (
+              <Image 
+                src={layerImageUrl || "/cat_mattress.png"} 
+                alt="Mattress Layers" 
+                fill 
+                className="object-contain"
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+            )}
           </div>
         </div>
 

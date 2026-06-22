@@ -100,7 +100,7 @@ export const columns: ColumnDef<ProductColumn>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem asChild>
-              <Link href={`/dashboard/products/${product.id}/edit`}>
+              <Link href={`/dashboard/products/${product.id}/edit`} scroll>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit
               </Link>

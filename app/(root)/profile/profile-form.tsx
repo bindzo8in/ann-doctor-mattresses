@@ -98,7 +98,7 @@ export function ProfileForm({ initialUser }: ProfileFormProps) {
             <label className="text-sm font-semibold text-slate-700 flex items-center gap-2">
               <Lock className="w-4 h-4 text-slate-400" /> Current Password
             </label>
-            <Link href="/forgot-password" className="text-xs font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900 transition-colors">
+            <Link href="/forgot-password" scroll className="text-xs font-medium text-slate-700 underline underline-offset-4 hover:text-slate-900 transition-colors">
               Forgot Password?
             </Link>
           </div>

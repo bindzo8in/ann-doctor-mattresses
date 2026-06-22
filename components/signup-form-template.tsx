@@ -213,7 +213,7 @@ export function SignupForm() {
             className="w-full text-sm font-medium"
             asChild
           >
-            <Link href={routes.login}>
+            <Link href={routes.login} scroll>
               Log in to existing account
             </Link>
           </Button>

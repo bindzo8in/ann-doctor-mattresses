@@ -17,7 +17,7 @@ export interface CategoryVariantsBlockProps {
 
 export function CategoryVariantsBlock({ categoryName, coverImageUrl, variants }: CategoryVariantsBlockProps) {
   return (
-    <section className="w-full max-w-6xl mx-auto px-4 py-16 relative overflow-hidden">
+    <section className="w-full max-w-6xl mx-auto px-4 section-padding relative overflow-hidden">
       {/* Decorative background swirly lines could go here */}
       
       <div className="flex flex-col md:flex-row items-center gap-10 md:gap-20">
@@ -52,6 +52,7 @@ export function CategoryVariantsBlock({ categoryName, coverImageUrl, variants }:
                 href={variant.link}
                 className="relative group transition-transform hover:-translate-x-2"
                 style={{ zIndex }}
+                scroll
               >
                 <div 
                   className={`

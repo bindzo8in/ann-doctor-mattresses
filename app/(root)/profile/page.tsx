@@ -13,7 +13,7 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 font-montserrat">
       <ProfileForm initialUser={session.user} />
       <div>
         <h2 className="text-xl font-bold text-slate-900 mb-4">Notification Preferences</h2>

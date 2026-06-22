@@ -420,6 +420,7 @@ function HeroPrimaryBtn({ href, label }: { href: string; label: string }) {
     <Link
       href={href}
       className="inline-flex items-center gap-1.5 md:gap-2 h-10 md:h-[50px] px-5 md:px-8 rounded-full bg-primary text-primary-foreground text-xs md:text-sm font-bold tracking-[0.01em] no-underline transition-[opacity,transform,box-shadow] duration-200 hover:opacity-[0.88] hover:-translate-y-0.5 hover:shadow-[0_10px_30px_color-mix(in_oklab,var(--primary)_40%,transparent)] active:translate-y-0 active:opacity-100"
+      scroll
     >
       {label} <ArrowRight size={14} className="md:w-4 md:h-4" />
     </Link>
@@ -431,6 +432,7 @@ function HeroGhostBtn({ href, label }: { href: string; label: string }) {
     <Link
       href={href}
       className="inline-flex items-center h-10 md:h-[50px] px-4 md:px-7 rounded-full border border-border text-foreground text-xs md:text-sm font-semibold no-underline transition-[background,border-color] duration-200 hover:bg-secondary hover:border-ring"
+      scroll
     >
       {label}
     </Link>

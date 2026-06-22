@@ -46,7 +46,7 @@ export function ProductGallery({ images }: Props) {
         <CarouselContent>
           {images.map((image, index) => (
             <CarouselItem key={image.id}>
-              <div className="relative aspect-square overflow-hidden rounded-xl bg-muted">
+              <div className="relative w-full aspect-[4/3] max-h-[60vh] lg:max-h-[550px] overflow-hidden rounded-2xl bg-[#f8f9fa] border border-slate-100">
                 <Image
                   src={image.url}
                   alt={`Product Image ${index + 1}`}
@@ -55,6 +55,11 @@ export function ProductGallery({ images }: Props) {
                   sizes="(max-width: 768px) 100vw, 50vw"
                   priority={index === 0}
                 />
+                {index === 0 && (
+                  <div className="absolute top-4 left-4 bg-[#E53935] text-white px-3 py-1.5 text-xs sm:text-sm font-bold rounded-md uppercase tracking-wide shadow-md z-10">
+                    Buy 1 Get 1 Free
+                  </div>
+                )}
               </div>
             </CarouselItem>
           ))}

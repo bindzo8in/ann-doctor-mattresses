@@ -33,6 +33,7 @@ export async function getProducts(params: ProductFilterParams) {
           take: 1,
         },
         specifications: true,
+        reviews: { select: { rating: true } },
       },
     });
 

@@ -1,6 +1,6 @@
 export default function PrivacyPolicyPage() {
   return (
-    <main className="py-16 md:py-24">
+    <main className="py-16 md:py-24 font-montserrat">
       <div className="page-container max-w-4xl">
         <h1 className="text-3xl md:text-4xl font-extrabold mb-8">Privacy Policy</h1>
         <div className="space-y-6 text-muted-foreground leading-relaxed">

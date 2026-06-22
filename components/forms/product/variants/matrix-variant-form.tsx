@@ -45,6 +45,9 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
 
   const [defaultVariantKey, setDefaultVariantKey] = useState<string>("");
   const [priceOverrides, setPriceOverrides] = useState<Record<string, { mrp?: number, salePrice?: number }>>({});
+  
+  const [customDefaultWidth, setCustomDefaultWidth] = useState<number | "">("");
+  const [customDefaultLength, setCustomDefaultLength] = useState<number | "">("");
 
   // Initialization and reverse-calculation
   const existingVariants = useWatch({ control: form.control, name: "variants" });
@@ -85,8 +88,13 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
        
        existingVariants.forEach(v => {
           if (v.variantType === "MATTRESS" && v.width && v.length && v.thickness) {
-             const key = `${v.width}x${v.length}-${v.thickness}`;
+             const key = v.sizeName === "CUSTOM" ? `CUSTOM-${v.thickness}` : `${v.width}x${v.length}-${v.thickness}`;
              if (v.isDefault) initialDefault = key;
+             
+             if (v.sizeName === "CUSTOM") {
+                setCustomDefaultWidth(v.width);
+                setCustomDefaultLength(v.length);
+             }
              
              const areaSqFt = (v.width * v.length) / 144;
              
@@ -147,7 +155,11 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
     if (existingVariants && Array.isArray(existingVariants)) {
       existingVariants.forEach(v => {
         if (v.variantType === "MATTRESS" && v.width && v.length && v.thickness && v.id) {
-          existingMap.set(`${v.width}x${v.length}-${v.thickness}`, v.id);
+          if (v.sizeName === "CUSTOM") {
+            existingMap.set(`CUSTOM-${v.thickness}`, v.id);
+          } else {
+            existingMap.set(`${v.width}x${v.length}-${v.thickness}`, v.id);
+          }
         }
       });
     }
@@ -197,8 +209,42 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
       });
     });
 
+    const allowCustomSize = form.getValues("allowCustomSize");
+    if (allowCustomSize && activeThicknesses.length > 0) {
+      const minW = form.getValues("minWidth") || 30;
+      const minL = form.getValues("minLength") || 70;
+      const tStr = defaultVariantKey?.startsWith("CUSTOM") ? defaultVariantKey.split("-")[1] : activeThicknesses[0]?.toString();
+      const t = parseInt(tStr || "") || activeThicknesses[0];
+      const key = `CUSTOM-${t}`;
+      
+      let isDefault = defaultVariantKey === key || defaultVariantKey?.startsWith("CUSTOM");
+      const existingId = existingMap.get(key);
+
+      const w = customDefaultWidth || minW;
+      const l = customDefaultLength || minL;
+      
+      const areaSqFt = (w * l) / 144;
+      const saleRate = customPricing[t.toString()] || 0;
+      const mrpRate = mrpPricing[t.toString()] || saleRate;
+      
+      const salePrice = Math.round(areaSqFt * saleRate);
+      const mrpPrice = Math.round(areaSqFt * mrpRate);
+
+      newVariants.push({
+        ...(existingId ? { id: existingId } : {}),
+        isDefault: isDefault,
+        variantType: "MATTRESS",
+        mrp: mrpPrice,
+        salePrice: salePrice,
+        sizeName: "CUSTOM",
+        width: w,
+        length: l,
+        thickness: t
+      });
+    }
+
     form.setValue("variants", newVariants, { shouldValidate: true });
-  }, [customPricing, mrpPricing, selectedSizes, form, priceOverrides, defaultVariantKey]);
+  }, [customPricing, mrpPricing, selectedSizes, form, priceOverrides, defaultVariantKey, customDefaultWidth, customDefaultLength]);
 
   const activeThicknesses = Object.keys(customPricing).map(Number).filter(t => !isNaN(t) && customPricing[t.toString()] > 0).sort((a,b)=>a-b);
   const variantsError = (form.formState.errors.variants as any)?.message;
@@ -280,6 +326,83 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
           })}
         </div>
       </div>
+
+      {/* Custom Size Default Option */}
+      {form.getValues("allowCustomSize") && activeThicknesses.length > 0 && (
+        <div className="border rounded-xl p-6 bg-slate-50 space-y-4 transition-all">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold">Custom Size Default</h3>
+              <p className="text-sm text-muted-foreground">Select this if you want the "Custom Size" option to be selected by default when customers view this product.</p>
+            </div>
+            <button 
+              type="button"
+              onClick={() => setDefaultVariantKey(`CUSTOM-${activeThicknesses[0]}`)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all shrink-0 ${defaultVariantKey?.startsWith("CUSTOM") ? 'bg-yellow-50 border-yellow-400 text-yellow-700' : 'bg-white hover:bg-slate-50'}`}
+            >
+              <Star className="h-4 w-4" fill={defaultVariantKey?.startsWith("CUSTOM") ? "currentColor" : "none"} />
+              <span className="font-medium">Set as Default</span>
+            </button>
+          </div>
+          
+          {defaultVariantKey?.startsWith("CUSTOM") && (() => {
+            const tStr = defaultVariantKey.split("-")[1];
+            const t = parseInt(tStr || "") || activeThicknesses[0];
+            const w = customDefaultWidth || form.getValues("minWidth") || 30;
+            const l = customDefaultLength || form.getValues("minLength") || 70;
+            const areaSqFt = (w * l) / 144;
+            const saleRate = customPricing[t.toString()] || 0;
+            const mrpRate = mrpPricing[t.toString()] || saleRate;
+            const salePrice = Math.round(areaSqFt * saleRate);
+            const mrpPrice = Math.round(areaSqFt * mrpRate);
+
+            return (
+              <div className="pt-4 border-t flex flex-col md:flex-row gap-6 items-start md:items-end w-full">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1 w-full max-w-2xl">
+                   <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Default Thickness</Label>
+                      <select 
+                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                         value={t}
+                         onChange={(e) => setDefaultVariantKey(`CUSTOM-${e.target.value}`)}
+                      >
+                         {activeThicknesses.map(thick => (
+                            <option key={thick} value={thick}>{thick} Inches</option>
+                         ))}
+                      </select>
+                   </div>
+                   <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Default Length (Inches)</Label>
+                      <Input 
+                         type="number"
+                         placeholder={`Default: ${form.getValues("minLength") || 70}`}
+                         value={customDefaultLength === "" ? "" : customDefaultLength}
+                         onChange={(e) => setCustomDefaultLength(e.target.value ? parseInt(e.target.value) : "")}
+                      />
+                   </div>
+                   <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">Default Width (Inches)</Label>
+                      <Input 
+                         type="number"
+                         placeholder={`Default: ${form.getValues("minWidth") || 30}`}
+                         value={customDefaultWidth === "" ? "" : customDefaultWidth}
+                         onChange={(e) => setCustomDefaultWidth(e.target.value ? parseInt(e.target.value) : "")}
+                      />
+                   </div>
+                </div>
+
+                <div className="bg-white px-6 py-3 rounded-lg border shadow-sm flex flex-col items-center justify-center shrink-0 min-w-[150px]">
+                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Calculated Price</span>
+                   <span className="font-bold text-green-600 text-lg">₹{formatPrice(salePrice)}</span>
+                   {mrpPrice > salePrice && (
+                     <span className="text-xs text-slate-400 line-through">₹{formatPrice(mrpPrice)}</span>
+                   )}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
 
       {/* Auto-Calculated Preview */}
       {activeThicknesses.length > 0 && selectedSizes.length > 0 && (

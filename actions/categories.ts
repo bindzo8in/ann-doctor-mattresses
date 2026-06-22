@@ -5,25 +5,49 @@ import { auth } from "@/auth";
 import { userHasPermission } from "@/lib/rbac";
 import { auditLogger } from "@/lib/audit";
 
-export async function getCategories() {
+export async function getCategories(limit?: number, onlyWithProducts: boolean = false) {
   const session = await auth();
   if (!userHasPermission(session?.user, "categories.read")) {
     throw new Error("Unauthorized");
   }
 
   const categories = await prisma.category.findMany({
+    where: onlyWithProducts
+      ? {
+        products: {
+          some: {},
+        },
+      }
+      : undefined,
     orderBy: { name: "asc" },
     include: {
       _count: {
         select: { products: true }
       }
-    }
+    },
+    take: limit,
   });
 
-  return categories;
+  return categories.map(({ _count, ...category }) => ({
+    ...category,
+    productCount: _count.products,
+  }));
 }
 
-export async function createCategory(data: { name: string; slug: string; thumbnailUrl?: string | null; thumbnailPublicId?: string | null }) {
+export async function createCategory(data: { 
+  name: string; 
+  slug: string; 
+  description?: string | null;
+  features?: any | null;
+  layerImageUrl?: string | null;
+  layerImagePublicId?: string | null;
+  layerVideoUrl?: string | null;
+  layerVideoPublicId?: string | null;
+  coverImageUrl?: string | null;
+  coverImagePublicId?: string | null;
+  thumbnailUrl?: string | null; 
+  thumbnailPublicId?: string | null;
+}) {
   const session = await auth();
   if (!userHasPermission(session?.user, "categories.create")) {
     throw new Error("Unauthorized");
@@ -41,6 +65,14 @@ export async function createCategory(data: { name: string; slug: string; thumbna
     data: {
       name: data.name,
       slug: data.slug,
+      description: data.description || null,
+      features: data.features || null,
+      layerImageUrl: data.layerImageUrl || null,
+      layerImagePublicId: data.layerImagePublicId || null,
+      layerVideoUrl: data.layerVideoUrl || null,
+      layerVideoPublicId: data.layerVideoPublicId || null,
+      coverImageUrl: data.coverImageUrl || null,
+      coverImagePublicId: data.coverImagePublicId || null,
       thumbnailUrl: data.thumbnailUrl || null,
       thumbnailPublicId: data.thumbnailPublicId || null,
     }
@@ -59,7 +91,20 @@ export async function createCategory(data: { name: string; slug: string; thumbna
   return category;
 }
 
-export async function updateCategory(id: string, data: { name?: string; slug?: string; thumbnailUrl?: string | null; thumbnailPublicId?: string | null }) {
+export async function updateCategory(id: string, data: { 
+  name?: string; 
+  slug?: string; 
+  description?: string | null;
+  features?: any | null;
+  layerImageUrl?: string | null;
+  layerImagePublicId?: string | null;
+  layerVideoUrl?: string | null;
+  layerVideoPublicId?: string | null;
+  coverImageUrl?: string | null;
+  coverImagePublicId?: string | null;
+  thumbnailUrl?: string | null; 
+  thumbnailPublicId?: string | null;
+}) {
   const session = await auth();
   if (!userHasPermission(session?.user, "categories.update")) {
     throw new Error("Unauthorized");
@@ -79,6 +124,14 @@ export async function updateCategory(id: string, data: { name?: string; slug?: s
     data: {
       name: data.name,
       slug: data.slug,
+      description: data.description !== undefined ? data.description : undefined,
+      features: data.features !== undefined ? data.features : undefined,
+      layerImageUrl: data.layerImageUrl !== undefined ? data.layerImageUrl : undefined,
+      layerImagePublicId: data.layerImagePublicId !== undefined ? data.layerImagePublicId : undefined,
+      layerVideoUrl: data.layerVideoUrl !== undefined ? data.layerVideoUrl : undefined,
+      layerVideoPublicId: data.layerVideoPublicId !== undefined ? data.layerVideoPublicId : undefined,
+      coverImageUrl: data.coverImageUrl !== undefined ? data.coverImageUrl : undefined,
+      coverImagePublicId: data.coverImagePublicId !== undefined ? data.coverImagePublicId : undefined,
       thumbnailUrl: data.thumbnailUrl !== undefined ? data.thumbnailUrl : undefined,
       thumbnailPublicId: data.thumbnailPublicId !== undefined ? data.thumbnailPublicId : undefined,
     }

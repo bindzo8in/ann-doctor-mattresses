@@ -12,7 +12,8 @@ import {
   type CreateProductInput,
 } from "@/lib/schema/product-form-schema";
 
-import { MultiStepFormProvider } from "@/hooks/use-multi-step-viewer";
+import { MultiStepFormProvider, useMultiStepForm } from "@/hooks/use-multi-step-viewer";
+import { Button } from "@/components/ui/button";
 
 import {
   FormFooter,
@@ -56,6 +57,8 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
     defaultValues: initialData || defaultValues,
     mode: "onChange",
   });
+
+  console.log(form.formState.errors)
 
   const router = useRouter();
   const productType = form.watch("type");
@@ -264,6 +267,19 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
     [form, productType]
   );
 
+  async function handleSaveAndExit(stepIndex: number) {
+    const step = steps[stepIndex - 1];
+    const isValid = await form.trigger(step.fields as never);
+    if (!isValid) return;
+
+    const saved = await handleStepSave(stepIndex);
+    if (saved) {
+      toast.success("Product saved successfully!");
+      router.push(routes.dashboard_products);
+      router.refresh();
+    }
+  }
+
   return (
     <MultiStepFormProvider
       stepsFields={steps}
@@ -288,6 +304,8 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
           <FormFooter className="flex flex-col sm:flex-row gap-2 items-center justify-end pt-2">
             <PreviousButton className="w-full sm:w-auto">Previous</PreviousButton>
 
+            <SaveAndExitButton onSaveAndExit={handleSaveAndExit} />
+
             <NextButton className="w-full sm:w-auto">Next</NextButton>
 
             <SubmitButton onClick={onSubmit} className="w-full sm:w-auto">
@@ -297,5 +315,21 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
         </MultiStepFormContent>
       </form>
     </MultiStepFormProvider>
+  );
+}
+
+function SaveAndExitButton({ onSaveAndExit }: { onSaveAndExit: (stepIndex: number) => void }) {
+  const { currentStepIndex, isLastStep } = useMultiStepForm();
+  if (isLastStep) return null;
+  
+  return (
+    <Button 
+      type="button" 
+      variant="secondary" 
+      onClick={() => onSaveAndExit(currentStepIndex)}
+      className="w-full sm:w-auto"
+    >
+      Save & Exit
+    </Button>
   );
 }
