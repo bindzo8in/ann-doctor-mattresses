@@ -66,6 +66,7 @@ export function FeaturesMarquee() {
                       alt={feature.title}
                       fill
                       className="object-cover hover:scale-105 transition-transform duration-500"
+                      sizes="256px"
                       unoptimized
                     />
                   </div>

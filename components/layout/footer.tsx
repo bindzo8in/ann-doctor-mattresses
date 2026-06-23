@@ -58,7 +58,7 @@ export function ContactBlock() {
       <div className="w-full lg:w-[65%] xl:w-[70%] bg-[#222222] text-white py-8 lg:py-10 relative overflow-hidden flex items-center shadow-inner">
         {/* Large watermark logo */}
         <div className="absolute inset-0 opacity-10 pointer-events-none">
-          <Image src="/footer_bed.png" fill alt="" className="object-cover object-center" />
+          <Image src="/footer_bed.png" fill alt="" className="object-cover object-center" sizes="100vw" />
         </div>
 
         <div className="w-full px-6 sm:px-12 xl:px-16 relative z-10 max-w-6xl mx-auto">
@@ -174,7 +174,7 @@ function MainFooterBlock() {
           <div className="flex flex-wrap sm:flex-nowrap justify-center gap-10 sm:gap-16 lg:gap-24 flex-1">
             
             {/* Shop */}
-            <div className="space-y-6 min-w-[120px]">
+            <div className="space-y-6 w-full sm:w-auto sm:min-w-[120px]">
             <h4 className="font-bold text-lg">Shop</h4>
 
             <ul className="space-y-3 text-sm text-slate-400">
@@ -222,7 +222,7 @@ function MainFooterBlock() {
             </div>
 
             {/* Company */}
-            <div className="space-y-6 min-w-[120px]">
+            <div className="space-y-6 w-full sm:w-auto sm:min-w-[120px]">
             <h4 className="font-bold text-lg">Company</h4>
 
             <ul className="space-y-3 text-sm text-slate-400">
@@ -249,7 +249,7 @@ function MainFooterBlock() {
             </div>
 
             {/* Support */}
-            <div className="space-y-6 min-w-[120px]">
+            <div className="space-y-6 w-full sm:w-auto sm:min-w-[120px]">
             <h4 className="font-bold text-lg">Support</h4>
 
             <ul className="space-y-3 text-sm text-slate-400">

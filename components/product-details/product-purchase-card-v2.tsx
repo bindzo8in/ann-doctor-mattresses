@@ -78,7 +78,7 @@ export function ProductPurchaseCardV2({ product, branchGroups }: Props) {
   const { status } = useSession();
 
   const actualReviewCount = product.reviews?.length || 0;
-  const reviewCount = actualReviewCount > 0 ? actualReviewCount : 100;
+  const reviewCount = actualReviewCount;
   const averageRating = actualReviewCount > 0 
     ? product.reviews.reduce((acc, r) => acc + r.rating, 0) / actualReviewCount
     : 5;

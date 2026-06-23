@@ -35,7 +35,7 @@ export const columns: ColumnDef<ProductColumn>[] = [
       const url = row.getValue("thumbnailUrl") as string;
       return (
         <div className="h-12 w-12 relative rounded-md overflow-hidden bg-gray-100">
-          <Image src={url} alt={row.getValue("name")} fill className="object-cover" />
+          <Image src={url} alt={row.getValue("name")} fill className="object-cover" sizes="48px" />
         </div>
       );
     },

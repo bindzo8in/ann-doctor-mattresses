@@ -397,7 +397,7 @@ export default function CheckoutPage() {
                         <div key={(item as any).id || item.productId} className="flex gap-4 border-b pb-3 last:border-b-0 last:pb-0">
                           <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border bg-slate-50">
                             {item.product.thumbnailUrl && (
-                              <Image src={item.product.thumbnailUrl} alt={item.product.name} fill className="object-cover" />
+                              <Image src={item.product.thumbnailUrl} alt={item.product.name} fill className="object-cover" sizes="80px" />
                             )}
                           </div>
                           <div className="flex-1 text-sm space-y-1">

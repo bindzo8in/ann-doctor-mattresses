@@ -180,7 +180,7 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground overflow-x-hidden;
     letter-spacing: var(--tracking-normal);
   }
 
@@ -230,6 +230,6 @@
 }
 
 /* Standardized vertical padding for sections */
-.section-padding {
+/* .section-padding {
   @apply py-20 md:py-28 lg:py-32;
-}
+} */

@@ -623,7 +623,7 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
                     <div key={item.id} className="flex gap-4 py-4 first:pt-0 last:pb-0">
                       <div className="relative w-16 h-16 rounded-xl overflow-hidden border bg-slate-50 flex-shrink-0">
                         {item.product.thumbnailUrl && (
-                          <Image src={item.product.thumbnailUrl} alt={item.productName} fill className="object-cover" />
+                          <Image src={item.product.thumbnailUrl} alt={item.productName} fill className="object-cover" sizes="80px" />
                         )}
                       </div>
                       <div className="flex-1 text-sm flex flex-col justify-between">

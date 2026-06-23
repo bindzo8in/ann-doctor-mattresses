@@ -184,7 +184,7 @@ export function MattressVariantArray({ form }: MattressVariantArrayProps) {
                           )}
                         </div>
                         {fieldState.error && (
-                          <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
+                          <p className="text-xs text-destructive whitespace-normal break-words max-w-xs">{fieldState.error.message}</p>
                         )}
                       </div>
                     )}
@@ -210,7 +210,7 @@ export function MattressVariantArray({ form }: MattressVariantArrayProps) {
                           className={fieldState.invalid ? "border-destructive" : ""}
                         />
                         {fieldState.error && (
-                          <p className="text-[10px] text-destructive whitespace-normal wrap-break-word max-w-[150px]">{fieldState.error.message}</p>
+                          <p className="text-xs text-destructive whitespace-normal break-words max-w-xs">{fieldState.error.message}</p>
                         )}
                       </div>
                     )}
@@ -236,7 +236,7 @@ export function MattressVariantArray({ form }: MattressVariantArrayProps) {
                           className={fieldState.invalid ? "border-destructive" : ""}
                         />
                         {fieldState.error && (
-                          <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
+                          <p className="text-xs text-destructive whitespace-normal break-words max-w-xs">{fieldState.error.message}</p>
                         )}
                       </div>
                     )}
@@ -262,7 +262,7 @@ export function MattressVariantArray({ form }: MattressVariantArrayProps) {
                           className={fieldState.invalid ? "border-destructive" : ""}
                         />
                         {fieldState.error && (
-                          <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
+                          <p className="text-xs text-destructive whitespace-normal break-words max-w-xs">{fieldState.error.message}</p>
                         )}
                       </div>
                     )}
@@ -288,7 +288,7 @@ export function MattressVariantArray({ form }: MattressVariantArrayProps) {
                           className={fieldState.invalid ? "border-destructive" : ""}
                         />
                         {fieldState.error && (
-                          <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
+                          <p className="text-xs text-destructive whitespace-normal break-words max-w-xs">{fieldState.error.message}</p>
                         )}
                       </div>
                     )}
@@ -314,7 +314,7 @@ export function MattressVariantArray({ form }: MattressVariantArrayProps) {
                           className={fieldState.invalid ? "border-destructive" : ""}
                         />
                         {fieldState.error && (
-                          <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
+                          <p className="text-xs text-destructive whitespace-normal break-words max-w-xs">{fieldState.error.message}</p>
                         )}
                       </div>
                     )}

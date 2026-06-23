@@ -58,8 +58,6 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
     mode: "onChange",
   });
 
-  console.log(form.formState.errors)
-
   const router = useRouter();
   const productType = form.watch("type");
 

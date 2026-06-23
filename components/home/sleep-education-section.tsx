@@ -66,6 +66,7 @@ export function SleepEducationSection() {
                   alt="Sleep Chart"
                   fill
                   className="object-contain p-3 sm:p-4 md:p-6"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                   priority
                 />
               </div>
@@ -79,6 +80,7 @@ export function SleepEducationSection() {
                     alt="Sleeping Positions"
                     fill
                     className="object-contain object-center"
+                    sizes="(max-width: 768px) 100vw, 50vw"
                   />
                 </div>
 

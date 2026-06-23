@@ -45,7 +45,6 @@ export default async function Home() {
     categories,
     branchGroups,
   } = await getHomePageData();
-console.log(categories)
   return (
     <main className="font-montserrat">
       <Script

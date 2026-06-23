@@ -95,7 +95,7 @@ export function QuickBuyModal({ product, trigger }: Props) {
     <div className="flex flex-col h-full overflow-y-auto">
       <div className="p-6 border-b flex items-center gap-4 bg-slate-50">
         <div className="w-16 h-16 relative rounded-lg overflow-hidden bg-white border shrink-0">
-          <Image src={product.thumbnailUrl || "/products/mattress.webp"} alt={product.name} fill className="object-cover" />
+          <Image src={product.thumbnailUrl || "/products/mattress.webp"} alt={product.name} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
         </div>
         <div>
           <h3 className="font-bold text-slate-900 line-clamp-1">{product.name}</h3>

@@ -8,7 +8,6 @@ import { ProductPurchaseCardV2 } from "@/components/product-details/product-purc
 import { SpecificationTableV2 } from "@/components/product-details/specification-table-v2";
 import { ProductSectionsRenderer } from "@/components/product-details/product-sections-renderer";
 import { FaqAccordionV2 } from "@/components/product-details/faq-accordion-v2";
-import { HelpCircle } from "lucide-react";
 import { RelatedProductsCarousel } from "@/components/product-details/related-products-carousel";
 import { ProductReviews } from "@/components/product-details/product-reviews";
 import { getApprovedReviews, canUserReviewProduct } from "@/actions/reviews";
@@ -133,7 +132,7 @@ export default async function ProductDetailsPage({ params }: Props) {
               </div>
               <div className="hidden md:flex justify-center items-center">
                 <div className="relative w-80 h-80 flex items-center justify-center">
-                   <Image src="/faq.png" alt="FAQ" fill className="object-contain drop-shadow-xl" />
+                   <Image src="/faq.png" alt="FAQ" fill className="object-contain drop-shadow-xl" sizes="(max-width: 768px) 100vw, 50vw" />
                 </div>
               </div>
             </div>

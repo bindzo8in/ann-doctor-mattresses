@@ -227,7 +227,7 @@ export default function CategoriesPage() {
                   <TableCell>
                     {category.thumbnailUrl ? (
                       <div className="relative w-12 h-12 rounded overflow-hidden border">
-                        <Image src={category.thumbnailUrl} alt={category.name} fill className="object-cover" />
+                        <Image src={category.thumbnailUrl} alt={category.name} fill className="object-cover" sizes="48px" />
                       </div>
                     ) : (
                       <div className="w-12 h-12 rounded border bg-slate-100 flex items-center justify-center text-xs text-slate-400">

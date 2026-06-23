@@ -1,7 +1,6 @@
 // lib/home-page.ts
 
-import { getCategories } from "@/actions/categories";
-import { getActiveBranchesGroupedByState, getFeaturedProducts, getHeroBanners, getNewLaunches } from "../home";
+import { getCategories, getActiveBranchesGroupedByState, getFeaturedProducts, getHeroBanners, getNewLaunches } from "../home";
 
 export async function getHomePageData() {
   const [
@@ -14,7 +13,7 @@ export async function getHomePageData() {
     getHeroBanners(),
     getFeaturedProducts(3),
     getNewLaunches(3),
-    getCategories(undefined, false),
+    getCategories(),
     getActiveBranchesGroupedByState(),
   ]);
 

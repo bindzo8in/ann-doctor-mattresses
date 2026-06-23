@@ -225,7 +225,7 @@ export function OrdersClient({ initialOrders, initialNextCursor }: OrdersClientP
                   <TableCell>
                     {order.items && order.items[0]?.product?.thumbnailUrl ? (
                       <div className="relative w-12 h-12 rounded-md overflow-hidden border bg-slate-100 flex-shrink-0">
-                        <Image src={order.items[0].product.thumbnailUrl} alt="Product Thumbnail" fill className="object-cover" />
+                        <Image src={order.items[0].product.thumbnailUrl} alt="Product Thumbnail" fill className="object-cover" sizes="64px" />
                       </div>
                     ) : (
                       <div className="w-12 h-12 bg-slate-100 rounded-md border flex items-center justify-center">

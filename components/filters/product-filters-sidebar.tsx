@@ -139,7 +139,7 @@ export function ProductFiltersSidebar({ dynamicFacets }: ProductFiltersSidebarPr
   const filterContent = (
     <div className="space-y-2 pb-12">
       <FilterSection title="Product Type" defaultOpen>
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 px-4">
           <Link
             href={routes.products}
             className={cn(
@@ -226,7 +226,7 @@ export function ProductFiltersSidebar({ dynamicFacets }: ProductFiltersSidebarPr
                     key={opt.value}
                     onClick={() => toggleAge(opt.value)}
                     className={cn(
-                      "w-full flex items-center justify-between text-left px-2.5 py-2 rounded-md text-sm transition-colors",
+                      "w-full flex items-center justify-between text-left px-2.5 py-2 rounded-md text-sm transition-colors px-4",
                       isActive
                         ? "bg-primary/10 text-primary font-semibold"
                         : "hover:bg-muted text-foreground"
@@ -252,7 +252,7 @@ export function ProductFiltersSidebar({ dynamicFacets }: ProductFiltersSidebarPr
                     key={opt.value}
                     onClick={() => toggleWeight(opt.value)}
                     className={cn(
-                      "w-full flex items-center justify-between text-left px-2.5 py-2 rounded-md text-sm transition-colors",
+                      "w-full flex items-center justify-between text-left py-2 rounded-md text-sm transition-colors px-4",
                       isActive
                         ? "bg-primary/10 text-primary font-semibold"
                         : "hover:bg-muted text-foreground"
@@ -306,7 +306,7 @@ export function ProductFiltersSidebar({ dynamicFacets }: ProductFiltersSidebarPr
               <span>Filters</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[85vw] sm:w-[350px] overflow-y-auto">
+          <SheetContent side="left" className="w-full max-w-[85vw] sm:max-w-sm overflow-y-auto">
             <SheetHeader className="mb-4 text-left">
               <SheetTitle>Filters</SheetTitle>
             </SheetHeader>

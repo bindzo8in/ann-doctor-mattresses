@@ -109,7 +109,7 @@ export function ReviewsPageClient({ initialData }: ReviewsPageClientProps) {
                     <div className="flex items-center gap-3">
                       {review.product.thumbnailUrl && (
                         <div className="relative w-10 h-10 rounded-md overflow-hidden bg-slate-100 flex-shrink-0 border">
-                          <Image src={review.product.thumbnailUrl} alt={review.product.name} fill className="object-cover" />
+                          <Image src={review.product.thumbnailUrl} alt={review.product.name} fill className="object-cover" sizes="40px" />
                         </div>
                       )}
                       <div className="font-medium text-slate-800 line-clamp-2 max-w-[200px]">{review.product.name}</div>

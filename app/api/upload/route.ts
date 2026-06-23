@@ -45,7 +45,6 @@ export async function POST(request: Request) {
           },
           (error, result) => {
             if (error) {
-              console.log(error)
               return reject(error)};
 
             if (!result) {

@@ -20,7 +20,7 @@ export function CheckboxFilterGroup({ paramName, options }: CheckboxFilterGroupP
   const currentValues = searchParams.get(paramName)?.split(",").filter(Boolean) || [];
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 px-4">
       {options.map((option) => {
         const isChecked = currentValues.includes(option.value);
         return (

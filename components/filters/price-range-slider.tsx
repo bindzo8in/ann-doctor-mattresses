@@ -39,7 +39,7 @@ export function PriceRangeSlider({ minPrice, maxPrice, step = 100 }: PriceRangeS
   }, [value, currentMin, currentMax, minPrice, maxPrice, setFilters]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 px-4">
       <Slider
         min={minPrice}
         max={maxPrice}

@@ -46,7 +46,7 @@ export function ProductSectionsRenderer({ sections, sectionHeading }: Props) {
                 )}
                 {imageUrl && (
                   <div className="relative aspect-square rounded-xl overflow-hidden bg-muted order-1 md:order-2">
-                    <Image src={imageUrl} alt={title || "Section Image"} fill className="object-cover" />
+                    <Image src={imageUrl} alt={title || "Section Image"} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
                   </div>
                 )}
               </div>

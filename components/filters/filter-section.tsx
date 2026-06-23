@@ -14,7 +14,7 @@ export function FilterSection({ title, children, defaultOpen = true }: FilterSec
   const [isOpen, setIsOpen] = React.useState(defaultOpen);
 
   return (
-    <div className="border-b border-border py-4 last:border-b-0">
+    <div className="border-b border-border py-4 last:border-b-0 ">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex w-full items-center justify-between font-semibold text-sm transition-colors hover:text-primary"

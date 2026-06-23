@@ -202,7 +202,7 @@ const SofaVariantRow = React.memo(function SofaVariantRow({
                 )}
               </div>
               {fieldState.error && (
-                <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
+                <p className="text-xs text-destructive whitespace-normal wrap-break-word max-w-xs">{fieldState.error.message}</p>
               )}
             </div>
           )}
@@ -220,7 +220,7 @@ const SofaVariantRow = React.memo(function SofaVariantRow({
                 className={fieldState.invalid ? "border-destructive" : ""} 
               />
               {fieldState.error && (
-                <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
+                <p className="text-xs text-destructive whitespace-normal wrap-break-word max-w-xs">{fieldState.error.message}</p>
               )}
             </div>
           )}
@@ -248,7 +248,7 @@ const SofaVariantRow = React.memo(function SofaVariantRow({
                 </SelectContent>
               </Select>
               {fieldState.error && (
-                <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
+                <p className="text-xs text-destructive whitespace-normal break-words max-w-xs">{fieldState.error.message}</p>
               )}
             </div>
           )}
@@ -272,7 +272,7 @@ const SofaVariantRow = React.memo(function SofaVariantRow({
                 className={fieldState.invalid ? "border-destructive" : ""}
               />
               {fieldState.error && (
-                <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
+                <p className="text-xs text-destructive whitespace-normal break-words max-w-xs">{fieldState.error.message}</p>
               )}
             </div>
           )}
@@ -296,7 +296,7 @@ const SofaVariantRow = React.memo(function SofaVariantRow({
                 className={fieldState.invalid ? "border-destructive" : ""}
               />
               {fieldState.error && (
-                <p className="text-[10px] text-destructive whitespace-normal break-words max-w-[150px]">{fieldState.error.message}</p>
+                <p className="text-xs text-destructive whitespace-normal break-words max-w-xs">{fieldState.error.message}</p>
               )}
             </div>
           )}

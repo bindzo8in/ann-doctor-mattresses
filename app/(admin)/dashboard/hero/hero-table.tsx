@@ -69,7 +69,7 @@ function SortableBannerRow({
       </div>
       
       <div className="relative w-24 h-14 rounded overflow-hidden shrink-0 bg-slate-100 border">
-        <Image src={banner.backgroundImageUrl} alt={banner.title} fill className="object-cover" />
+        <Image src={banner.backgroundImageUrl} alt={banner.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 33vw" />
       </div>
       
       <div className="flex-1 min-w-0">

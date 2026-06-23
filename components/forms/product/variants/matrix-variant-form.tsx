@@ -467,7 +467,7 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
                                  <div className="flex flex-col items-center">
                                     <span className="font-bold text-green-600">₹{formatPrice(sale)}</span>
                                     {mrp > sale && (
-                                      <span className="text-[10px] text-slate-400 line-through">₹{formatPrice(mrp)}</span>
+                                      <span className="text-xs text-slate-400 line-through">₹{formatPrice(mrp)}</span>
                                     )}
                                  </div>
                                  

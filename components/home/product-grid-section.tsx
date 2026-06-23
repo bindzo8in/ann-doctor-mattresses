@@ -53,12 +53,12 @@ export function ProductGridSection({
         </div>
 
         {/* Grid */}
-        <div className="flex flex-wrap justify-center gap-4 lg:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6 justify-items-center">
           {products.map((product) => {
             const defaultVariant =
               product.variants.find((v) => v.isDefault) ?? product.variants[0];
             return (
-              <div key={product.id} className="w-full sm:w-[calc(50%-0.5rem)] md:w-[calc(33.333%-0.66rem)] lg:w-[calc(33.333%-1rem)] max-w-[420px]">
+              <div key={product.id} className="w-full max-w-[420px]">
                 <ProductCard
                   id={product.id}
                   name={product.name}
