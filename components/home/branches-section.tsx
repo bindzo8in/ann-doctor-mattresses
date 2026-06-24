@@ -24,7 +24,7 @@ export function BranchesSection({
     <>
       <section className="bg-[#005814] section-padding">
         <div className="page-container">
-          <h2 className="mb-8 text-xl text-white">
+          <h2 className="mb-8 text-2xl sm:text-3xl md:text-4xl font-extrabold text-white">
             Branches:
           </h2>
 
@@ -41,8 +41,8 @@ export function BranchesSection({
                   <div
                     key={group.state}
                     className={`p-6 ${index !== branchGroups.length - 1
-                        ? "border-r border-neutral-400"
-                        : ""
+                      ? "border-r border-neutral-400"
+                      : ""
                       }`}
                   >
                     <h3 className="mb-8 text-[11px] font-bold uppercase tracking-wide text-red-600">
@@ -53,9 +53,9 @@ export function BranchesSection({
                       {group.branches.map((branch) => (
                         <div key={branch.id} onClick={() =>
                           setSelectedBranch(branch)
-                          
+
                         }
-                        className="cursor-pointer"
+                          className="cursor-pointer"
                         >
                           <div className="mb-2 flex items-start gap-2">
                             <MapPin
