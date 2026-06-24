@@ -84,7 +84,6 @@ export default function AboutUs() {
                 bg-cover bg-center bg-no-repeat
                 section-padding
                 text-white
-                font-montserrat-alternates
             "
         >
             {/* Split Overlays */}
@@ -111,7 +110,7 @@ export default function AboutUs() {
                     ref={headingRef}
                     className="
                         mb-6 lg:mb-8
-                        text-center font-bold
+                        text-center font-bold font-montserrat
                         text-3xl sm:text-4xl lg:text-5xl xl:text-6xl
                         opacity-0
                     "

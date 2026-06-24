@@ -3,7 +3,7 @@ import { Layers, Wind, ShieldBan } from "lucide-react";
 
 export function SleepEducationSection() {
   return (
-    <section className="py-[80px] md:py-[120px] lg:py-[150px] bg-white">
+    <section className="py-[80px] md:py-[120px] lg:py-[150px] bg-white font-montserrat">
       <div className="page-container">
         <div className="border border-slate-200 rounded-3xl lg:rounded-[2.5rem] p-4 sm:p-6 lg:p-10 xl:p-12">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-10">
