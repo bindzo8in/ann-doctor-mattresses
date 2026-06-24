@@ -230,6 +230,6 @@
 }
 
 /* Standardized vertical padding for sections */
-/* .section-padding {
+.section-padding {
   @apply py-20 md:py-28 lg:py-32;
-} */
+}
