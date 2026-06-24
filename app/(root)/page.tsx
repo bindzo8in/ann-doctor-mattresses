@@ -1,8 +1,7 @@
-import { Suspense } from "react";
 import { Metadata } from "next";
 import Script from "next/script";
 
-export const revalidate = 3600; // ISR revalidation every 1 hour
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Doctor Mattresses | Premium Orthopedic Mattresses",
@@ -15,9 +14,6 @@ export const metadata: Metadata = {
 import HomeHeroSection from "@/components/home/hero-section";
 import { ProductGridSection } from "@/components/home/product-grid-section";
 import { CategoriesSection } from "@/components/home/categories-section";
-// import { WhyChooseUsSection } from "@/components/home/why-choose-us-section";
-import { getFeaturedProducts, getNewLaunches, getCategories, getHeroBanners, getActiveBranchesGroupedByState } from "@/lib/home";
-import { Skeleton } from "@/components/ui/skeleton";
 import AboutUs from "@/components/home/about-us";
 import { BranchesSection } from "@/components/home/branches-section";
 import { FeaturesMarquee } from "@/components/home/features-marquee";

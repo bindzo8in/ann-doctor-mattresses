@@ -6,7 +6,7 @@ import ProductsPageClientWrapper from "./products-client-wrapper";
 
 import { Metadata } from "next";
 
-export const revalidate = 1800; // 30 minutes
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Products | Doctor Mattresses",

@@ -65,11 +65,19 @@ export async function getDynamicFilterFacets(type?: ProductType) {
     label: c.name
   }));
 
+  const maxPriceResult = await prisma.productVariant.aggregate({
+    _max: {
+      salePrice: true,
+    },
+  });
+  const maxPrice = maxPriceResult._max.salePrice ? Number(maxPriceResult._max.salePrice) : 100000;
+
   return {
     thicknessOptions,
     seatingCapacityOptions,
     materialOptions,
     shapeOptions,
-    categoryOptions
+    categoryOptions,
+    maxPrice
   };
 }

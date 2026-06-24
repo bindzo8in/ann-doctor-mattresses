@@ -79,7 +79,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   }));
 
   return (
-    <main className="min-h-screen bg-[url('/bg-category.jpg')] bg-cover bg-no-repeat pt-0">
+    <main className="min-h-screen bg-[url('/bg-category.jpg')] bg-cover bg-no-repeat pt-0 px-4 sm:px-6 lg:px-8">
       {/* Category Navbar */}
       <div className="w-full bg-[#E51D2A] text-white py-3 md:py-4 px-2 md:px-6 sticky top-0 z-50 shadow-md">
         <div className="page-container flex items-center">

@@ -24,6 +24,7 @@ interface ProductsPageClientProps {
     materialOptions: { value: string; label: string }[];
     shapeOptions: { value: string; label: string }[];
     categoryOptions: { value: string; label: string }[];
+    maxPrice: number;
   };
 }
 

@@ -11,8 +11,8 @@ export async function getHomePageData() {
     branchGroups,
   ] = await Promise.all([
     getHeroBanners(),
-    getFeaturedProducts(3),
-    getNewLaunches(3),
+    getFeaturedProducts(4),
+    getNewLaunches(4),
     getCategories(),
     getActiveBranchesGroupedByState(),
   ]);

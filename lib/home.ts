@@ -1,5 +1,4 @@
 import prisma from "@/lib/prisma";
-import { unstable_cache } from "next/cache";
 export type HomeProduct = {
   id: string;
   name: string;
@@ -44,69 +43,54 @@ function serializeProduct(p: any): HomeProduct {
   };
 }
 
-export const getHeroBanners = unstable_cache(
+export const getHeroBanners =
   async () => {
     const banners = await prisma.heroBanner.findMany({
       where: { isActive: true },
       orderBy: { order: "asc" },
     });
     return banners;
-  },
-  ["hero-banners"],
-  { revalidate: 3600, tags: ["banners"] }
-);
+  }
 
-export const getFeaturedProducts = unstable_cache(
-  async (limit = 8): Promise<HomeProduct[]> => {
-    const products = await prisma.product.findMany({
-      where: { isFeatured: true, isActive: true },
-      take: limit,
-      include: {
-        category: true,
-        variants: { orderBy: { salePrice: "asc" }, take: 1 },
-      },
-      orderBy: { featuredOrder: "asc" },
-    });
-    return products.map(serializeProduct);
-  },
-  ["featured-products"],
-  { revalidate: 3600, tags: ["products"] }
-);
+export const getFeaturedProducts = async (limit = 8): Promise<HomeProduct[]> => {
+  const products = await prisma.product.findMany({
+    where: { isFeatured: true, isActive: true },
+    take: limit,
+    include: {
+      category: true,
+      variants: { orderBy: { salePrice: "asc" }, take: 1 },
+    },
+    orderBy: { featuredOrder: "asc" },
+  });
+  return products.map(serializeProduct);
+}
 
-export const getNewLaunches = unstable_cache(
-  async (limit = 8): Promise<HomeProduct[]> => {
-    const products = await prisma.product.findMany({
-      where: { isActive: true },
-      take: limit,
-      include: {
-        category: true,
-        variants: { orderBy: { salePrice: "asc" }, take: 1 },
-      },
-      orderBy: { createdAt: "desc" },
-    });
-    return products.map(serializeProduct);
-  },
-  ["new-launches"],
-  { revalidate: 3600, tags: ["products"] }
-);
+export const getNewLaunches = async (limit = 8): Promise<HomeProduct[]> => {
+  const products = await prisma.product.findMany({
+    where: { isActive: true },
+    take: limit,
+    include: {
+      category: true,
+      variants: { orderBy: { salePrice: "asc" }, take: 1 },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  return products.map(serializeProduct);
+}
 
-export const getCategories = unstable_cache(
-  async (): Promise<HomeCategory[]> => {
-    const categories = await prisma.category.findMany({
-      include: { _count: { select: { products: { where: { isActive: true } } } } },
-      orderBy: { name: "asc" },
-    });
-    return categories.map((c) => ({
-      id: c.id,
-      name: c.name,
-      slug: c.slug,
-      thumbnailUrl: c.thumbnailUrl,
-      productCount: c._count.products,
-    }));
-  },
-  ["home-categories"],
-  { revalidate: 3600, tags: ["categories"] }
-);
+export const getCategories = async (): Promise<HomeCategory[]> => {
+  const categories = await prisma.category.findMany({
+    include: { _count: { select: { products: { where: { isActive: true } } } } },
+    orderBy: { name: "asc" },
+  });
+  return categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    thumbnailUrl: c.thumbnailUrl,
+    productCount: c._count.products,
+  }));
+}
 
 export type HomeBranchGroup = {
   state: string;
@@ -122,7 +106,7 @@ export type HomeBranchGroup = {
   }>;
 };
 
-export const getActiveBranchesGroupedByState = unstable_cache(
+export const getActiveBranchesGroupedByState =
   async (): Promise<HomeBranchGroup[]> => {
     const branches = await prisma.branch.findMany({
       where: { isActive: true },
@@ -151,7 +135,4 @@ export const getActiveBranchesGroupedByState = unstable_cache(
       state,
       branches: grouped[state]
     }));
-  },
-  ["active-branches-grouped"],
-  { revalidate: 3600, tags: ["branches"] }
-);
+  }

@@ -2,8 +2,6 @@ import { Suspense } from "react";
 import { Metadata } from "next";
 import Script from "next/script";
 
-export const revalidate = 3600; // ISR revalidation every 1 hour
-
 export const metadata: Metadata = {
   title: "Doctor Mattresses | Premium Orthopedic Mattresses",
   description: "Shop premium orthopedic mattresses, comfortable sofas, and sleep accessories.",

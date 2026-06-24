@@ -65,6 +65,7 @@ interface ProductFiltersSidebarProps {
     materialOptions: { value: string; label: string }[];
     shapeOptions: { value: string; label: string }[];
     categoryOptions: { value: string; label: string }[];
+    maxPrice: number;
   };
 }
 
@@ -190,7 +191,7 @@ export function ProductFiltersSidebar({ dynamicFacets }: ProductFiltersSidebarPr
       )}
 
       <FilterSection title="Price Range" defaultOpen>
-        <PriceRangeSlider minPrice={0} maxPrice={100000} step={500} />
+        <PriceRangeSlider minPrice={0} maxPrice={dynamicFacets.maxPrice} step={500} />
       </FilterSection>
 
       {(!currentType || currentType === "MATTRESS") && (

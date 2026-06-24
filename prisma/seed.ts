@@ -1,8 +1,7 @@
-import { PrismaClient, UserRole, OrderStatus, ProductType, Firmness, SleepingPosition, ComfortLevel, HealthBenefit, MattressSize } from "../app/generated/prisma/client";
+import { PrismaClient, UserRole } from "../app/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
-import { faker } from "@faker-js/faker";
 
 dotenv.config();
 
@@ -20,10 +19,8 @@ const prisma = new PrismaClient({
   adapter,
 });
 
-
 async function main() {
   console.log("Starting seed process...");
-
 
   // 2. Create Users
   const users = [
