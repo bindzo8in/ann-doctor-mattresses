@@ -2,7 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { auditLogger } from "@/lib/audit";
 import { env } from "@/env";
 import * as React from "react";

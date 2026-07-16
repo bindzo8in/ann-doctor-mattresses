@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { UserRole } from "@/app/generated/prisma/client";
 import { auditLogger } from "@/lib/audit";
 

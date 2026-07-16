@@ -1,10 +1,16 @@
 import React from "react";
 import { ProfileSidebar } from "./profile-sidebar";
-import { auth } from "@/auth";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export default async function ProfileLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
-  const userRole = session?.user?.role as string | undefined;
+
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+  
+  const userRole = session?.user?.role as string;
+
   return (
     <div className="bg-slate-50/50 flex flex-col">
       {/* Main Grid Layout */}

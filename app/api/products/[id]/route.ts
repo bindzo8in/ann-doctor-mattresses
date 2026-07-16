@@ -4,7 +4,7 @@ import { createProductSchema } from "@/lib/schema/product-form-schema";
 import { getFieldErrors } from "@/lib/utils";
 import { v2 as cloudinary } from "cloudinary";
 // import { revalidatePath } from "next/cache";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { userHasPermission } from "@/lib/rbac";
 import { measure } from "@/lib/utils/measure";
 import { env } from "@/env";

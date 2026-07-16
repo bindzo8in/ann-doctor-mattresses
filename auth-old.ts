@@ -6,7 +6,7 @@ import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 
 import prisma from "./lib/prisma";
-import authConfig from "./auth.config";
+import authConfig from "./auth-old.config";
 import { auditLogger } from "./lib/audit";
 import { loginRateLimit } from "./lib/security/rate-limit";
 

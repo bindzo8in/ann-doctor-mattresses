@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import slugify from "slugify";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { auditLogger } from "@/lib/audit";
 import { userHasPermission } from "@/lib/rbac";
 
@@ -167,4 +167,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-}
+}

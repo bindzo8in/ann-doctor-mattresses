@@ -1,56 +1,23 @@
-// lib/permissions.ts
+import { UserRole } from "@/app/generated/prisma/enums";
+import { createAccessControl } from "better-auth/plugins/access";
+import { defaultStatements, adminAc } from "better-auth/plugins/admin/access";
 
-export const permissions = [
-  // orders
-  "orders.read",
-  "orders.update",
-  "orders.delete",
-  "orders.refund",
+const statement = {
+    ...defaultStatements,
 
-  // branches
-  "branches.read",
-  "branches.create",
-  "branches.update",
-  "branches.delete",
 
-  // products
-  "products.read",
-  "products.create",
-  "products.update",
-  "products.delete",
+} as const;
 
-  // categories
-  "categories.read",
-  "categories.create",
-  "categories.update",
-  "categories.delete",
+export const ac = createAccessControl(statement);
 
-  // promotions
-  "promotions.read",
-  "promotions.create",
-  "promotions.update",
-  "promotions.delete",
+export const superAdminRole = ac.newRole({
+    ...adminAc.statements,
+})
 
-  // reviews
-  "reviews.read",
-  "reviews.update",
-  "reviews.delete",
+export const adminRole = ac.newRole({
 
-  // users
-  "users.read",
-  "users.create",
-  "users.update",
-  "users.delete",
+})
 
-  // settings & hero
-  "settings.read",
-  "settings.update",
+export const customerRole = ac.newRole({
 
-  // dashboard
-  "dashboard.read",
-
-  // audit
-  "audit.read",
-] as const;
-
-export type Permission = (typeof permissions)[number];
+})

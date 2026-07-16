@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { Permission } from "@/lib/permissions";
+import { Permission } from "@/lib/permissions.old";
 import { userHasPermission } from "@/lib/rbac";
 
 interface RequirePermissionProps {

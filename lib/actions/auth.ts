@@ -2,7 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
-import { signIn } from "@/auth";
+import { signIn } from "@/auth-old";
 import { headers } from "next/headers";
 import { loginRateLimit } from "@/lib/security/rate-limit";
 import { securityLogger } from "@/lib/security/audit";

@@ -19,53 +19,105 @@ enum UserRole {
 }
 
 model User {
-  id            String    @id @default(cuid())
+  id            String  @id @default(cuid())
   name          String
-  email         String    @unique
-  emailVerified DateTime?
+  email         String
+  emailVerified Boolean @default(false)
   image         String?
-  password      String
-  role          UserRole  @default(CUSTOMER)
 
-  isActive Boolean @default(true)
-  
-  // Security and Lockout
-  failedAttempts      Int       @default(0)
-  lockedUntil         DateTime?
-  lastFailedAttemptAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  role      UserRole @default(CUSTOMER)
+
+  sessions Session[]
+  accounts Account[]
+
+  banned     Boolean?  @default(false)
+  banReason  String?
+  banExpires DateTime?
 
   branchId String?
   branch   Branch? @relation(fields: [branchId], references: [id])
 
-  orders        Order[]
-  accounts      Account[]
-  sessions      Session[]
-  addresses     Address[]
-  cartItems     CartItem[]
-  wishlistItems WishlistItem[]
-  reviews       Review[]
-  notifications Notification[]
+  orders            Order[]
+  addresses         Address[]
+  cartItems         CartItem[]
+  wishlistItems     WishlistItem[]
+  reviews           Review[]
+  notifications     Notification[]
   pushSubscriptions PushSubscription[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  impersonatedBy String?
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
 }
 
 model Branch {
-  id        String   @id @default(cuid())
-  name      String
-  address   String?
-  city      String?
-  district  String   @default("Unknown")
-  state     String   @default("Tamil Nadu")
-  phone     String?
+  id           String  @id @default(cuid())
+  name         String
+  address      String?
+  city         String?
+  district     String  @default("Unknown")
+  state        String  @default("Tamil Nadu")
+  phone        String?
   googleMapUrl String?
-  latitude  Float?
-  longitude Float?
-  isActive  Boolean  @default(true)
-  
-  users     User[]
-  orders    Order[]
+  latitude     Float?
+  longitude    Float?
+  isActive     Boolean @default(true)
+
+  users  User[]
+  orders Order[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -74,63 +126,13 @@ model Branch {
   @@index([state])
 }
 
-model Account {
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([provider, providerAccountId])
-  @@index([userId])
-}
-
-model Session {
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-}
-
-enum VerificationTokenType {
-  EMAIL_VERIFICATION
-  PASSWORD_RESET
-}
-
-model VerificationToken {
-  identifier String
-  token      String
-  type       VerificationTokenType
-  expires    DateTime
-
-  createdAt DateTime @default(now())
-
-  @@id([identifier, token])
-}
-
 model Category {
   id   String @id @default(cuid())
   name String
   slug String @unique
 
-  description        String?
-  features           Json?    // Array of { title: string, description: string }
+  description String?
+  features    Json? // Array of { title: string, description: string }
 
   layerImageUrl      String?
   layerImagePublicId String?
@@ -167,19 +169,19 @@ model Product {
   thumbnailUrl      String
   thumbnailPublicId String
 
-  isFeatured Boolean @default(false)
-  featuredOrder Int @default(0)
-  isActive   Boolean @default(true)
+  isFeatured    Boolean @default(false)
+  featuredOrder Int     @default(0)
+  isActive      Boolean @default(true)
 
   availableColors String[] @default([])
 
   // Custom Size Settings
-  allowCustomSize      Boolean @default(false)
-  minWidth             Int?
-  maxWidth             Int?
-  minLength            Int?
-  maxLength            Int?
-  customSizePricing    Json?    
+  allowCustomSize   Boolean @default(false)
+  minWidth          Int?
+  maxWidth          Int?
+  minLength         Int?
+  maxLength         Int?
+  customSizePricing Json?
 
   category Category @relation(fields: [categoryId], references: [id])
 
@@ -193,11 +195,11 @@ model Product {
   sections       ProductSection[]
   faqs           ProductFaq[]
 
-  firmness                Firmness?
-  comfortLevel            ComfortLevel?
-  healthBenefits          HealthBenefit[]    @default([])
+  firmness       Firmness?
+  comfortLevel   ComfortLevel?
+  healthBenefits HealthBenefit[] @default([])
 
-  recommendedPositions    SleepingPosition[] @default([])
+  recommendedPositions SleepingPosition[] @default([])
 
   orderItems    OrderItem[]
   cartItems     CartItem[]
@@ -241,8 +243,6 @@ enum Firmness {
   MEDIUM_FIRM
   FIRM
 }
-
-
 
 enum SleepingPosition {
   SIDE
@@ -412,7 +412,7 @@ model Order {
   customerId String
   customer   User   @relation(fields: [customerId], references: [id])
 
-  status OrderStatus @default(PENDING_PAYMENT)
+  status         OrderStatus    @default(PENDING_PAYMENT)
   checkoutSource CheckoutSource @default(CART)
 
   branchId String?
@@ -463,10 +463,10 @@ model OrderItem {
 
   price Decimal @db.Decimal(10, 2)
 
-  quantityPurchased Int      @default(0)
-  quantityFree      Int      @default(0)
-  unitPrice         Decimal  @db.Decimal(10, 2) @default(0)
-  totalPaid         Decimal  @db.Decimal(10, 2) @default(0)
+  quantityPurchased Int     @default(0)
+  quantityFree      Int     @default(0)
+  unitPrice         Decimal @default(0) @db.Decimal(10, 2)
+  totalPaid         Decimal @default(0) @db.Decimal(10, 2)
   offerType         String?
   color             String?
 
@@ -508,8 +508,8 @@ model CartItem {
   customData Json?
   color      String?
 
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([productId])
   @@index([variantId])
@@ -569,25 +569,25 @@ model DeliveryZone {
   pincodePrefixes String[] // e.g., ["1", "2"]
   charge          Decimal  @db.Decimal(10, 2)
   isDefault       Boolean  @default(false)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Review {
-  id         String   @id @default(cuid())
+  id         String  @id @default(cuid())
   productId  String
   userId     String
   rating     Int
   title      String?
-  comment    String   @db.Text
-  isApproved Boolean  @default(false)
+  comment    String  @db.Text
+  isApproved Boolean @default(false)
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([productId])
   @@index([userId])
@@ -599,65 +599,65 @@ enum HeroBannerType {
 }
 
 model HeroBanner {
-  id                 String   @id @default(cuid())
-  title              String
-  subtitle           String?
-  buttonText         String?
-  buttonLink         String?
-  
-  backgroundImageUrl       String
-  backgroundPublicId       String
-  
+  id         String  @id @default(cuid())
+  title      String
+  subtitle   String?
+  buttonText String?
+  buttonLink String?
+
+  backgroundImageUrl String
+  backgroundPublicId String
+
   mobileBackgroundImageUrl String?
   mobileBackgroundPublicId String?
-  
-  foregroundImageUrl       String?
+
+  foregroundImageUrl String?
   foregroundPublicId String?
-  
-  type               HeroBannerType @default(DYNAMIC)
-  order              Int      @default(0)
-  isActive           Boolean  @default(true)
-  
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+
+  type     HeroBannerType @default(DYNAMIC)
+  order    Int            @default(0)
+  isActive Boolean        @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Complaint {
-  id            String   @id @default(cuid())
+  id            String  @id @default(cuid())
   userId        String?
   name          String
   email         String
   subject       String?
-  message       String   @db.Text
+  message       String  @db.Text
   imageUrl      String?
   imagePublicId String?
-  status        String   @default("OPEN")
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  status        String  @default("OPEN")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model ContactMessage {
-  id        String   @id @default(cuid())
-  name      String
-  email     String
-  message   String   @db.Text
-  
+  id      String @id @default(cuid())
+  name    String
+  email   String
+  message String @db.Text
+
   createdAt DateTime @default(now())
 }
 
 model Notification {
-  id          String   @id @default(cuid())
-  userId      String?
-  title       String
-  message     String
-  type        String
-  isRead      Boolean  @default(false)
+  id      String  @id @default(cuid())
+  userId  String?
+  title   String
+  message String
+  type    String
+  isRead  Boolean @default(false)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isRead])
@@ -665,16 +665,16 @@ model Notification {
 }
 
 model PushSubscription {
-  id         String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  userId     String
+  userId String
 
-  endpoint   String   @db.Text
-  p256dh     String   @db.Text
-  auth       String   @db.Text
+  endpoint String @db.Text
+  p256dh   String @db.Text
+  auth     String @db.Text
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -685,11 +685,11 @@ model Refund {
   id String @id @default(cuid())
 
   paymentId String
-  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  payment   Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
 
   razorpayRefundId String? @unique
 
-  amount Decimal @db.Decimal(10,2)
+  amount Decimal @db.Decimal(10, 2)
 
   status RefundStatus
 
@@ -713,18 +713,18 @@ model AuditLog {
   id String @id @default(cuid())
 
   actorUserId String?
-  actorRole String?
+  actorRole   String?
 
   action String
 
   entityType String
-  entityId String?
+  entityId   String?
 
   description String?
 
   oldValues Json?
   newValues Json?
-  metadata Json?
+  metadata  Json?
 
   ipAddress String?
   userAgent String?
@@ -739,12 +739,12 @@ model AuditLog {
 }
 
 model WebhookEvent {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   event       String
   payload     Json
-  status      String   @default("PENDING") // PENDING, SUCCESS, FAILED
-  error       String?  @db.Text
-  createdAt   DateTime @default(now())
+  status      String    @default("PENDING") // PENDING, SUCCESS, FAILED
+  error       String?   @db.Text
+  createdAt   DateTime  @default(now())
   processedAt DateTime?
 
   @@index([status])

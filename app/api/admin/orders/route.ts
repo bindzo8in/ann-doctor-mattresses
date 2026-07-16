@@ -1,7 +1,7 @@
 // Force cache invalidation
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { cookies } from "next/headers";
 import { getToken } from "next-auth/jwt";
 import { userHasPermission } from "@/lib/rbac";

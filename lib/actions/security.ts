@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { securityLogger } from "@/lib/security/audit";
 
 export async function getLockedAccounts() {

@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { auditLogger } from "@/lib/audit";
 import { userHasPermission } from "@/lib/rbac";
 import { roundPrice } from "@/lib/price";

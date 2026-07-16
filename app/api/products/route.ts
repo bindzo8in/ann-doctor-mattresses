@@ -6,7 +6,7 @@ import { ZodError } from "zod";
 
 export const maxDuration = 30;
 
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { userHasPermission } from "@/lib/rbac";
 
 export async function POST(req: NextRequest) {

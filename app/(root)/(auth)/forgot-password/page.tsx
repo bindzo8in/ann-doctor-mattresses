@@ -2,7 +2,7 @@
 
 import { ForgotPasswordForm } from "./form";
 
-export default function ForgotPasswordPage() {
+export default function ForgotPasswordPage({}) {
   return (
     <div className="container py-20">
       <ForgotPasswordForm />

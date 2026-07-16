@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Loader2, ShieldCheck, Mail, User, Lock } from "lucide-react";
 import { updateCustomerProfile } from "@/actions/profile";
 import Link from "next/link";
+import { changePassword, updateUser } from "@/lib/auth-client";
 
 interface ProfileFormProps {
   initialUser: {
@@ -17,7 +18,7 @@ interface ProfileFormProps {
 
 export function ProfileForm({ initialUser }: ProfileFormProps) {
   const [name, setName] = useState(initialUser.name || "");
-  const [email, setEmail] = useState(initialUser.email || "");
+  const email = initialUser.email ?? "";
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,18 +28,37 @@ export function ProfileForm({ initialUser }: ProfileFormProps) {
     setIsSubmitting(true);
 
     try {
-      await updateCustomerProfile({
-        name,
-        currentPassword: currentPassword || undefined,
-        newPassword: newPassword || undefined,
-      });
+      if (name !== initialUser.name) {
+        const { error } = await updateUser({
+          name,
+        });
+
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+      }
+
+      if (currentPassword && newPassword) {
+        const { error } = await changePassword({
+          currentPassword,
+          newPassword,
+          revokeOtherSessions: true,
+        });
+
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+      }
 
       toast.success("Profile updated successfully!");
+
       setCurrentPassword("");
       setNewPassword("");
-    } catch (error: any) {
-      console.error(error);
-      toast.error(error.message || "Failed to update profile");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update profile.");
     } finally {
       setIsSubmitting(false);
     }

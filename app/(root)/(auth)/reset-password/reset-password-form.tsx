@@ -1,54 +1,53 @@
 "use client";
 
-import * as z from "zod";
-
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import Link from "next/link";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { toast } from "sonner";
+
+import {
+  resetPasswordSchema,
+  type ResetPasswordSchema,
+} from "@/lib/schema/reset-password";
+
+import { resetPassword } from "@/lib/auth-client";
 
 import { Password } from "@/components/password";
 import { Button } from "@/components/ui/button";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+import {
   Field,
+  FieldContent,
   FieldError,
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import { Card, CardContent } from "@/components/ui/card";
+
 import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-  InputOTPSeparator,
-} from "@/components/ui/input-otp";
+  AlertCircle,
+  CheckCircle2,
+} from "lucide-react";
 
-export const resetPasswordSchema = z
-  .object({
-    email: z.string().email(),
-    token: z.string().length(6, "OTP must be 6 characters"),
-    password: z.string().min(8, "Password must be at least 8 characters"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    path: ["confirmPassword"],
-    message: "Passwords do not match",
-  });
-type Schema = z.infer<typeof resetPasswordSchema>;
+interface ResetPasswordFormProps {
+  token?: string;
+}
 
-export function ResetPasswordForm() {
-  const router = useRouter();
+export function ResetPasswordForm({
+  token,
+}: ResetPasswordFormProps) {
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
-  const searchParams = useSearchParams();
-
-  const email = searchParams.get("email");
-
-  const form = useForm<Schema>({
+  const form = useForm<ResetPasswordSchema>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      email: email ?? "",
-      token: "",
       password: "",
-      confirmPassword: "",
+      "confirm-password": "",
     },
   });
 
@@ -57,139 +56,201 @@ export function ResetPasswordForm() {
   } = form;
 
   const handleSubmit = form.handleSubmit(async (data) => {
-    if (!data.email) {
-      toast.error("Missing email address");
+    setError(null);
+
+    if (!token) {
+      setError("This password reset link is invalid or has expired.");
       return;
     }
 
     try {
-      const response = await fetch("/api/auth/reset-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email: data.email,
-          token: data.token,
-          password: data.password,
-        }),
+      const { error } = await resetPassword({
+        token,
+        newPassword: data.password,
       });
+      console.log(error)
 
-      const result = await response.json();
+      if (error) {
+        switch (error.status) {
+          case 400:
+            setError("This password reset link is invalid or has expired.");
+            break;
 
-      if (!response.ok) {
-        if (result.code === "VALIDATION_ERROR" && result.errors) {
-          Object.entries(result.errors).forEach(([field, messages]) => {
-            form.setError(field as keyof Schema, {
-              message: Array.isArray(messages) ? messages[0] : String(messages),
-            });
-          });
+          case 429:
+            setError("Too many requests. Please try again later.");
+            break;
 
-          return;
+          default:
+            setError(error.message ?? "Failed to reset password.");
         }
-
-        toast.error(result.message ?? "Unable to reset password.");
 
         return;
       }
 
-      toast.success("Password reset successfully.");
-
-      router.push("/signin");
-    } catch (error) {
-      console.error(error);
-
-      toast.error("Something went wrong.");
+      setSuccess(true);
+      form.reset();
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong. Please try again.");
     }
   });
 
-  if (!email) {
+  if (!token) {
     return (
-      <div className="max-w-lg mx-auto border rounded-md p-8">
-        <h1 className="text-2xl font-bold">Invalid Request</h1>
+      <Card className="max-w-md mx-auto">
+        <CardContent className="flex flex-col items-center py-10 text-center">
+          <AlertCircle className="size-12 text-destructive mb-4" />
 
-        <p className="mt-2 text-muted-foreground">
-          Email address is missing from the request.
-        </p>
-        <Button className="mt-4" onClick={() => router.push("/forgot-password")}>
-          Back to Forgot Password
-        </Button>
-      </div>
+          <h2 className="text-2xl font-bold">
+            Invalid Reset Link
+          </h2>
+
+          <p className="mt-3 text-muted-foreground">
+            This password reset link is invalid or has expired.
+          </p>
+
+          <Button asChild className="mt-6 w-full">
+            <Link href="/forgot-password">
+              Request New Reset Link
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (success) {
+    return (
+      <Card className="max-w-md mx-auto">
+        <CardContent className="flex flex-col items-center py-10 text-center">
+          <CheckCircle2 className="size-12 text-green-600 mb-4" />
+
+          <h2 className="text-2xl font-bold">
+            Password Updated
+          </h2>
+
+          <p className="mt-3 text-muted-foreground">
+            Your password has been updated successfully.
+          </p>
+
+          <p className="text-sm text-muted-foreground mt-2">
+            You can now sign in using your new password.
+          </p>
+
+          <Button asChild className="mt-6 w-full">
+            <Link href="/signin">
+              Continue to Sign In
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="w-full max-w-lg mx-auto border rounded-md p-8"
-    >
-      <FieldGroup className="space-y-5">
-        <div>
-          <h1 className="text-3xl font-bold">Reset Password</h1>
+    <>
+      {error && (
+        <Alert
+          variant="destructive"
+          className="max-w-3xl mx-auto mb-4"
+        >
+          <AlertCircle className="size-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-          <p className="mt-2 text-sm text-muted-foreground">
-            Enter the 6-digit code sent to {email} and your new password.
+      <form
+        onSubmit={handleSubmit}
+        className="p-2 sm:p-5 md:p-8 w-full rounded-md border max-w-3xl mx-auto"
+      >
+        <FieldGroup className="grid md:grid-cols-6 gap-4 mb-6">
+          <h1 className="mt-6 mb-1 font-extrabold text-3xl tracking-tight col-span-full">
+            🔒 Create New Password
+          </h1>
+
+          <p className="tracking-wide text-muted-foreground mb-5 text-sm col-span-full">
+            Enter and confirm your new password.
           </p>
+
+          <Controller
+            name="password"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field
+                data-invalid={fieldState.invalid}
+                className="gap-1 col-span-full"
+              >
+                <FieldContent className="gap-0.5">
+                  <FieldLabel htmlFor="password">
+                    New Password *
+                  </FieldLabel>
+                </FieldContent>
+
+                <Password
+                  {...field}
+                  id="password"
+                  placeholder="Enter your new password"
+                  aria-invalid={fieldState.invalid}
+                />
+
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+
+          <Controller
+            name="confirm-password"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field
+                data-invalid={fieldState.invalid}
+                className="gap-1 col-span-full"
+              >
+                <FieldContent className="gap-0.5">
+                  <FieldLabel htmlFor="confirm-password">
+                    Confirm Password *
+                  </FieldLabel>
+                </FieldContent>
+
+                <Password
+                  {...field}
+                  id="confirm-password"
+                  placeholder="Confirm your new password"
+                  aria-invalid={fieldState.invalid}
+                />
+
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+        </FieldGroup>
+
+        <div className="flex justify-end items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            asChild
+          >
+            <Link href="/signin">
+              Back to Sign In
+            </Link>
+          </Button>
+
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting
+              ? "Updating Password..."
+              : "Update Password"}
+          </Button>
         </div>
-
-        <Controller
-          name="token"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid} className="gap-1 flex flex-col items-center">
-              <FieldLabel>Verification Code</FieldLabel>
-
-              <InputOTP maxLength={6} {...field}>
-                <InputOTPGroup>
-                  <InputOTPSlot index={0} />
-                  <InputOTPSlot index={1} />
-                  <InputOTPSlot index={2} />
-                </InputOTPGroup>
-                <InputOTPSeparator />
-                <InputOTPGroup>
-                  <InputOTPSlot index={3} />
-                  <InputOTPSlot index={4} />
-                  <InputOTPSlot index={5} />
-                </InputOTPGroup>
-              </InputOTP>
-
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
-
-        <Controller
-          name="password"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid} className="gap-1">
-              <FieldLabel>New Password</FieldLabel>
-
-              <Password {...field} placeholder="New password" />
-
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
-
-        <Controller
-          name="confirmPassword"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid} className="gap-1">
-              <FieldLabel>Confirm Password</FieldLabel>
-
-              <Password {...field} placeholder="Confirm password" />
-
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
-
-        <Button type="submit" disabled={isSubmitting} className="w-full">
-          {isSubmitting ? "Updating..." : "Update Password"}
-        </Button>
-      </FieldGroup>
-    </form>
+      </form>
+    </>
   );
 }

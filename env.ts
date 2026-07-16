@@ -26,6 +26,8 @@ export const env = createEnv({
     NEXT_PUBLIC_SITE_URL: z.url(),
     NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY: z.string().min(1),
     // NEXT_PUBLIC_SITE_NAME: z.string(),
+    NEXT_PUBLIC_APP_NAME: z.string(),
+    NEXT_PUBLIC_SUPPORT_EMAIL: z.email(),
   },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
@@ -46,5 +48,7 @@ export const env = createEnv({
     AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
+    NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
+    NEXT_PUBLIC_SUPPORT_EMAIL: process.env.NEXT_PUBLIC_SUPPORT_EMAIL
   },
 });

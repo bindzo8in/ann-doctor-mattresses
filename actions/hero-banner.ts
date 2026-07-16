@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { auditLogger } from "@/lib/audit";
 
 async function checkAdmin() {

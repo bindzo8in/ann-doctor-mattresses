@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 
 function checkAdmin() {
   // Can be called by any admin role checking happens at route level, but we ensure here as well

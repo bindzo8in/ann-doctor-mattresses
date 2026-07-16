@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import bcrypt from "bcryptjs";
 import { auditLogger } from "@/lib/audit";
 import { env } from "@/env";

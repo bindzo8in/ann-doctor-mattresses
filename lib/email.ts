@@ -14,6 +14,8 @@ import prisma from "@/lib/prisma";
 import { env } from "@/env";
 import OrderConfirmationEmail from "@/emails/OrderConfirmationEmail";
 import DeliveryStatusEmail from "@/emails/DeliveryStatusEmail";
+import EmailVerificationEmail from "@/emails/EmailVerificationEmail";
+import ResetPasswordEmail from "@/emails/reset-password";
 
 // ---------------------------------------------------------------------------
 // Shared Resend client — instantiated once, reused across all requests
@@ -189,4 +191,63 @@ export async function sendDeliveryStatusEmail(orderId: string): Promise<void> {
       orderNumber: order.orderNumber,
     }),
   });
+}
+
+
+// ---------------------------------------------------------------------------
+// Email Verification
+// ---------------------------------------------------------------------------
+
+interface SendVerificationEmailParams {
+  email: string;
+  name: string;
+  appName: string;
+  verificationUrl: string;
+  supportEmail: string;
+}
+
+/**
+ * Send an email verification link.
+ *
+ * Intended for Better Auth's sendVerificationEmail callback.
+ */
+export async function sendVerificationEmail({
+  email,
+  name,
+  appName,
+  verificationUrl,
+  supportEmail,
+}: SendVerificationEmailParams): Promise<void> {
+  await sendEmail({
+    to: email,
+    subject: `Verify your email address - ${appName}`,
+    react: EmailVerificationEmail({
+      name,
+      appName,
+      verificationUrl,
+      supportEmail,
+    }),
+  });
+}
+
+export async function sendResetPasswordEmail({ appName, email, resetUrl, supportEmail }: { email: string, appName: string, resetUrl: string, supportEmail: string }) {
+  try {
+    const { error } = await resend.emails.send({
+      from: env.EMAIL_FROM,
+      to: email,
+      subject: `Reset Password - ${appName}`,
+      react: ResetPasswordEmail({
+        appName,
+        resetUrl,
+        supportEmail,
+      }),
+      tags: [
+        { name: "type", value: "reset-password" }
+      ]
+    });
+    if (error) throw error
+  }
+  catch (error) {
+    console.error(error)
+  }
 }

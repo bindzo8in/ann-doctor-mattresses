@@ -1,10 +1,9 @@
 import { Suspense } from "react";
 import { ResetPasswordForm } from "./reset-password-form";
 
-export default function ResetPasswordPage() {
+export default async function ResetPasswordPage({ searchParams }: PageProps<'/reset-password'>) {
+  const { token } = await searchParams;
   return (
-    <Suspense>
-      <ResetPasswordForm />
-    </Suspense>
+    <ResetPasswordForm token={token as string | undefined} />
   );
 }

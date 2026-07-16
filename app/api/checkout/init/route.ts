@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { calculateCartTotals } from "@/lib/checkout";
 import { OrderStatus, CheckoutSource } from "@/app/generated/prisma/client";
 import { env } from "@/env";

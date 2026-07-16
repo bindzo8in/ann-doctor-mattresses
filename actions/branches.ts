@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { UserRole } from "@/app/generated/prisma/enums";
 import { auditLogger } from "@/lib/audit";
 import { getCoordinates } from "@/lib/geocoding";

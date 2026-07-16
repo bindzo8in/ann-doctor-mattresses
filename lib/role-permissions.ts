@@ -1,7 +1,7 @@
 // lib/role-permissions.ts
 
 import { UserRole } from "@/app/generated/prisma/enums";
-import { Permission } from "./permissions";
+import { Permission } from "./permissions.old";
 
 export const rolePermissions: Record<UserRole, Permission[]> = {
   [UserRole.SUPER_ADMIN]: [

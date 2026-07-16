@@ -1,0 +1,70 @@
+import { betterAuth } from "better-auth";
+import prisma from "./prisma";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import EmailVerificationEmail from "@/emails/EmailVerificationEmail";
+import { env } from "@/env";
+import { sendResetPasswordEmail, sendVerificationEmail } from "./email";
+import { nextCookies } from "better-auth/next-js";
+import { admin } from "better-auth/plugins/admin"
+import { ac, adminRole, customerRole, superAdminRole } from './permissions'
+import { UserRole } from "@/app/generated/prisma/enums";
+export const auth = betterAuth({
+    logger: {
+        disabled: process.env.NODE_ENV !== 'development',
+        disableColors: process.env.NODE_ENV !== 'development',
+        level: "debug",
+        log: (level, message, ...args) => {
+            // Custom logging implementation
+            console.log(`[${level}] ${message}`, ...args);
+        }
+    },
+    database: prismaAdapter(prisma, {
+        provider: "postgresql"
+    }),
+    session: {
+        expiresIn: 60 * 60 * 24 * 7,
+        updateAge: 60 * 60 * 24
+    },
+    emailAndPassword: {
+        enabled: true,
+        autoSignIn: false,
+        requireEmailVerification: true,
+        resetPasswordTokenExpiresIn: 60 * 60, // 1 hour,
+        sendResetPassword: async ({ url, user }) => {
+            sendResetPasswordEmail({
+                email: user.email,
+                appName: env.NEXT_PUBLIC_APP_NAME,
+                resetUrl: url,
+                supportEmail: env.NEXT_PUBLIC_SUPPORT_EMAIL
+            })
+        },
+        revokeSessionsOnPasswordReset: true,
+    },
+    emailVerification: {
+        sendOnSignUp: true,
+        sendOnSignIn: true,
+        expiresIn: 24 * 60 * 60, // 24 hours
+        sendVerificationEmail: async ({ user, url }) => {
+            sendVerificationEmail({
+                appName: env.NEXT_PUBLIC_APP_NAME,
+                name: user.name,
+                supportEmail: env.NEXT_PUBLIC_SUPPORT_EMAIL,
+                verificationUrl: url,
+                email: user.email,
+            })
+        },
+        autoSignInAfterVerification: true,
+    },
+    plugins: [
+        admin({
+            ac,
+            defaultRole: UserRole.CUSTOMER,
+            roles: {
+                [UserRole.SUPER_ADMIN]: superAdminRole,
+                [UserRole.BRANCH_ADMIN]: adminRole,
+                [UserRole.CUSTOMER]: customerRole
+            }
+        }),
+        nextCookies()
+    ]
+});

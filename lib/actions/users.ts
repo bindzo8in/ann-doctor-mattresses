@@ -5,7 +5,7 @@ import { UserRole } from "@/app/generated/prisma/client"
 import bcryptjs from "bcryptjs"
 import { revalidatePath } from "next/cache"
 import { auditLogger } from "@/lib/audit"
-import { auth } from "@/auth"
+import { auth } from "@/auth-old"
 
 export async function getAdmins() {
   const session = await auth();

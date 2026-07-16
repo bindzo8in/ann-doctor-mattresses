@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { attributesStepSchema } from "@/lib/schema/product-step-schemas";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { userHasPermission } from "@/lib/rbac";
 import { getFieldErrors } from "@/lib/utils";
 

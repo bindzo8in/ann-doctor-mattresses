@@ -66,7 +66,7 @@ export const metadata: Metadata = {
   }
 };
 
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 
 export default async function RootLayout({
   children,

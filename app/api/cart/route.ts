@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { calculateCartTotals } from "@/lib/checkout";
 
 export const dynamic = "force-dynamic";

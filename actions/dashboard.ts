@@ -2,7 +2,7 @@
 
 import prisma from "@/lib/prisma";
 import { OrderStatus, PaymentStatus } from "@/app/generated/prisma/client";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { userHasPermission } from "@/lib/rbac";
 
 export type PeriodFilter = "today" | "this_week" | "last_month" | "this_year" | "all_time";

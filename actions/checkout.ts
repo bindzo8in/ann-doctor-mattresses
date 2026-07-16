@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { calculateCartTotals } from "@/lib/checkout";
 import { auditLogger } from "@/lib/audit";
 

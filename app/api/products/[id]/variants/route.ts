@@ -7,7 +7,7 @@ interface RouteProps {
   params: Promise<{ id: string }>;
 }
 
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 import { userHasPermission } from "@/lib/rbac";
 
 export async function PATCH(req: NextRequest, { params }: RouteProps) {

@@ -11,5 +11,6 @@ export interface ActionResponse<T = any> {
 export const formSchema = z.object({
   email: z.email({ error: "Please enter a valid email" }),
   password: z.string({ error: "This field is required" }),
+  rememberMe: z.boolean(),
   // "social-media-buttons": z.unknown(),
 });

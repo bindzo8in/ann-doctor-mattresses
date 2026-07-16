@@ -8,7 +8,7 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
-import { auth } from "@/auth";
+import { auth } from "@/auth-old";
 
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
   const session = await auth();

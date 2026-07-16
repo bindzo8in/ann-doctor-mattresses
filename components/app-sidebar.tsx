@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sidebar"
 import { LayoutDashboardIcon, ListIcon, ChartBarIcon, FolderIcon, Settings2Icon, CircleHelpIcon, SearchIcon, CommandIcon, MessageSquareIcon, MonitorPlay, ShieldIcon, UsersIcon, TagsIcon } from "lucide-react"
 import { userHasPermission } from "@/lib/rbac"
-import { Permission } from "@/lib/permissions"
+import { Permission } from "@/lib/permissions.old"
 import { routes } from "@/lib/routes"
 
 const navMain = [

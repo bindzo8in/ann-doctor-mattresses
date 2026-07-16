@@ -1,6 +1,6 @@
 // lib/rbac.ts
 
-import { Permission } from "./permissions";
+import { Permission } from "./permissions.old";
 import { UserRole } from "@/app/generated/prisma/enums";
 import { rolePermissions } from "./role-permissions";
 
