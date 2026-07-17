@@ -8,10 +8,17 @@ interface DashboardLayoutProps {
   children: ReactNode;
 }
 
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
-  const session = await auth();
+ const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session?.user) {
+    throw new Error("Unauthorized");
+  }
 
   return (
     <SidebarProvider
@@ -22,7 +29,7 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" user={session?.user} />
+      <AppSidebar variant="inset" user={session?.user as any} />
 
       <SidebarInset>
         <SiteHeader />

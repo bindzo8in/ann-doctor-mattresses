@@ -15,7 +15,7 @@ import { CheckoutSource } from "@/app/generated/prisma/enums";
 import { formatPrice } from "@/lib/price";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { routes } from "@/lib/routes";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import Image from "next/image";

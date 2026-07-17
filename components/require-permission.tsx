@@ -1,11 +1,10 @@
 "use client";
 
-import { useSession } from "next-auth/react";
-import { Permission } from "@/lib/permissions.old";
-import { userHasPermission } from "@/lib/rbac";
+import { useSession } from "@/lib/auth-client";
+import { useMemo } from "react";
 
 interface RequirePermissionProps {
-  permission: Permission;
+  permission: string;
   children: React.ReactNode;
   fallback?: React.ReactNode;
 }
@@ -13,7 +12,15 @@ interface RequirePermissionProps {
 export function RequirePermission({ permission, children, fallback = null }: RequirePermissionProps) {
   const { data: session } = useSession();
 
-  if (!session?.user || !userHasPermission(session.user, permission)) {
+  const canAccess = useMemo(() => {
+    if (!session?.user) return false;
+
+    if (session.user.role === "SUPER_ADMIN") return true;
+
+    return false;
+  }, [session?.user]);
+
+  if (!canAccess) {
     return <>{fallback}</>;
   }
 

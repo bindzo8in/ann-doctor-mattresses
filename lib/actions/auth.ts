@@ -2,7 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
-import { signIn } from "@/auth-old";
+import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { loginRateLimit } from "@/lib/security/rate-limit";
 import { securityLogger } from "@/lib/security/audit";
@@ -55,6 +55,9 @@ export async function login(
     where: {
       email: normalizedEmail,
     },
+    include: {
+      accounts: true,
+    },
   });
 
   if (!user) {
@@ -71,16 +74,16 @@ export async function login(
   }
 
   // 3. Check Lockout Status
-  if (user.lockedUntil && user.lockedUntil > new Date()) {
+  if (user.banExpires && user.banExpires > new Date()) {
     return {
       success: false,
       code: "ACCOUNT_LOCKED",
-      message: `Account is temporarily locked. Try again after ${user.lockedUntil.toLocaleTimeString()}`,
+      message: `Account is temporarily locked. Try again after ${user.banExpires.toLocaleTimeString()}`,
     };
   }
 
   // 4. Check other status
-  if (!user.isActive) {
+  if (user.banned) {
     return {
       success: false,
       code: "ACCOUNT_DISABLED",
@@ -100,13 +103,13 @@ export async function login(
   }
 
   // 5. Verify Password
-  const validPassword = await bcrypt.compare(
-    password,
-    user.password
-  );
+  const credentialAccount = user.accounts.find((account) => account.providerId === "credential");
+  const validPassword = credentialAccount?.password
+    ? await bcrypt.compare(password, credentialAccount.password)
+    : false;
 
   if (!validPassword) {
-    const failedAttempts = user.failedAttempts + 1;
+    const failedAttempts = 1;
     let lockedUntil = null;
     
     let action: "LOGIN_FAILURE" | "ACCOUNT_LOCKED" = "LOGIN_FAILURE";
@@ -121,9 +124,9 @@ export async function login(
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        failedAttempts,
-        lockedUntil,
-        lastFailedAttemptAt: new Date(),
+        banExpires: lockedUntil,
+        banReason: lockedUntil ? "Too many failed login attempts" : null,
+        banned: !!lockedUntil,
       },
     });
 
@@ -151,13 +154,13 @@ export async function login(
   }
 
   // 6. Success Reset
-  if (user.failedAttempts > 0 || user.lockedUntil) {
+  if (user.banned || user.banExpires) {
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        failedAttempts: 0,
-        lockedUntil: null,
-        lastFailedAttemptAt: null,
+        banned: false,
+        banReason: null,
+        banExpires: null,
       },
     });
   }

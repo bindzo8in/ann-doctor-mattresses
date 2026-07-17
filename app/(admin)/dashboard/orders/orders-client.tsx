@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { userHasPermission } from "@/lib/rbac";
 import { Badge } from "@/components/ui/badge";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { Loader2, Edit3, Truck, Calendar, DollarSign, User, Printer, ExternalLink } from "lucide-react";
@@ -591,7 +590,7 @@ export function OrdersPageClient({ initialData }: OrdersPageClientProps) {
         ];
       case "PENDING_ASSIGNMENT":
         return [
-          ...(userHasPermission(session?.user, "orders.update") ? [{ value: "OPEN_ASSIGN_MODAL", label: "Assign Branch", variant: "default" }] : []),
+          ...((session?.user?.role === "SUPER_ADMIN" || session?.user?.role === "BRANCH_ADMIN") ? [{ value: "OPEN_ASSIGN_MODAL", label: "Assign Branch", variant: "default" }] : []),
           { value: "CANCELLED", label: "Cancel Order", variant: "destructive" }
         ];
       case "ASSIGNED":
@@ -616,7 +615,7 @@ export function OrdersPageClient({ initialData }: OrdersPageClientProps) {
         return [];
       case "CANCELLED":
         // Logic will hide this if already refunded
-        return userHasPermission(session?.user, "orders.refund") ? [
+        return (session?.user?.role === "SUPER_ADMIN" || session?.user?.role === "BRANCH_ADMIN") ? [
           { value: "INITIATE_REFUND", label: "Initiate Refund (Razorpay)", variant: "destructive" }
         ] : [];
       default:

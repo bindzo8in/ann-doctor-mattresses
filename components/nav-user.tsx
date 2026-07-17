@@ -22,8 +22,7 @@ import {
 } from "@/components/ui/sidebar"
 import { EllipsisVerticalIcon, LogOutIcon } from "lucide-react"
 import { routes } from "@/lib/routes"
-import { logoutAction } from "@/actions/logout"
-import { signOut } from "next-auth/react"
+import { signOut } from "@/lib/auth-client"
 
 
 export function NavUser({
@@ -83,8 +82,7 @@ export function NavUser({
             <DropdownMenuItem
               onClick={async () => {
                 try {
-                  // await logoutAction()
-                  await signOut({ redirect: false })
+                  await signOut()
 
                 } catch {
                   // signOut() may throw NEXT_REDIRECT — that's expected

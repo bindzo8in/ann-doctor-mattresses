@@ -1,8 +1,8 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
-import { userHasPermission } from "@/lib/rbac";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 interface AuditLogFilters {
   cursor?: string | null;
@@ -15,10 +15,22 @@ interface AuditLogFilters {
 }
 
 export async function getAuditLogs(filters: AuditLogFilters = {}) {
-  const session = await auth();
-  
-  if (!userHasPermission(session?.user, "audit.read")) {
-    throw new Error("Forbidden");
+  // const session = await auth();
+
+  // if (!userHasPermission(session?.user, "audit.read")) {
+  //   throw new Error("Forbidden");
+  // }
+  const hasPermission = await auth.api.userHasPermission({
+    headers: await headers(),
+    body: {
+      permissions: {
+        audit: ['read']
+      }
+    }
+  })
+
+  if (!hasPermission.success) {
+    throw new Error("Forbidden")
   }
 
   try {

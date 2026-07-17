@@ -2,12 +2,29 @@
 
 import { revalidatePath } from "next/cache";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
 import { auditLogger } from "@/lib/audit";
+import { headers } from "next/headers";
 
-async function checkAdmin() {
-  const session = await auth();
-  if (!session?.user?.role || !["SUPER_ADMIN", "BRANCH_ADMIN"].includes(session.user.role)) {
+async function checkAdmin(permission: "create" | "read" | "update" | "delete") {
+  const hasPermission = await auth.api.userHasPermission({
+    headers: await headers(),
+    body: {
+      permissions: {
+        upload: [permission]
+      }
+    }
+  })
+
+  if (!hasPermission.success) {
+    throw new Error("Unauthorized");
+  }
+
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session) {
     throw new Error("Unauthorized");
   }
   return session;
@@ -28,8 +45,7 @@ type HeroBannerInput = {
 };
 
 export async function createHeroBanner(data: HeroBannerInput) {
-  const session = await checkAdmin();
-  
+  const session = await checkAdmin("create");
   const currentCount = await prisma.heroBanner.count();
 
   const banner = await prisma.heroBanner.create({
@@ -46,7 +62,7 @@ export async function createHeroBanner(data: HeroBannerInput) {
     entityId: banner.id,
     description: `Created new hero banner: ${banner.title}`,
     actorUserId: session.user.id,
-    actorRole: session.user.role,
+    actorRole: session.user.role!,
     newValues: banner,
   });
 
@@ -56,8 +72,8 @@ export async function createHeroBanner(data: HeroBannerInput) {
 }
 
 export async function updateHeroBanner(id: string, data: Partial<HeroBannerInput>) {
-  const session = await checkAdmin();
-  
+  const session = await checkAdmin("update");
+
   const banner = await prisma.heroBanner.update({
     where: { id },
     data
@@ -69,7 +85,7 @@ export async function updateHeroBanner(id: string, data: Partial<HeroBannerInput
     entityId: banner.id,
     description: `Updated hero banner: ${banner.title}`,
     actorUserId: session.user.id,
-    actorRole: session.user.role,
+    actorRole: session.user.role!,
     newValues: banner,
   });
 
@@ -79,8 +95,8 @@ export async function updateHeroBanner(id: string, data: Partial<HeroBannerInput
 }
 
 export async function deleteHeroBanner(id: string) {
-  const session = await checkAdmin();
-  
+  const session = await checkAdmin("delete");
+
   const banner = await prisma.heroBanner.delete({
     where: { id }
   });
@@ -91,7 +107,7 @@ export async function deleteHeroBanner(id: string) {
     entityId: id,
     description: `Deleted hero banner: ${banner.title}`,
     actorUserId: session.user.id,
-    actorRole: session.user.role,
+    actorRole: session.user.role!,
     oldValues: banner,
   });
 
@@ -101,7 +117,7 @@ export async function deleteHeroBanner(id: string) {
 }
 
 export async function reorderHeroBanners(orderedIds: string[]) {
-  const session = await checkAdmin();
+  const session = await checkAdmin("update");
 
   await prisma.$transaction(
     orderedIds.map((id, index) =>
@@ -117,7 +133,7 @@ export async function reorderHeroBanners(orderedIds: string[]) {
     entityType: "HeroBanner",
     description: `Reordered hero banners`,
     actorUserId: session.user.id,
-    actorRole: session.user.role,
+    actorRole: session.user.role!,
   });
 
   revalidatePath("/");
@@ -126,8 +142,8 @@ export async function reorderHeroBanners(orderedIds: string[]) {
 }
 
 export async function toggleHeroBannerStatus(id: string, isActive: boolean) {
-  const session = await checkAdmin();
-  
+  const session = await checkAdmin("update");
+
   const banner = await prisma.heroBanner.update({
     where: { id },
     data: { isActive }
@@ -139,7 +155,7 @@ export async function toggleHeroBannerStatus(id: string, isActive: boolean) {
     entityId: banner.id,
     description: `Toggled hero banner status to ${isActive ? 'Active' : 'Inactive'}`,
     actorUserId: session.user.id,
-    actorRole: session.user.role,
+    actorRole: session.user.role!,
     newValues: banner,
   });
 
@@ -147,8 +163,9 @@ export async function toggleHeroBannerStatus(id: string, isActive: boolean) {
   revalidatePath("/dashboard/hero");
   return { success: true };
 }
+
 export async function getAdminHeroBanners() {
-  await checkAdmin();
+  await checkAdmin("read");
   return prisma.heroBanner.findMany({
     orderBy: { order: "asc" }
   });

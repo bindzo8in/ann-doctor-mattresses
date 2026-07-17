@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
 import { UserRole } from "@/app/generated/prisma/client";
 import { auditLogger } from "@/lib/audit";
 
@@ -59,7 +59,7 @@ export async function POST(req: Request) {
       entityId: newZone.id,
       description: `Created delivery zone: ${newZone.name}`,
       actorUserId: session.user.id,
-      actorRole: session.user.role,
+      actorRole: session.user.role ?? undefined,
       newValues: newZone,
     });
 
@@ -108,7 +108,7 @@ export async function PUT(req: Request) {
       entityId: updatedZone.id,
       description: `Updated delivery zone: ${updatedZone.name}`,
       actorUserId: session.user.id,
-      actorRole: session.user.role,
+      actorRole: session.user.role ?? undefined,
       newValues: updatedZone,
     });
 
@@ -149,7 +149,7 @@ export async function DELETE(req: Request) {
       entityId: id,
       description: `Deleted delivery zone: ${zone?.name || id}`,
       actorUserId: session.user.id,
-      actorRole: session.user.role,
+      actorRole: session.user.role ?? undefined,
       oldValues: zone,
     });
 

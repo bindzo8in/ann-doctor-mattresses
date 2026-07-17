@@ -4,7 +4,7 @@ import { adminClient } from "better-auth/client/plugins"
 import { ac, adminRole, customerRole, superAdminRole } from "@/lib/permissions";
 import { UserRole } from "@/app/generated/prisma/enums";
 
-export const { signIn, signUp, useSession, sendVerificationEmail, updateUser, changePassword, requestPasswordReset, resetPassword } = createAuthClient({
+const authClient = createAuthClient({
     /** The base URL of the server (optional if you're using the same domain) */
     baseURL: env.NEXT_PUBLIC_SITE_URL,
     plugins: [
@@ -18,3 +18,15 @@ export const { signIn, signUp, useSession, sendVerificationEmail, updateUser, ch
         })
     ]
 })
+
+export const { signIn, signUp, signOut, sendVerificationEmail, updateUser, changePassword, requestPasswordReset, resetPassword, admin } = authClient
+
+export const useSession = () => {
+    const session = authClient.useSession()
+    const status = session.isPending ? "loading" : session.data?.session ? "authenticated" : "unauthenticated"
+
+    return {
+        ...session,
+        status,
+    }
+}

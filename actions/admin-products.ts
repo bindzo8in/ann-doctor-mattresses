@@ -1,11 +1,12 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { MattressSize } from "@/app/generated/prisma/client";
 import { auditLogger } from "@/lib/audit";
-import { userHasPermission } from "@/lib/rbac";
+import { hasBetterAuthPermission } from "@/lib/auth-permissions";
 
 export interface MatrixVariantInput {
   sizeName: MattressSize;
@@ -30,8 +31,8 @@ export async function upsertProductMatrix(
   matrixVariants: MatrixVariantInput[],
   customSettings: CustomSizeSettingsInput
 ) {
-  const session = await auth();
-  if (!userHasPermission(session?.user, "products.update")) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!(await hasBetterAuthPermission("products.update"))) {
     throw new Error("Unauthorized");
   }
 
@@ -121,7 +122,7 @@ export async function upsertProductMatrix(
       entityId: productId,
       description: `Product matrix and custom settings updated for product ${productId}`,
       actorUserId: session!.user.id,
-      actorRole: session!.user.role,
+      actorRole: session!.user.role ?? undefined,
     });
 
     revalidatePath("/dashboard/products");

@@ -1,23 +1,15 @@
 // Force cache invalidation
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
-import { cookies } from "next/headers";
-import { getToken } from "next-auth/jwt";
-import { userHasPermission } from "@/lib/rbac";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { hasBetterAuthPermission } from "@/lib/auth-permissions";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const cookieStore = await cookies();
-
-    const token = await getToken({
-    req,
-    secret: process.env.AUTH_SECRET,
-  });
-
-  const session = await auth();
-  if (!userHasPermission(session?.user, "orders.read")) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || !(await hasBetterAuthPermission("orders.read"))) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 

@@ -1,8 +1,11 @@
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
-export const GET = auth((req) => {
-  if (!req.auth) {
+export async function GET() {
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  if (!session?.user) {
     return NextResponse.json(
       {
         success: false,
@@ -16,8 +19,8 @@ export const GET = auth((req) => {
     {
       success: true,
       message: "authorized",
-      user: req.auth.user,
+      user: session.user,
     },
     { status: 200 }
   );
-});
+}

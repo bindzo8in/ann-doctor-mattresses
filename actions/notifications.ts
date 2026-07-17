@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
 
 export async function getNotifications() {
   const session = await auth();

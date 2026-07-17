@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
 import { addressSchema } from "@/lib/schema/checkout-schema";
 
 interface RouteProps {

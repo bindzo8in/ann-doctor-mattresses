@@ -29,24 +29,37 @@ async function main() {
 
   for (const user of users) {
     const hashedPassword = await bcrypt.hash(user.password, 10);
-    await prisma.user.upsert({
+    const createdUser = await prisma.user.upsert({
       where: { email: user.email },
       update: {
         name: user.name,
         role: user.role,
-        isActive: user.isActive,
         branchId: user.branchId,
-        emailVerified: new Date(),
+        emailVerified: true,
       },
       create: {
         id: user.id,
         name: user.name,
         email: user.email,
-        password: hashedPassword,
         role: user.role,
-        isActive: user.isActive,
         branchId: user.branchId,
-        emailVerified: new Date(),
+        emailVerified: true,
+      },
+    });
+
+    await prisma.account.upsert({
+      where: {
+        id: `${createdUser.id}:credential`,
+      },
+      update: {
+        password: hashedPassword,
+      },
+      create: {
+        id: `${createdUser.id}:credential`,
+        accountId: createdUser.id,
+        providerId: "credential",
+        userId: createdUser.id,
+        password: hashedPassword,
       },
     });
   }

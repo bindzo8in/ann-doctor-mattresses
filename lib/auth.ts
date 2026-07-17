@@ -1,14 +1,15 @@
 import { betterAuth } from "better-auth";
 import prisma from "./prisma";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import EmailVerificationEmail from "@/emails/EmailVerificationEmail";
 import { env } from "@/env";
 import { sendResetPasswordEmail, sendVerificationEmail } from "./email";
 import { nextCookies } from "better-auth/next-js";
 import { admin } from "better-auth/plugins/admin"
 import { ac, adminRole, customerRole, superAdminRole } from './permissions'
 import { UserRole } from "@/app/generated/prisma/enums";
-export const auth = betterAuth({
+import { headers as nextHeaders } from "next/headers";
+
+export const authInstance = betterAuth({
     logger: {
         disabled: process.env.NODE_ENV !== 'development',
         disableColors: process.env.NODE_ENV !== 'development',
@@ -68,3 +69,31 @@ export const auth = betterAuth({
         nextCookies()
     ]
 });
+
+export const auth = Object.assign(
+    async (input?: { headers?: Headers } | Headers) => {
+        let requestHeaders: Headers | undefined;
+
+        if (input instanceof Headers) {
+            requestHeaders = input;
+        } else if (input?.headers) {
+            requestHeaders = input.headers;
+        } else {
+            try {
+                requestHeaders = await nextHeaders();
+            } catch {
+                return null;
+            }
+        }
+
+        if (!requestHeaders) {
+            return null;
+        }
+
+        return authInstance.api.getSession({ headers: requestHeaders });
+    },
+    { api: authInstance.api }
+) as typeof authInstance & {
+    api: typeof authInstance.api;
+    (input?: { headers?: Headers } | Headers): Promise<any>;
+};

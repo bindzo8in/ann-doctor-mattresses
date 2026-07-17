@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import slugify from "slugify";
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { auditLogger } from "@/lib/audit";
-import { userHasPermission } from "@/lib/rbac";
+import { hasBetterAuthPermission } from "@/lib/auth-permissions";
 
 export async function GET(
   _: NextRequest,
@@ -40,8 +41,8 @@ export async function PATCH(
   }
 ) {
   try {
-    const session = await auth();
-    if (!userHasPermission(session?.user, "categories.update")) {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session || !(await hasBetterAuthPermission("categories.update"))) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
@@ -94,7 +95,7 @@ export async function PATCH(
         entityId: category.id,
         description: `Updated category: ${category.name}`,
         actorUserId: session.user.id,
-        actorRole: session.user.role,
+        actorRole: session.user.role ?? undefined,
         newValues: category,
       });
     }
@@ -118,8 +119,8 @@ export async function DELETE(
   }
 ) {
   try {
-    const session = await auth();
-    if (!userHasPermission(session?.user, "categories.delete")) {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session || !(await hasBetterAuthPermission("categories.delete"))) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
@@ -154,7 +155,7 @@ export async function DELETE(
         entityId: id,
         description: `Deleted category: ${category.name}`,
         actorUserId: session.user.id,
-        actorRole: session.user.role,
+        actorRole: session.user.role ?? undefined,
         oldValues: category,
       });
     }

@@ -2,8 +2,9 @@
 
 import prisma from "@/lib/prisma";
 import { OrderStatus, PaymentStatus } from "@/app/generated/prisma/client";
-import { auth } from "@/auth-old";
-import { userHasPermission } from "@/lib/rbac";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { hasBetterAuthPermission } from "@/lib/auth-permissions";
 
 export type PeriodFilter = "today" | "this_week" | "last_month" | "this_year" | "all_time";
 
@@ -40,8 +41,8 @@ function getDateRange(period: PeriodFilter): { start: Date | undefined; end: Dat
 }
 
 export async function getDashboardStats(period: PeriodFilter = "all_time") {
-  const session = await auth();
-  if (!userHasPermission(session?.user, "dashboard.read")) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || !(await hasBetterAuthPermission("dashboard.read"))) {
     throw new Error("Unauthorized");
   }
 
@@ -116,8 +117,8 @@ export async function getDashboardStats(period: PeriodFilter = "all_time") {
 }
 
 export async function getRecentOrders(limit: number = 5) {
-  const session = await auth();
-  if (!userHasPermission(session?.user, "dashboard.read")) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || !(await hasBetterAuthPermission("dashboard.read"))) {
     throw new Error("Unauthorized");
   }
 
@@ -150,8 +151,8 @@ export async function getRecentOrders(limit: number = 5) {
 }
 
 export async function getChartData(period: PeriodFilter = "all_time") {
-  const session = await auth();
-  if (!userHasPermission(session?.user, "dashboard.read")) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || !(await hasBetterAuthPermission("dashboard.read"))) {
     throw new Error("Unauthorized");
   }
 

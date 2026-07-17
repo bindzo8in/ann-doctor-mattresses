@@ -9,14 +9,30 @@ cloudinary.config({
   api_secret: env.CLOUDINARY_API_SECRET,
 });
 
-import { auth } from "@/auth-old";
-import { userHasPermission } from "@/lib/rbac";
+import { auth } from "@/lib/auth";
 
 export async function POST(request: Request) {
   try {
-    const session = await auth();
-    if (!userHasPermission(session?.user, "products.create") && !userHasPermission(session?.user, "products.update")) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 });
+
+    const hasPermission = await auth.api.userHasPermission({
+      headers: request.headers,
+      body: {
+        permissions: {
+          upload: ['create']
+        }
+      }
+    })
+
+    if (!hasPermission.success) {
+      throw new Error("Unauthorized");
+    }
+
+    const session = await auth.api.getSession({
+      headers: request.headers
+    })
+
+    if (!session) {
+      throw new Error("Unauthorized");
     }
 
     const formData = await request.formData();
@@ -45,7 +61,8 @@ export async function POST(request: Request) {
           },
           (error, result) => {
             if (error) {
-              return reject(error)};
+              return reject(error)
+            };
 
             if (!result) {
               return reject(new Error("Upload failed"));
@@ -73,9 +90,25 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const session = await auth();
-    if (!userHasPermission(session?.user, "products.delete") && !userHasPermission(session?.user, "products.update")) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 });
+    const hasPermission = await auth.api.userHasPermission({
+      headers: request.headers,
+      body: {
+        permissions: {
+          upload: ['delete']
+        }
+      }
+    })
+
+    if (!hasPermission.success) {
+      throw new Error("Unauthorized");
+    }
+
+    const session = await auth.api.getSession({
+      headers: request.headers
+    })
+
+    if (!session) {
+      throw new Error("Unauthorized");
     }
 
     const body = await request.json();

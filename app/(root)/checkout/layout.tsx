@@ -1,4 +1,4 @@
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { routes } from "@/lib/routes";
 

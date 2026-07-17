@@ -7,13 +7,14 @@ interface RouteProps {
   params: Promise<{ id: string }>;
 }
 
-import { auth } from "@/auth-old";
-import { userHasPermission } from "@/lib/rbac";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { hasBetterAuthPermission } from "@/lib/auth-permissions";
 
 export async function PATCH(req: NextRequest, { params }: RouteProps) {
   try {
-    const session = await auth();
-    if (!userHasPermission(session?.user, "products.update")) {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session || !(await hasBetterAuthPermission("products.update"))) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 });
     }
 

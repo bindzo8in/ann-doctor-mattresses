@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { auditLogger } from "@/lib/audit";
-import { userHasPermission } from "@/lib/rbac";
+import { hasBetterAuthPermission } from "@/lib/auth-permissions";
 
 interface RouteProps {
   params: Promise<{ id: string }>;
@@ -10,8 +11,8 @@ interface RouteProps {
 
 export async function PUT(req: NextRequest, { params }: RouteProps) {
   
-  const session = await auth();
-  if (!userHasPermission(session?.user, "promotions.update")) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || !(await hasBetterAuthPermission("promotions.update"))) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
   try {
@@ -40,7 +41,7 @@ export async function PUT(req: NextRequest, { params }: RouteProps) {
       entityId: promotion.id,
       description: `Updated promotion: ${promotion.name}`,
       actorUserId: session!.user.id,
-      actorRole: session!.user.role,
+      actorRole: session!.user.role ?? undefined,
       newValues: promotion,
     });
 
@@ -52,8 +53,8 @@ export async function PUT(req: NextRequest, { params }: RouteProps) {
 }
 
 export async function DELETE(req: NextRequest, { params }: RouteProps) {
-  const session = await auth();
-  if (!userHasPermission(session?.user, "promotions.delete")) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || !(await hasBetterAuthPermission("promotions.delete"))) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
@@ -73,7 +74,7 @@ export async function DELETE(req: NextRequest, { params }: RouteProps) {
       entityId: id,
       description: `Deleted promotion: ${promotion.name}`,
       actorUserId: session!.user.id,
-      actorRole: session!.user.role,
+      actorRole: session!.user.role ?? undefined,
       oldValues: promotion,
     });
 

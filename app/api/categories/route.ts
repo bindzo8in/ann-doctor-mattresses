@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import slugify from "slugify";
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { auditLogger } from "@/lib/audit";
-import { userHasPermission } from "@/lib/rbac";
+import { hasBetterAuthPermission } from "@/lib/auth-permissions";
 
 export async function GET(req: NextRequest) {
   const search = req.nextUrl.searchParams.get("search") ?? "";
@@ -42,9 +43,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
   
-  if (!userHasPermission(session?.user, "categories.create")) {
+  if (!session || !(await hasBetterAuthPermission("categories.create"))) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
@@ -95,7 +96,7 @@ export async function POST(req: NextRequest) {
       entityId: category.id,
       description: `Created category: ${category.name}`,
       actorUserId: session.user.id,
-      actorRole: session.user.role,
+      actorRole: session.user.role ?? undefined,
       newValues: category,
     });
   }

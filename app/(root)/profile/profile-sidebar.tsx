@@ -5,8 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { User, ClipboardList, LogOut, Home } from "lucide-react";
 import { routes } from "@/lib/routes";
-import { logoutAction } from "@/actions/logout";
-import { signOut } from "next-auth/react";
+import { signOut } from "@/lib/auth-client";
 
 export function ProfileSidebar({ userRole }: { userRole?: string }) {
   const pathname = usePathname();
@@ -34,8 +33,7 @@ export function ProfileSidebar({ userRole }: { userRole?: string }) {
 
   const handleLogout = async () => {
     try {
-      // await logoutAction();
-      await signOut({ redirect: false })
+      await signOut()
     } catch {
       // signOut() may throw NEXT_REDIRECT — that's expected
     }

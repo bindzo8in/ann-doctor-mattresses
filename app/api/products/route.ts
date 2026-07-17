@@ -6,13 +6,14 @@ import { ZodError } from "zod";
 
 export const maxDuration = 30;
 
-import { auth } from "@/auth-old";
-import { userHasPermission } from "@/lib/rbac";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { hasBetterAuthPermission } from "@/lib/auth-permissions";
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth();
-    if (!userHasPermission(session?.user, "products.create")) {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session || !(await hasBetterAuthPermission("products.create"))) {
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 403 });
     }
 

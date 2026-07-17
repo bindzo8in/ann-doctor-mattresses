@@ -1,13 +1,14 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
-import { userHasPermission } from "@/lib/rbac";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { auditLogger } from "@/lib/audit";
+import { hasBetterAuthPermission } from "@/lib/auth-permissions";
 
 export async function getCategories(limit?: number, onlyWithProducts: boolean = false) {
-  const session = await auth();
-  if (!userHasPermission(session?.user, "categories.read")) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!(await hasBetterAuthPermission("categories.read"))) {
     throw new Error("Unauthorized");
   }
 
@@ -48,8 +49,8 @@ export async function createCategory(data: {
   thumbnailUrl?: string | null; 
   thumbnailPublicId?: string | null;
 }) {
-  const session = await auth();
-  if (!userHasPermission(session?.user, "categories.create")) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!(await hasBetterAuthPermission("categories.create"))) {
     throw new Error("Unauthorized");
   }
 
@@ -84,7 +85,7 @@ export async function createCategory(data: {
     entityId: category.id,
     description: `Created new category: ${category.name}`,
     actorUserId: session!.user.id,
-    actorRole: session!.user.role,
+    actorRole: session!.user.role ?? undefined,
     newValues: category,
   });
 
@@ -105,8 +106,8 @@ export async function updateCategory(id: string, data: {
   thumbnailUrl?: string | null; 
   thumbnailPublicId?: string | null;
 }) {
-  const session = await auth();
-  if (!userHasPermission(session?.user, "categories.update")) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!(await hasBetterAuthPermission("categories.update"))) {
     throw new Error("Unauthorized");
   }
 
@@ -143,7 +144,7 @@ export async function updateCategory(id: string, data: {
     entityId: category.id,
     description: `Updated category: ${category.name}`,
     actorUserId: session!.user.id,
-    actorRole: session!.user.role,
+    actorRole: session!.user.role ?? undefined,
     newValues: category,
   });
 
@@ -151,8 +152,8 @@ export async function updateCategory(id: string, data: {
 }
 
 export async function deleteCategory(id: string) {
-  const session = await auth();
-  if (!userHasPermission(session?.user, "categories.delete")) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!(await hasBetterAuthPermission("categories.delete"))) {
     throw new Error("Unauthorized");
   }
 
@@ -175,7 +176,7 @@ export async function deleteCategory(id: string) {
     entityId: id,
     description: `Deleted category: ${category.name}`,
     actorUserId: session!.user.id,
-    actorRole: session!.user.role,
+    actorRole: session!.user.role ?? undefined,
     oldValues: category,
   });
 

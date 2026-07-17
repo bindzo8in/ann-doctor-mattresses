@@ -1,3 +1,5 @@
+
+
 "use client";
 
 import React, { useState } from "react";
@@ -7,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Loader2, Plus, Edit3, Trash2 } from "lucide-react";
+import { Loader2, Plus, Edit3, Trash2, Trash } from "lucide-react";
 import { getBranches, createBranch, updateBranch, deleteBranch } from "@/actions/branches";
 import {
   Dialog,
@@ -33,7 +35,7 @@ export function BranchesPageClient({ initialData }: BranchesPageClientProps) {
     initialData
   });
 
-  
+
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<any | null>(null);
@@ -67,6 +69,23 @@ export function BranchesPageClient({ initialData }: BranchesPageClientProps) {
     onError: (error) => {
       console.error(error);
       toast.error("Failed to update branch");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteBranch(id),
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["branches"],
+      });
+
+      toast.success("Branch deleted");
+    },
+
+    onError: (error) => {
+      console.error(error);
+      toast.error("Failed to delete branch");
     },
   });
 
@@ -154,6 +173,20 @@ export function BranchesPageClient({ initialData }: BranchesPageClientProps) {
                         <Edit3 className="w-4 h-4" />
                       </Button>
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        disabled={deleteMutation.isPending}
+                        onClick={() => deleteMutation.mutate(branch.id)}
+                      >
+                        {deleteMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -170,41 +203,41 @@ export function BranchesPageClient({ initialData }: BranchesPageClientProps) {
               {editingBranch ? "Update details for this branch." : "Create a new branch for order assignments."}
             </DialogDescription>
           </DialogHeader>
-          
+
           <form onSubmit={handleSubmit} className="space-y-4 pt-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Branch Name</label>
-              <Input 
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
-                placeholder="E.g. South India Hub" 
-                required 
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="E.g. South India Hub"
+                required
               />
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Phone</label>
-              <Input 
-                value={phone} 
-                onChange={(e) => setPhone(e.target.value)} 
-                placeholder="+91 98765 43210" 
+              <Input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+91 98765 43210"
               />
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Address</label>
-              <Input 
-                value={address} 
-                onChange={(e) => setAddress(e.target.value)} 
-                placeholder="Full address for internal reference" 
+              <Input
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Full address for internal reference"
               />
             </div>
-            
+
             <div className="flex items-center space-x-2 pt-2">
-              <Checkbox 
-                id="isActive" 
-                checked={isActive} 
-                onCheckedChange={(checked) => setIsActive(checked === true)} 
+              <Checkbox
+                id="isActive"
+                checked={isActive}
+                onCheckedChange={(checked) => setIsActive(checked === true)}
               />
               <label htmlFor="isActive" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                 Active Branch

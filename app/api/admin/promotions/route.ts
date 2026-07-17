@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { auditLogger } from "@/lib/audit";
-import { userHasPermission } from "@/lib/rbac";
+import { hasBetterAuthPermission } from "@/lib/auth-permissions";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!userHasPermission(session?.user, "promotions.read")) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || !(await hasBetterAuthPermission("promotions.read"))) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
@@ -37,8 +38,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!userHasPermission(session?.user, "promotions.create")) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || !(await hasBetterAuthPermission("promotions.create"))) {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
@@ -67,7 +68,7 @@ export async function POST(req: NextRequest) {
       entityId: promotion.id,
       description: `Created new promotion: ${promotion.name}`,
       actorUserId: session!.user.id,
-      actorRole: session!.user.role,
+      actorRole: session!.user.role ?? undefined,
       newValues: promotion,
     });
 

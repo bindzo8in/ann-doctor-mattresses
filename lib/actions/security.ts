@@ -1,18 +1,19 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
 import { securityLogger } from "@/lib/security/audit";
+import { headers } from "next/headers";
 
 export async function getLockedAccounts() {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
   if (session?.user?.role !== "SUPER_ADMIN" && session?.user?.role !== "BRANCH_ADMIN") {
     throw new Error("Unauthorized");
   }
 
   const lockedUsers = await prisma.user.findMany({
     where: {
-      lockedUntil: {
+      banExpires: {
         not: null,
         gt: new Date()
       }
@@ -21,13 +22,12 @@ export async function getLockedAccounts() {
       id: true,
       name: true,
       email: true,
-      failedAttempts: true,
-      lockedUntil: true,
-      lastFailedAttemptAt: true,
+      banExpires: true,
+      banned: true,
       role: true
     },
     orderBy: {
-      lockedUntil: "desc"
+      banExpires: "desc"
     }
   });
 
@@ -35,17 +35,28 @@ export async function getLockedAccounts() {
 }
 
 export async function unlockAccount(userId: string) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
   if (session?.user?.role !== "SUPER_ADMIN" && session?.user?.role !== "BRANCH_ADMIN") {
     throw new Error("Unauthorized");
   }
 
-  const user = await prisma.user.update({
-    where: { id: userId },
-    data: {
-      failedAttempts: 0,
-      lockedUntil: null,
-      lastFailedAttemptAt: null,
+  // Get user details for logging before unbanning
+  const user = await auth.api.getUser({
+    headers: await headers(),
+    query: {
+      id: userId
+    }
+  });
+
+  if (!user) {
+    return { success: false, error: "User not found." };
+  }
+
+  // Use Better Auth Admin API to unban the user
+  await auth.api.unbanUser({
+    headers: await headers(),
+    body: {
+      userId,
     }
   });
 
@@ -67,7 +78,7 @@ export async function getAuditLogs(params?: {
   skip?: number;
   take?: number;
 }) {
-  const session = await auth();
+  const session = await auth.api.getSession({ headers: await headers() });
   if (session?.user?.role !== "SUPER_ADMIN" && session?.user?.role !== "BRANCH_ADMIN") {
     throw new Error("Unauthorized");
   }

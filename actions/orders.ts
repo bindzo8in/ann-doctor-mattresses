@@ -1,13 +1,36 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
 import { auditLogger } from "@/lib/audit";
-import { userHasPermission } from "@/lib/rbac";
 import { roundPrice } from "@/lib/price";
+import { headers } from "next/headers";
 
+async function checkAdmin(permission: "create" | "read" | "update" | "delete", target: string) {
+  const hasPermission = await auth.api.userHasPermission({
+    headers: await headers(),
+    body: {
+      permissions: {
+        [target]: [permission]
+      }
+    }
+  })
+
+  if (!hasPermission.success) {
+    throw new Error("Unauthorized");
+  }
+
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session) {
+    throw new Error("Unauthorized");
+  }
+  return session;
+}
 export async function getCustomerOrders(cursor: string | null = null, limit = 10) {
-  const session = await auth();
+  const session = await checkAdmin("read", "orders");
   if (!session?.user?.id) {
     throw new Error("Unauthorized");
   }
@@ -66,9 +89,9 @@ export async function getCustomerOrders(cursor: string | null = null, limit = 10
 }
 
 export async function getAdminOrders(cursor: string | null = null, limit = 10) {
-  const session = await auth();
-  if (!userHasPermission(session?.user, "orders.read")) {
-    throw new Error("Forbidden");
+  const session = await checkAdmin("read", "orders");
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
   }
 
   try {
@@ -129,7 +152,10 @@ export async function getAdminOrders(cursor: string | null = null, limit = 10) {
 }
 
 export async function getOrderDetails(orderId: string) {
-  const session = await auth();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
   if (!session?.user?.id) {
     throw new Error("Unauthorized");
   }
@@ -190,8 +216,8 @@ export async function getOrderDetails(orderId: string) {
 }
 
 export async function assignOrderToBranch(orderId: string, branchId: string | null) {
-  const session = await auth();
-  if (!userHasPermission(session?.user, "orders.update")) {
+  const session = await checkAdmin("update", "orders");
+  if (!session.user.id) {
     throw new Error("Unauthorized: Insufficient permissions to assign branches");
   }
 
@@ -205,13 +231,13 @@ export async function assignOrderToBranch(orderId: string, branchId: string | nu
     if (branchId) {
       try {
         const branchAdmins = await prisma.user.findMany({
-          where: { branchId, role: "BRANCH_ADMIN", isActive: true },
+          where: { branchId, role: "BRANCH_ADMIN" },
           select: { id: true }
         });
 
         const { NotificationService } = await import("@/lib/notification-service");
         const adminIds = branchAdmins.map(admin => admin.id);
-        
+
         await NotificationService.notifyUsers(
           adminIds,
           "New Order Assigned",
@@ -231,7 +257,7 @@ export async function assignOrderToBranch(orderId: string, branchId: string | nu
       description: `Order ${order.orderNumber} assigned to branch ${branchId}`,
       newValues: { branchId },
       actorUserId: session!.user.id,
-      actorRole: session!.user.role,
+      actorRole: session!.user.role!,
     });
 
     return { success: true, orderId: order.id };
@@ -242,8 +268,8 @@ export async function assignOrderToBranch(orderId: string, branchId: string | nu
 }
 
 export async function initiateRazorpayRefund(orderId: string) {
-  const session = await auth();
-  if (!userHasPermission(session?.user, "orders.refund")) {
+  const session = await checkAdmin("update", "orders");
+  if (!session.user.id) {
     throw new Error("Unauthorized: Insufficient permissions to initiate refunds");
   }
 
@@ -283,7 +309,7 @@ export async function initiateRazorpayRefund(orderId: string) {
       }
     });
 
-    const session = await auth();
+    // const session = await auth();
 
     // Create Refund record (Webhook will handle Payment status update)
     const refundRecord = await prisma.refund.create({
@@ -304,7 +330,7 @@ export async function initiateRazorpayRefund(orderId: string) {
       description: `Refund initiated for payment ${paidPayment.id}`,
       metadata: { razorpayRefundId: refund.id },
       actorUserId: session?.user?.id,
-      actorRole: session?.user?.role,
+      actorRole: session?.user?.role!,
     });
 
     return { success: true, refundId: refund.id };

@@ -4,8 +4,9 @@ import { createProductSchema } from "@/lib/schema/product-form-schema";
 import { getFieldErrors } from "@/lib/utils";
 import { v2 as cloudinary } from "cloudinary";
 // import { revalidatePath } from "next/cache";
-import { auth } from "@/auth-old";
-import { userHasPermission } from "@/lib/rbac";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { hasBetterAuthPermission } from "@/lib/auth-permissions";
 import { measure } from "@/lib/utils/measure";
 import { env } from "@/env";
 
@@ -26,8 +27,8 @@ export async function DELETE(
   { params }: RouteProps
 ) {
   try {
-    const session = await auth();
-    if (!userHasPermission(session?.user, "products.delete")) {
+    const session = await auth.api.getSession({ headers: await headers() });
+    if (!session || !(await hasBetterAuthPermission("products.delete"))) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
@@ -94,9 +95,8 @@ export async function PUT(
 ) {
   return measure("PUT /api/products/[id]", async () => {
     try {
-      const session = await auth();
-      if (!userHasPermission(session?.user, "products.update")) {
-        console.log("no permission", session?.user?.role)
+      const session = await auth.api.getSession({ headers: await headers() });
+      if (!session || !(await hasBetterAuthPermission("products.update"))) {
         return NextResponse.json({ message: "Forbidden" }, { status: 403 });
       }
 

@@ -1,24 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
 import { calculateCartTotals } from "@/lib/checkout";
 import { OrderStatus, CheckoutSource } from "@/app/generated/prisma/client";
 import { env } from "@/env";
 import { roundPrice, toRazorpayAmount } from "@/lib/price";
-import { Redis } from "@upstash/redis";
 import crypto from "crypto";
 
-const getRedisInstance = () => {
-  if (!env.UPSTASH_REDIS_REST_URL || !env.UPSTASH_REDIS_REST_TOKEN) {
-    return null;
-  }
-  return new Redis({
-    url: env.UPSTASH_REDIS_REST_URL,
-    token: env.UPSTASH_REDIS_REST_TOKEN,
-  });
-};
-
-const redis = getRedisInstance();
+const idempotencyKeys = new Map<string, number>();
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -30,11 +19,13 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { addressId, notes, source, buyNowItem, idempotencyKey } = body;
 
-    if (idempotencyKey && redis) {
-      const isNew = await redis.set(`idempotency:checkout:${session.user.id}:${idempotencyKey}`, "processing", { nx: true, ex: 60 * 60 * 24 });
-      if (!isNew) {
+    if (idempotencyKey) {
+      const key = `checkout:${session.user.id}:${idempotencyKey}`;
+      const existing = idempotencyKeys.get(key);
+      if (existing) {
         return NextResponse.json({ message: "Duplicate checkout request detected" }, { status: 409 });
       }
+      idempotencyKeys.set(key, Date.now());
     }
 
     if (!addressId) {
@@ -183,8 +174,9 @@ export async function POST(req: NextRequest) {
       const errorData = await rzpRes.json();
       console.error("Razorpay Error:", errorData);
       // Remove idempotency key if external API fails, allowing retry
-      if (idempotencyKey && redis) {
-        await redis.del(`idempotency:checkout:${session.user.id}:${idempotencyKey}`);
+      if (idempotencyKey) {
+        const key = `checkout:${session.user.id}:${idempotencyKey}`;
+        idempotencyKeys.delete(key);
       }
       return NextResponse.json({ message: "Failed to initialize payment gateway" }, { status: 500 });
     }

@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { auditLogger } from "@/lib/audit";
 
@@ -56,7 +56,7 @@ export async function createReview(productId: string, rating: number, title: str
       entityId: review.id,
       description: `User submitted a review for product ${productId}`,
       actorUserId: session.user.id,
-      actorRole: session.user.role,
+      actorRole: session.user.role ?? undefined,
       newValues: review,
     });
 
@@ -182,7 +182,7 @@ export async function toggleReviewApproval(reviewId: string, isApproved: boolean
       entityId: reviewId,
       description: `Review approval status set to ${isApproved}`,
       actorUserId: session.user.id,
-      actorRole: session.user.role,
+      actorRole: session.user.role ?? undefined,
       newValues: updatedReview,
     });
 
@@ -216,7 +216,7 @@ export async function deleteReview(reviewId: string) {
       entityId: reviewId,
       description: `Deleted review`,
       actorUserId: session.user.id,
-      actorRole: session.user.role,
+      actorRole: session.user.role ?? undefined,
       oldValues: deletedReview,
     });
 

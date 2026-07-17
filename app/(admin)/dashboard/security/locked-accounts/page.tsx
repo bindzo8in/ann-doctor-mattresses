@@ -54,13 +54,13 @@ export default async function LockedAccountsPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="destructive">{account.failedAttempts}</Badge>
+                      <Badge variant="destructive">{account.banned ? "Locked" : "—"}</Badge>
                     </TableCell>
                     <TableCell>
-                      {account.lockedUntil && format(new Date(account.lockedUntil), "MMM d, yyyy h:mm a")}
+                      {account.banExpires && format(new Date(account.banExpires), "MMM d, yyyy h:mm a")}
                     </TableCell>
                     <TableCell>
-                      {account.lastFailedAttemptAt && format(new Date(account.lastFailedAttemptAt), "MMM d, h:mm a")}
+                      {account.banned ? "Locked by admin" : "—"}
                     </TableCell>
                     <TableCell className="text-right">
                       <UnlockButton userId={account.id} userName={account.name} />

@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { formatPrice, roundPrice } from "@/lib/price";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { routes } from "@/lib/routes";
 import { useCheckoutStore } from "@/hooks/use-checkout";
 import { CheckoutSource } from "@/app/generated/prisma/enums";

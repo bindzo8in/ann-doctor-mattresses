@@ -1,16 +1,24 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
 import { UserRole } from "@/app/generated/prisma/enums";
 import { auditLogger } from "@/lib/audit";
 import { getCoordinates } from "@/lib/geocoding";
+import { headers } from "next/headers";
 
 export async function getBranches() {
-  const session = await auth();
-  if (session?.user?.role !== UserRole.SUPER_ADMIN) {
-    throw new Error("Unauthorized");
-  }
+  const hasPermission = await auth.api.userHasPermission({
+    headers: await headers(),
+    body: {
+      permissions: {
+        branches: ['read']
+      }
+    }
+  })
+  console.log(hasPermission)
+
+  if (!hasPermission.success) throw new Error("Unauthorized");
 
   const branches = await prisma.branch.findMany({
     orderBy: { createdAt: "desc" }
@@ -19,10 +27,31 @@ export async function getBranches() {
 }
 
 export async function createBranch(data: { name: string; address?: string; district: string; state?: string; phone?: string; googleMapUrl?: string; latitude?: number; longitude?: number; isActive?: boolean }) {
-  const session = await auth();
-  if (session?.user?.role !== UserRole.SUPER_ADMIN) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session) {
     throw new Error("Unauthorized");
   }
+  console.log(session)
+  const hasPermission = await auth.api.userHasPermission({
+    headers: await headers(),
+    body: {
+      permissions: {
+        branches: ['create']
+      }
+    }
+  })
+  
+  console.log(hasPermission)
+
+  if (!hasPermission.success) {
+    throw new Error("Unauthorized");
+  }
+
+
+
 
   let coords = null;
   if (!data.latitude || !data.longitude) {
@@ -43,7 +72,7 @@ export async function createBranch(data: { name: string; address?: string; distr
     entityId: branch.id,
     description: `Created new branch: ${branch.name}`,
     actorUserId: session.user.id,
-    actorRole: session.user.role,
+    actorRole: session.user.role!,
     newValues: branch,
   });
 
@@ -51,8 +80,23 @@ export async function createBranch(data: { name: string; address?: string; distr
 }
 
 export async function updateBranch(id: string, data: { name?: string; address?: string; district?: string; state?: string; phone?: string; googleMapUrl?: string; latitude?: number; longitude?: number; isActive?: boolean }) {
-  const session = await auth();
-  if (session?.user?.role !== UserRole.SUPER_ADMIN) {
+  const hasPermission = await auth.api.userHasPermission({
+    headers: await headers(),
+    body: {
+      permissions: {
+        branches: ['update']
+      }
+    }
+  })
+  if (!hasPermission.success) {
+    throw new Error("Unauthorized");
+  }
+
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session) {
     throw new Error("Unauthorized");
   }
 
@@ -89,7 +133,7 @@ export async function updateBranch(id: string, data: { name?: string; address?: 
     entityId: branch.id,
     description: `Updated branch: ${branch.name}`,
     actorUserId: session.user.id,
-    actorRole: session.user.role,
+    actorRole: session.user.role!,
     newValues: branch,
   });
 
@@ -97,8 +141,23 @@ export async function updateBranch(id: string, data: { name?: string; address?: 
 }
 
 export async function deleteBranch(id: string) {
-  const session = await auth();
-  if (session?.user?.role !== UserRole.SUPER_ADMIN) {
+  const hasPermission = await auth.api.userHasPermission({
+    headers: await headers(),
+    body: {
+      permissions: {
+        branches: ['delete']
+      }
+    }
+  })
+  if (!hasPermission.success) {
+    throw new Error("Unauthorized");
+  }
+
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
+
+  if (!session) {
     throw new Error("Unauthorized");
   }
 
@@ -112,7 +171,7 @@ export async function deleteBranch(id: string) {
     entityId: id,
     description: `Deleted branch: ${branch.name}`,
     actorUserId: session.user.id,
-    actorRole: session.user.role,
+    actorRole: session.user.role!,
     oldValues: branch,
   });
 

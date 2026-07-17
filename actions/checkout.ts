@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
 import { calculateCartTotals } from "@/lib/checkout";
 import { auditLogger } from "@/lib/audit";
 
@@ -98,7 +98,7 @@ export async function cancelOrderAction(orderId: string, cancelReason?: string) 
     description: `Order ${order.orderNumber} cancelled by customer${cancelReason ? ` - Reason: ${cancelReason}` : ''}`,
     newValues: { status: "CANCELLED", cancelReason },
     actorUserId: session.user.id,
-    actorRole: session.user.role,
+    actorRole: session.user.role ?? undefined,
   });
 
   return { success: true };

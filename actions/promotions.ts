@@ -1,7 +1,7 @@
 "use server";
 
 import prisma from "@/lib/prisma";
-import { auth } from "@/auth-old";
+import { auth } from "@/lib/auth";
 
 export async function getAdminPromotions(cursor: string | null = null, limit = 10) {
   const session = await auth();
