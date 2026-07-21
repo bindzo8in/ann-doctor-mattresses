@@ -174,6 +174,7 @@ model Product {
   isActive      Boolean @default(true)
 
   availableColors String[] @default([])
+  defaultColor    String?
 
   // Custom Size Settings
   allowCustomSize   Boolean @default(false)
@@ -181,7 +182,10 @@ model Product {
   maxWidth          Int?
   minLength         Int?
   maxLength         Int?
-  customSizePricing Json?
+  customSizePricing           Json?
+  customSizeMrpPricing        Json?
+  baseMrpPerSqFtPerInch       Float?
+  baseSalePricePerSqFtPerInch Float?
 
   category Category @relation(fields: [categoryId], references: [id])
 

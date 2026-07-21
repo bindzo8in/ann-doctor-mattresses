@@ -66,3 +66,22 @@ export async function deleteImage(urlOrId: string) {
   }
 }
 
+/**
+ * Clones/duplicates an existing Cloudinary image by uploading from URL to a new public_id
+ */
+export async function cloneCloudinaryImage(url: string, folder: string = "products") {
+  if (!url) return { url: "", publicId: "" };
+  try {
+    const result = await cloudinary.uploader.upload(url, {
+      folder: `${CLOUDINARY_FOLDER_PREFIX}/${folder}`,
+    });
+    return {
+      url: result.secure_url,
+      publicId: result.public_id,
+    };
+  } catch (error) {
+    console.error("Failed to clone Cloudinary image, using original as fallback:", error);
+    return { url, publicId: "" };
+  }
+}
+

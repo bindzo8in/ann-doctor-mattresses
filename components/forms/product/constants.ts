@@ -78,6 +78,8 @@ export const defaultValues: CreateProductInput = {
   healthBenefits: [],
 
   recommendedPositions: [],
+  availableColors: [],
+  defaultColor: "",
 
   categoryId: "",
 

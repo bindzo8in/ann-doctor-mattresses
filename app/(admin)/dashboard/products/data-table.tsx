@@ -12,6 +12,7 @@ import {
 import * as React from "react";
 
 import { Input } from "@/components/ui/input";
+import { CategoryCombobox } from "@/components/forms/product/category-combobox";
 
 import {
   Table,
@@ -57,6 +58,14 @@ export function DataTable<TData, TValue>({
           }
           className="max-w-sm"
         />
+        <div className="w-[220px]">
+          <CategoryCombobox
+            value={(table.getColumn("category")?.getFilterValue() as string) ?? ""}
+            onChange={(val) => table.getColumn("category")?.setFilterValue(val)}
+            isFilter
+            placeholder="All Categories"
+          />
+        </div>
         <select
           value={(table.getColumn("type")?.getFilterValue() as string) ?? ""}
           onChange={(event) => table.getColumn("type")?.setFilterValue(event.target.value)}

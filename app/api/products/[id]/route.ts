@@ -478,6 +478,7 @@ export async function PUT(
           isFeatured: data.isFeatured,
           isActive: data.isActive,
           availableColors: data.availableColors || [],
+          defaultColor: data.defaultColor || null,
           categoryId: data.categoryId,
           firmness: data.firmness,
           comfortLevel: data.comfortLevel,
@@ -489,6 +490,7 @@ export async function PUT(
           minLength: data.minLength,
           maxLength: data.maxLength,
           customSizePricing: data.customSizePricing ? data.customSizePricing : null,
+          customSizeMrpPricing: data.customSizeMrpPricing ? data.customSizeMrpPricing : null,
           sectionHeading: data.sectionsHeading || "",
         },
         include: {

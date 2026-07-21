@@ -43,7 +43,7 @@ export async function saveBasicInfo(
   productId: string,
   values: Pick<
     CreateProductInput,
-    "name" | "slug" | "type" | "categoryId" | "shortDescription" | "isFeatured" | "isActive" | "availableColors"
+    "name" | "slug" | "type" | "categoryId" | "shortDescription" | "isFeatured" | "isActive" | "availableColors" | "defaultColor"
   >
 ): Promise<StepApiResult<{ id: string }>> {
   return patchStep(productId, "basic-info", values);
@@ -54,7 +54,7 @@ export async function saveBasicInfo(
 export async function createProduct(
   values: Pick<
     CreateProductInput,
-    "name" | "slug" | "type" | "categoryId" | "shortDescription" | "isFeatured" | "isActive" | "availableColors"
+    "name" | "slug" | "type" | "categoryId" | "shortDescription" | "isFeatured" | "isActive" | "availableColors" | "defaultColor"
   >
 ): Promise<StepApiResult<{ id: string }>> {
   try {
@@ -140,6 +140,8 @@ export async function saveVariants(
     | "maxLength"
     | "customSizePricing"
     | "customSizeMrpPricing"
+    | "baseMrpPerSqFtPerInch"
+    | "baseSalePricePerSqFtPerInch"
   >
 ): Promise<StepApiResult<{ variants: SavedVariant[] }>> {
   return patchStep(productId, "variants", values);

@@ -66,11 +66,17 @@ import { ImageUpload, type UploadedImage } from "@/components/ui/image-upload";
 interface Props {
   value?: string;
   onChange: (value: string) => void;
+  isFilter?: boolean;
+  placeholder?: string;
+  className?: string;
 }
 
 export function CategoryCombobox({
   value,
   onChange,
+  isFilter = false,
+  placeholder,
+  className,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -227,14 +233,14 @@ export function CategoryCombobox({
             <Button
               variant="outline"
               role="combobox"
-              className="w-full justify-between"
+              className={cn("w-full justify-between font-normal", className)}
             >
-              {selectedCategory.data?.name ?? "Select category"}
-              <ChevronsUpDown className="size-4 opacity-50" />
+              {selectedCategory.data?.name ?? placeholder ?? (isFilter ? "All Categories" : "Select category")}
+              <ChevronsUpDown className="size-4 opacity-50 ml-2 shrink-0" />
             </Button>
           </PopoverTrigger>
 
-          <PopoverContent className="w-[400px] p-0" align="start">
+          <PopoverContent className="w-[300px] p-0" align="start">
             <Command shouldFilter={false}>
               <CommandInput
                 placeholder="Search category..."
@@ -246,6 +252,23 @@ export function CategoryCombobox({
                 <CommandEmpty>No category found.</CommandEmpty>
 
                 <CommandGroup>
+                  {isFilter && (
+                    <CommandItem
+                      value=""
+                      onSelect={() => {
+                        onChange("");
+                        setOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 size-4",
+                          !value ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      All Categories
+                    </CommandItem>
+                  )}
                   {items.map((category) => (
                     <CommandItem
                       key={category.id}
@@ -268,7 +291,7 @@ export function CategoryCombobox({
 
                 <div ref={loaderRef} />
 
-                {!exists && search.trim().length > 0 && (
+                {!isFilter && !exists && search.trim().length > 0 && (
                   <div className="border-t p-2">
                     <Button
                       size="sm"
@@ -290,7 +313,7 @@ export function CategoryCombobox({
           </PopoverContent>
         </Popover>
 
-        {value && (
+        {!isFilter && value && (
           <>
             <Button
               type="button"

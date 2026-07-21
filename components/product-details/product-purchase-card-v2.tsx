@@ -61,7 +61,7 @@ export function ProductPurchaseCardV2({ product, branchGroups }: Props) {
            width: w,
            length: l,
            thickness: t,
-           calculatedPrice: Math.round(areaSqFt * rate),
+           calculatedPrice: roundPrice(areaSqFt * rate),
            isValid: true
         };
      }
@@ -69,7 +69,7 @@ export function ProductPurchaseCardV2({ product, branchGroups }: Props) {
   });
 
   const [selectedColor, setSelectedColor] = useState<string | null>(
-    product.availableColors && product.availableColors.length > 0 ? product.availableColors[0] : null
+    product.defaultColor || (product.availableColors && product.availableColors.length > 0 ? product.availableColors[0] : null)
   );
 
   const { addToCart, isAddingToCart } = useCart();

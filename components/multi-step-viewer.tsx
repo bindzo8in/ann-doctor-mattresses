@@ -11,6 +11,7 @@ import {
 	StepperTrigger,
 } from '@/components/ui/stepper'
 import { useMultiStepForm } from '@/hooks/use-multi-step-viewer'
+import { cn } from '@/lib/utils'
 
 const NextButton = (
 	props: React.ComponentProps<'button'> &
@@ -64,15 +65,31 @@ const ResetButton = (
 	return <Button size="sm" type="button" variant="ghost" {...props} />
 }
 
-const FormHeader = (props: React.ComponentProps<'div'>) => {
-	const { currentStepIndex, steps } = useMultiStepForm()
+interface FormHeaderProps extends Omit<React.ComponentProps<'div'>, 'title'> {
+	title?: React.ReactNode
+}
+
+const FormHeader = ({ title, className, ...props }: FormHeaderProps) => {
+	const { currentStepIndex, steps, goToStep } = useMultiStepForm()
+	const currentStep = steps[currentStepIndex - 1]
+
 	return (
 		<div
-			className="flex flex-col items-start justify-center gap-1 pb-4"
+			className={cn("flex flex-col items-start justify-center gap-2 pb-4", className)}
 			{...props}
 		>
-			<Stepper value={currentStepIndex} orientation="horizontal">
-				{steps.map((_, index) => {
+			{title && (
+				<h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 mb-1">
+					{title}
+				</h2>
+			)}
+			<div className="flex items-center justify-between w-full">
+				<span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+					Step {currentStepIndex} of {steps.length}: {currentStep?.title || `Step ${currentStepIndex}`}
+				</span>
+			</div>
+			<Stepper value={currentStepIndex} onValueChange={(step) => goToStep(step)} orientation="horizontal">
+				{steps.map((stepItem, index) => {
 					const stepNumber = index + 1
 					const isLast = stepNumber === steps.length
 					return (
@@ -81,7 +98,7 @@ const FormHeader = (props: React.ComponentProps<'div'>) => {
 							step={stepNumber}
 							className="not-last:flex-1"
 						>
-							<StepperTrigger>
+							<StepperTrigger title={stepItem.title || `Step ${stepNumber}`}>
 								<StepperIndicator />
 							</StepperTrigger>
 							{!isLast && <StepperSeparator />}

@@ -7,11 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { MattressSize } from "@/app/generated/prisma/client";
 import type { CreateProductInput } from "@/lib/schema/product-form-schema";
-import { formatPrice } from "@/lib/price";
+import { formatPrice, roundPrice } from "@/lib/price";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Settings2, Star, RefreshCw } from "lucide-react";
+import { Settings2, Star, RefreshCw, Zap } from "lucide-react";
+import { toast } from "sonner";
 
 const STANDARD_SIZES: { label: string, sizeName: MattressSize, w: number, l: number }[] = [
   { label: "Single 36x72", sizeName: "SINGLE", w: 36, l: 72 },
@@ -29,7 +30,7 @@ const STANDARD_SIZES: { label: string, sizeName: MattressSize, w: number, l: num
   { label: "King 72x84", sizeName: "KING", w: 72, l: 84 },
 ];
 
-const STANDARD_THICKNESSES = [4, 5, 6, 8, 10, 12, 14];
+const STANDARD_THICKNESSES = [4, 5, 6, 7, 8, 9, 10, 12, 14];
 
 import { UseFormReturn } from "react-hook-form";
 
@@ -38,13 +39,30 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
   const customPricing = useWatch({ control: form.control, name: "customSizePricing" }) as Record<string, number> || {};
   const mrpPricing = useWatch({ control: form.control, name: "customSizeMrpPricing" }) as Record<string, number> || {};
   
+  // Base rate inputs for auto-populating rates per Sq.Ft per Inch
+  const [baseMrpPerSqFtPerInch, setBaseMrpPerSqFtPerInch] = useState<number | "">(
+    () => form.getValues("baseMrpPerSqFtPerInch") ?? ""
+  );
+  const [baseSalePricePerSqFtPerInch, setBaseSalePricePerSqFtPerInch] = useState<number | "">(
+    () => form.getValues("baseSalePricePerSqFtPerInch") ?? ""
+  );
+
   // Which standard sizes are active
   const [selectedSizes, setSelectedSizes] = useState<string[]>(STANDARD_SIZES.map(s => `${s.w}x${s.l}`));
+  
+  // Which standard thicknesses are active/selected
+  const [selectedThicknesses, setSelectedThicknesses] = useState<number[]>(() => {
+    const pricingKeys = Object.keys(customPricing).map(Number).filter(t => !isNaN(t));
+    if (pricingKeys.length > 0) return pricingKeys;
+    return STANDARD_THICKNESSES;
+  });
+  const [hasInitializedThicknesses, setHasInitializedThicknesses] = useState(false);
+
   const [hasCalculatedMrp, setHasCalculatedMrp] = useState(false);
   const [hasInitializedOverrides, setHasInitializedOverrides] = useState(false);
 
   const [defaultVariantKey, setDefaultVariantKey] = useState<string>("");
-  const [priceOverrides, setPriceOverrides] = useState<Record<string, { mrp?: number, salePrice?: number }>>({});
+  const [priceOverrides, setPriceOverrides] = useState<Record<string, { mrp?: number | string, salePrice?: number | string }>>({});
   
   const [customDefaultWidth, setCustomDefaultWidth] = useState<number | "">("");
   const [customDefaultLength, setCustomDefaultLength] = useState<number | "">("");
@@ -52,6 +70,25 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
   // Initialization and reverse-calculation
   const existingVariants = useWatch({ control: form.control, name: "variants" });
   
+  useEffect(() => {
+    if (!hasInitializedThicknesses) {
+      const pricingKeys = Object.keys(customPricing).map(Number).filter(t => !isNaN(t));
+      if (pricingKeys.length > 0) {
+        setSelectedThicknesses(pricingKeys.sort((a, b) => a - b));
+        setHasInitializedThicknesses(true);
+      } else if (existingVariants && existingVariants.length > 0) {
+        const existingThicks = new Set<number>();
+        existingVariants.forEach(v => {
+          if (v.variantType === "MATTRESS" && v.thickness) existingThicks.add(v.thickness);
+        });
+        if (existingThicks.size > 0) {
+          setSelectedThicknesses(Array.from(existingThicks).sort((a, b) => a - b));
+          setHasInitializedThicknesses(true);
+        }
+      }
+    }
+  }, [customPricing, existingVariants, hasInitializedThicknesses]);
+
   useEffect(() => {
     // Force allow custom size to be true as per requirement
     if (form.getValues("allowCustomSize") !== true) {
@@ -71,7 +108,7 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
         if (v.variantType === "MATTRESS" && v.mrp && v.width && v.length) {
           const area = (v.width * v.length) / 144;
           if (area > 0 && !derivedMrp[v.thickness!.toString()]) {
-            derivedMrp[v.thickness!.toString()] = Math.round(v.mrp / area);
+            derivedMrp[v.thickness!.toString()] = Number((v.mrp / area).toFixed(2));
           }
         }
       });
@@ -82,7 +119,11 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
     }
 
     // Initialize overrides and default variant
-    if (existingVariants && existingVariants.length > 0 && !hasInitializedOverrides) {
+    const currentCustomPricing = (form.getValues("customSizePricing") as Record<string, number>) || customPricing;
+    const currentMrpPricing = (form.getValues("customSizeMrpPricing") as Record<string, number>) || mrpPricing;
+    const hasPricingData = Object.keys(currentCustomPricing).length > 0;
+
+    if (existingVariants && existingVariants.length > 0 && !hasInitializedOverrides && hasPricingData) {
        const initialOverrides: Record<string, { mrp?: number, salePrice?: number }> = {};
        let initialDefault = "";
        
@@ -97,18 +138,17 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
              }
              
              const areaSqFt = (v.width * v.length) / 144;
+             const sqftSale = currentCustomPricing[v.thickness.toString()];
+             const sqftMrp = currentMrpPricing[v.thickness.toString()] || derivedMrp[v.thickness.toString()];
              
-             // Get the SqFt rate from form values because customPricing might not be synced yet in this block
-             const currentCustomPricing = form.getValues("customSizePricing") || {};
-             const sqftSale = currentCustomPricing[v.thickness.toString()] || 0;
-             const expectedSale = Math.round(areaSqFt * sqftSale);
-             
-             const currentMrpPricing = Object.keys(derivedMrp).length > 0 ? derivedMrp : (form.getValues("customSizeMrpPricing") || {});
-             const sqftMrp = currentMrpPricing[v.thickness.toString()] || sqftSale;
-             const expectedMrp = Math.round(areaSqFt * sqftMrp);
-
-             if (v.salePrice !== expectedSale || v.mrp !== expectedMrp) {
-                initialOverrides[key] = { mrp: v.mrp, salePrice: v.salePrice };
+             if (sqftSale && sqftSale > 0) {
+                const expectedSale = roundPrice(areaSqFt * sqftSale);
+                const expectedMrp = sqftMrp && sqftMrp > 0 ? roundPrice(areaSqFt * sqftMrp) : expectedSale;
+                
+                // Only mark as manual override if stored price differs from the roundoff value calculated from rate
+                if (v.salePrice !== expectedSale || v.mrp !== expectedMrp) {
+                   initialOverrides[key] = { mrp: v.mrp, salePrice: v.salePrice };
+                }
              }
           }
        });
@@ -117,7 +157,7 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
        if (initialDefault) setDefaultVariantKey(initialDefault);
        setHasInitializedOverrides(true);
     }
-  }, [existingVariants, hasCalculatedMrp, mrpPricing, form, hasInitializedOverrides]);
+  }, [existingVariants, hasCalculatedMrp, mrpPricing, customPricing, form, hasInitializedOverrides]);
 
   const handleSalePriceChange = (thickness: number, value: string) => {
     const val = parseFloat(value);
@@ -139,6 +179,75 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
       current[thickness.toString()] = val;
     }
     form.setValue("customSizeMrpPricing", current, { shouldValidate: true });
+  };
+
+  const handleThicknessToggle = (thickness: number) => {
+    setSelectedThicknesses(prev => {
+      const isSelected = prev.includes(thickness);
+      if (isSelected) {
+        const newCustom = { ...customPricing };
+        delete newCustom[thickness.toString()];
+        form.setValue("customSizePricing", newCustom, { shouldValidate: true });
+
+        const newMrp = { ...mrpPricing };
+        delete newMrp[thickness.toString()];
+        form.setValue("customSizeMrpPricing", newMrp, { shouldValidate: true });
+
+        return prev.filter(t => t !== thickness);
+      } else {
+        const updated = [...prev, thickness].sort((a, b) => a - b);
+        // If base rates are populated, automatically set rates for newly selected thickness
+        if (baseSalePricePerSqFtPerInch !== "" && !isNaN(Number(baseSalePricePerSqFtPerInch))) {
+          const newCustom = { ...customPricing, [thickness.toString()]: Number(baseSalePricePerSqFtPerInch) * thickness };
+          form.setValue("customSizePricing", newCustom, { shouldValidate: true });
+        }
+        if (baseMrpPerSqFtPerInch !== "" && !isNaN(Number(baseMrpPerSqFtPerInch))) {
+          const newMrp = { ...mrpPricing, [thickness.toString()]: Number(baseMrpPerSqFtPerInch) * thickness };
+          form.setValue("customSizeMrpPricing", newMrp, { shouldValidate: true });
+        }
+        return updated;
+      }
+    });
+  };
+
+  const handleSelectAllThicknesses = () => {
+    setSelectedThicknesses(STANDARD_THICKNESSES);
+  };
+
+  const handleDeselectAllThicknesses = () => {
+    setSelectedThicknesses([]);
+    form.setValue("customSizePricing", {}, { shouldValidate: true });
+    form.setValue("customSizeMrpPricing", {}, { shouldValidate: true });
+  };
+
+  const handleApplyBaseRates = () => {
+    setPriceOverrides({}); // Clear manual overrides when auto-populating new base rates
+    const salePerInch = typeof baseSalePricePerSqFtPerInch === "number" ? baseSalePricePerSqFtPerInch : parseFloat(baseSalePricePerSqFtPerInch as string);
+    const mrpPerInch = typeof baseMrpPerSqFtPerInch === "number" ? baseMrpPerSqFtPerInch : parseFloat(baseMrpPerSqFtPerInch as string);
+
+    const updatedCustomPricing = { ...customPricing };
+    const updatedMrpPricing = { ...mrpPricing };
+
+    selectedThicknesses.forEach(t => {
+      if (!isNaN(salePerInch) && salePerInch > 0) {
+        updatedCustomPricing[t.toString()] = salePerInch * t;
+      }
+      if (!isNaN(mrpPerInch) && mrpPerInch > 0) {
+        updatedMrpPricing[t.toString()] = mrpPerInch * t;
+      }
+    });
+
+    if (!isNaN(salePerInch) && salePerInch > 0) {
+      form.setValue("customSizePricing", updatedCustomPricing, { shouldValidate: true });
+    }
+    if (!isNaN(mrpPerInch) && mrpPerInch > 0) {
+      form.setValue("customSizeMrpPricing", updatedMrpPricing, { shouldValidate: true });
+    }
+  };
+
+  const handleRecalculateMatrix = () => {
+    setPriceOverrides({});
+    toast.success("Recalculated all matrix variant prices from rates.");
   };
 
   const handleSizeToggle = (key: string) => {
@@ -164,8 +273,8 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
       });
     }
 
-    // Only process thicknesses that have a defined Sale rate
-    const activeThicknesses = Object.keys(customPricing).map(Number).filter(t => !isNaN(t) && customPricing[t.toString()] > 0);
+    // Only process thicknesses that are selected AND have a defined Sale rate
+    const activeThicknesses = selectedThicknesses.filter(t => !isNaN(t) && customPricing[t.toString()] > 0);
 
     selectedSizes.forEach(sizeKey => {
       const sizeDef = STANDARD_SIZES.find(s => `${s.w}x${s.l}` === sizeKey);
@@ -179,12 +288,20 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
         const saleRate = customPricing[t.toString()];
         const mrpRate = mrpPricing[t.toString()] || saleRate; // Fallback to sale rate if no MRP
 
-        let salePrice = Math.round(areaSqFt * saleRate);
-        let mrpPrice = Math.round(areaSqFt * mrpRate);
+        let salePrice = roundPrice(areaSqFt * saleRate);
+        let mrpPrice = roundPrice(areaSqFt * mrpRate);
         
         if (priceOverrides[key]) {
-           if (priceOverrides[key].salePrice !== undefined) salePrice = priceOverrides[key].salePrice!;
-           if (priceOverrides[key].mrp !== undefined) mrpPrice = priceOverrides[key].mrp!;
+           const oSale = priceOverrides[key].salePrice;
+           const oMrp = priceOverrides[key].mrp;
+           if (oSale !== undefined && oSale !== "") {
+             const pSale = typeof oSale === "number" ? oSale : parseFloat(oSale as string);
+             if (!isNaN(pSale)) salePrice = pSale;
+           }
+           if (oMrp !== undefined && oMrp !== "") {
+             const pMrp = typeof oMrp === "number" ? oMrp : parseFloat(oMrp as string);
+             if (!isNaN(pMrp)) mrpPrice = pMrp;
+           }
         }
         
         let isDefault = isFirst;
@@ -227,8 +344,8 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
       const saleRate = customPricing[t.toString()] || 0;
       const mrpRate = mrpPricing[t.toString()] || saleRate;
       
-      const salePrice = Math.round(areaSqFt * saleRate);
-      const mrpPrice = Math.round(areaSqFt * mrpRate);
+      const salePrice = roundPrice(areaSqFt * saleRate);
+      const mrpPrice = roundPrice(areaSqFt * mrpRate);
 
       newVariants.push({
         ...(existingId ? { id: existingId } : {}),
@@ -244,9 +361,9 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
     }
 
     form.setValue("variants", newVariants, { shouldValidate: true });
-  }, [customPricing, mrpPricing, selectedSizes, form, priceOverrides, defaultVariantKey, customDefaultWidth, customDefaultLength]);
+  }, [customPricing, mrpPricing, selectedSizes, selectedThicknesses, form, priceOverrides, defaultVariantKey, customDefaultWidth, customDefaultLength]);
 
-  const activeThicknesses = Object.keys(customPricing).map(Number).filter(t => !isNaN(t) && customPricing[t.toString()] > 0).sort((a,b)=>a-b);
+  const activeThicknesses = selectedThicknesses.filter(t => !isNaN(t) && customPricing[t.toString()] > 0).sort((a,b)=>a-b);
   const variantsError = (form.formState.errors.variants as any)?.message;
 
   return (
@@ -259,47 +376,170 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
 
       {/* Pricing Configuration */}
       <div className="border rounded-xl p-6 bg-slate-50 space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold">Pricing Configuration</h3>
-          <p className="text-sm text-muted-foreground">
-            Enter the Per Square Feet rate for each thickness you offer. All standard variants will be automatically calculated and saved. Custom size orders will also use these rates.
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold">Pricing Configuration</h3>
+            <p className="text-sm text-muted-foreground">
+              Select which thicknesses are available and enter the Per Square Feet rate for each. All standard variants will be automatically calculated.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleSelectAllThicknesses}
+              className="text-xs"
+            >
+              Select All
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleDeselectAllThicknesses}
+              className="text-xs"
+            >
+              Deselect All
+            </Button>
+          </div>
+        </div>
+
+        {/* Auto-populate base rate section */}
+        <div className="bg-white p-4 rounded-lg border border-slate-200 space-y-3">
+          <div>
+            <h4 className="font-semibold text-sm text-slate-800 flex items-center gap-1.5">
+              <Zap className="h-4 w-4 text-amber-500 fill-amber-500" /> Auto-Calculate Rates (per Sq.Ft / Inch)
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              Enter base rate per Sq.Ft per inch of thickness to automatically populate all selected thickness cards (e.g., 6" rate = 6 × Base Rate).
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end pt-1">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Base MRP (per Sq.Ft / Inch)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">₹</span>
+                <Input 
+                  type="number"
+                  className="pl-7 text-sm"
+                  placeholder="e.g., 150"
+                  value={baseMrpPerSqFtPerInch}
+                  onChange={(e) => {
+                    const val = e.target.value === "" ? "" : parseFloat(e.target.value);
+                    setBaseMrpPerSqFtPerInch(val);
+                    form.setValue("baseMrpPerSqFtPerInch", val === "" ? null : val, { shouldValidate: true });
+                    if (val !== "" && !isNaN(Number(val))) {
+                      const updatedMrp = { ...mrpPricing };
+                      selectedThicknesses.forEach(t => {
+                        updatedMrp[t.toString()] = Number(val) * t;
+                      });
+                      form.setValue("customSizeMrpPricing", updatedMrp, { shouldValidate: true });
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Base Sale Price (per Sq.Ft / Inch)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">₹</span>
+                <Input 
+                  type="number"
+                  className="pl-7 text-sm border-primary"
+                  placeholder="e.g., 100"
+                  value={baseSalePricePerSqFtPerInch}
+                  onChange={(e) => {
+                    const val = e.target.value === "" ? "" : parseFloat(e.target.value);
+                    setBaseSalePricePerSqFtPerInch(val);
+                    form.setValue("baseSalePricePerSqFtPerInch", val === "" ? null : val, { shouldValidate: true });
+                    if (val !== "" && !isNaN(Number(val))) {
+                      const updatedCustom = { ...customPricing };
+                      selectedThicknesses.forEach(t => {
+                        updatedCustom[t.toString()] = Number(val) * t;
+                      });
+                      form.setValue("customSizePricing", updatedCustom, { shouldValidate: true });
+                    }
+                  }}
+                />
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="secondary"
+              className="w-full text-xs font-medium gap-1.5"
+              onClick={handleApplyBaseRates}
+            >
+              <RefreshCw className="h-3.5 w-3.5" /> Auto-Populate Rates
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {STANDARD_THICKNESSES.map(t => (
-            <div key={t} className="bg-white p-4 rounded-lg border space-y-4">
-              <h4 className="font-semibold text-center border-b pb-2">{t}" Thickness</h4>
-              <div className="space-y-3">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">MRP per Sq.Ft</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">₹</span>
-                    <Input 
-                      type="number"
-                      className="pl-7"
-                      placeholder="e.g., 1500"
-                      value={mrpPricing[t.toString()] || ""}
-                      onChange={(e) => handleMrpPriceChange(t, e.target.value)}
+          {STANDARD_THICKNESSES.map(t => {
+            const isSelected = selectedThicknesses.includes(t);
+            return (
+              <div 
+                key={t} 
+                className={`p-4 rounded-lg border transition-all space-y-4 ${
+                  isSelected ? "bg-white border-slate-300 shadow-sm" : "bg-slate-100/70 border-slate-200 opacity-60"
+                }`}
+              >
+                <div className="flex items-center justify-between border-b pb-2">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`thick-${t}`}
+                      checked={isSelected}
+                      onCheckedChange={() => handleThicknessToggle(t)}
                     />
+                    <label 
+                      htmlFor={`thick-${t}`} 
+                      className="font-semibold text-sm cursor-pointer select-none"
+                    >
+                      {t}" Thickness
+                    </label>
                   </div>
+                  <span className={`text-xs px-2 py-0.5 rounded font-medium ${isSelected ? 'bg-primary/10 text-primary' : 'bg-slate-200 text-slate-500'}`}>
+                    {isSelected ? 'Available' : 'Disabled'}
+                  </span>
                 </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Sale Price per Sq.Ft</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">₹</span>
-                    <Input 
-                      type="number"
-                      className="pl-7 border-primary"
-                      placeholder="e.g., 1000"
-                      value={customPricing[t.toString()] || ""}
-                      onChange={(e) => handleSalePriceChange(t, e.target.value)}
-                    />
+
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">MRP per Sq.Ft</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">₹</span>
+                      <Input 
+                        type="number"
+                        className="pl-7"
+                        placeholder="e.g., 1500"
+                        disabled={!isSelected}
+                        value={mrpPricing[t.toString()] || ""}
+                        onChange={(e) => handleMrpPriceChange(t, e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">Sale Price per Sq.Ft</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">₹</span>
+                      <Input 
+                        type="number"
+                        className="pl-7 border-primary"
+                        placeholder="e.g., 1000"
+                        disabled={!isSelected}
+                        value={customPricing[t.toString()] || ""}
+                        onChange={(e) => handleSalePriceChange(t, e.target.value)}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -335,14 +575,25 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
               <h3 className="text-lg font-semibold">Custom Size Default</h3>
               <p className="text-sm text-muted-foreground">Select this if you want the "Custom Size" option to be selected by default when customers view this product.</p>
             </div>
-            <button 
-              type="button"
-              onClick={() => setDefaultVariantKey(`CUSTOM-${activeThicknesses[0]}`)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all shrink-0 ${defaultVariantKey?.startsWith("CUSTOM") ? 'bg-yellow-50 border-yellow-400 text-yellow-700' : 'bg-white hover:bg-slate-50'}`}
-            >
-              <Star className="h-4 w-4" fill={defaultVariantKey?.startsWith("CUSTOM") ? "currentColor" : "none"} />
-              <span className="font-medium">Set as Default</span>
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleRecalculateMatrix}
+                className="text-xs gap-1.5 bg-white hover:bg-slate-50 border-slate-300"
+              >
+                <RefreshCw className="h-3.5 w-3.5 text-primary" /> Recalculate
+              </Button>
+              <button 
+                type="button"
+                onClick={() => setDefaultVariantKey(`CUSTOM-${activeThicknesses[0]}`)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all shrink-0 ${defaultVariantKey?.startsWith("CUSTOM") ? 'bg-yellow-50 border-yellow-400 text-yellow-700' : 'bg-white hover:bg-slate-50'}`}
+              >
+                <Star className="h-4 w-4" fill={defaultVariantKey?.startsWith("CUSTOM") ? "currentColor" : "none"} />
+                <span className="font-medium">Set as Default</span>
+              </button>
+            </div>
           </div>
           
           {defaultVariantKey?.startsWith("CUSTOM") && (() => {
@@ -353,8 +604,8 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
             const areaSqFt = (w * l) / 144;
             const saleRate = customPricing[t.toString()] || 0;
             const mrpRate = mrpPricing[t.toString()] || saleRate;
-            const salePrice = Math.round(areaSqFt * saleRate);
-            const mrpPrice = Math.round(areaSqFt * mrpRate);
+            const salePrice = roundPrice(areaSqFt * saleRate);
+            const mrpPrice = roundPrice(areaSqFt * mrpRate);
 
             return (
               <div className="pt-4 border-t flex flex-col md:flex-row gap-6 items-start md:items-end w-full">
@@ -407,11 +658,20 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
       {/* Auto-Calculated Preview */}
       {activeThicknesses.length > 0 && selectedSizes.length > 0 && (
         <div className="border rounded-xl overflow-hidden shadow-sm">
-          <div className="p-4 bg-slate-100 border-b flex justify-between items-center">
+          <div className="p-4 bg-slate-100 border-b flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="font-semibold text-slate-800">Variants Matrix</h3>
               <p className="text-xs text-slate-500">Hover over a price to override it manually, or click the star to set a variant as Default.</p>
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleRecalculateMatrix}
+              className="text-xs gap-1.5 shrink-0 bg-white hover:bg-slate-50 border-slate-300"
+            >
+              <RefreshCw className="h-3.5 w-3.5 text-primary" /> Recalculate Matrix
+            </Button>
           </div>
           <div className="overflow-x-auto">
             <Table>
@@ -438,12 +698,23 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
                         const key = `${sizeDef.w}x${sizeDef.l}-${t}`;
                         const isOverridden = !!priceOverrides[key];
                         
-                        let sale = Math.round(area * customPricing[t.toString()]);
-                        let mrp = Math.round(area * (mrpPricing[t.toString()] || customPricing[t.toString()]));
+                        const baseSale = roundPrice(area * (customPricing[t.toString()] || 0));
+                        const baseMrp = roundPrice(area * (mrpPricing[t.toString()] || customPricing[t.toString()] || 0));
+
+                        let sale = baseSale;
+                        let mrp = baseMrp;
                         
                         if (isOverridden) {
-                            if (priceOverrides[key].salePrice !== undefined) sale = priceOverrides[key].salePrice!;
-                            if (priceOverrides[key].mrp !== undefined) mrp = priceOverrides[key].mrp!;
+                            const oSale = priceOverrides[key].salePrice;
+                            const oMrp = priceOverrides[key].mrp;
+                            if (oSale !== undefined && oSale !== "") {
+                              const parsedSale = typeof oSale === "number" ? oSale : parseFloat(oSale as string);
+                              if (!isNaN(parsedSale)) sale = parsedSale;
+                            }
+                            if (oMrp !== undefined && oMrp !== "") {
+                              const parsedMrp = typeof oMrp === "number" ? oMrp : parseFloat(oMrp as string);
+                              if (!isNaN(parsedMrp)) mrp = parsedMrp;
+                            }
                         }
                         
                         // Set the first variant as default fallback if nothing is selected
@@ -465,7 +736,12 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
 
                               <div className="flex items-center gap-1">
                                  <div className="flex flex-col items-center">
-                                    <span className="font-bold text-green-600">₹{formatPrice(sale)}</span>
+                                    <span className="font-bold text-green-600 flex items-center gap-1">
+                                      ₹{formatPrice(sale)}
+                                      {isOverridden && (
+                                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" title="Custom Price Override" />
+                                      )}
+                                    </span>
                                     {mrp > sale && (
                                       <span className="text-xs text-slate-400 line-through">₹{formatPrice(mrp)}</span>
                                     )}
@@ -486,14 +762,14 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
                                             <Label className="text-xs">MRP (₹)</Label>
                                             <Input 
                                                type="number" 
-                                               value={priceOverrides[key]?.mrp !== undefined ? priceOverrides[key].mrp : mrp} 
+                                               value={priceOverrides[key]?.mrp !== undefined ? priceOverrides[key].mrp : baseMrp} 
                                                onChange={(e) => {
-                                                  const newMrp = parseFloat(e.target.value);
+                                                  const val = e.target.value;
                                                   setPriceOverrides(prev => ({
                                                      ...prev,
                                                      [key]: {
                                                          ...prev[key],
-                                                         mrp: isNaN(newMrp) ? undefined : newMrp
+                                                         mrp: val === "" ? "" : (isNaN(parseFloat(val)) ? val : parseFloat(val))
                                                      }
                                                   }));
                                                }}
@@ -503,14 +779,14 @@ export function MatrixVariantForm({ form }: { form: UseFormReturn<CreateProductI
                                             <Label className="text-xs">Sale Price (₹)</Label>
                                             <Input 
                                                type="number" 
-                                               value={priceOverrides[key]?.salePrice !== undefined ? priceOverrides[key].salePrice : sale} 
+                                               value={priceOverrides[key]?.salePrice !== undefined ? priceOverrides[key].salePrice : baseSale} 
                                                onChange={(e) => {
-                                                  const newSale = parseFloat(e.target.value);
+                                                  const val = e.target.value;
                                                   setPriceOverrides(prev => ({
                                                      ...prev,
                                                      [key]: {
                                                          ...prev[key],
-                                                         salePrice: isNaN(newSale) ? undefined : newSale
+                                                         salePrice: val === "" ? "" : (isNaN(parseFloat(val)) ? val : parseFloat(val))
                                                      }
                                                   }));
                                                }}

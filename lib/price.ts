@@ -1,21 +1,18 @@
 /**
- * Rounds a price to the nearest whole rupee.
- *
- * All customer-facing prices and payment amounts must be whole rupees.
- * Use this everywhere a monetary value is calculated or displayed.
+ * Rounds a price UP to the nearest ₹50 for clean retail pricing.
  *
  * Examples:
- *   roundPrice(199.45)   → 199
- *   roundPrice(199.50)   → 200
- *   roundPrice(199.86)   → 200
- *   roundPrice(12499.15) → 12499
- *   roundPrice(12499.86) → 12500
+ *   roundPrice(8438)  → 8450
+ *   roundPrice(10556) → 10600
+ *   roundPrice(14638) → 14650
+ *   roundPrice(25313) → 25350
  *
- * @param price - Raw price as a number (may contain decimals / paisa)
- * @returns Whole-rupee price (Math.round)
+ * @param price - Raw price as a number
+ * @returns Price rounded UP to the nearest ₹50
  */
 export function roundPrice(price: number): number {
-  return Math.round(price);
+  if (price <= 0 || isNaN(price)) return 0;
+  return Math.ceil(price / 50) * 50;
 }
 
 /**
@@ -26,16 +23,17 @@ export function roundPrice(price: number): number {
  * @returns Formatted string with comma separators
  */
 export function formatPrice(price: number): string {
-  return roundPrice(price).toLocaleString("en-IN");
+  if (isNaN(price) || price <= 0) return "0";
+  return Math.round(price).toLocaleString("en-IN");
 }
 
 /**
  * Convert a whole-rupee amount to Razorpay paise.
  * Razorpay requires amounts in the smallest currency unit (paise = 1/100 of ₹).
  *
- * @param amount - Whole-rupee amount (will be rounded first)
+ * @param amount - Whole-rupee amount
  * @returns Integer paise value for Razorpay
  */
 export function toRazorpayAmount(amount: number): number {
-  return roundPrice(amount) * 100;
+  return Math.round(amount) * 100;
 }

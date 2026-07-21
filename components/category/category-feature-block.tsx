@@ -31,7 +31,7 @@ export function CategoryFeatureBlock({ features, layerImageUrl, layerVideoUrl }:
               </li>
             ))}
           </ul>
-        </div>
+        </div> 
 
         {/* Right Side: Pink background with image */}
         <div className="w-full md:w-1/2 bg-[#fbe7e7] p-10 flex items-center justify-center relative min-h-[300px]">

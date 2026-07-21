@@ -76,7 +76,20 @@ export async function calculateCartTotals(
   const productIds = cartItems.map((item) => item.productId);
   const products = await prisma.product.findMany({
     where: { id: { in: productIds } },
-    select: { id: true, categoryId: true, customSizePricing: true, allowCustomSize: true },
+    select: {
+      id: true,
+      categoryId: true,
+      customSizePricing: true,
+      allowCustomSize: true,
+      variants: {
+        where: { isDefault: true },
+        select: {
+          mattressVariant: {
+            select: { thickness: true }
+          }
+        }
+      }
+    },
   });
   const productMap = new Map(products.map((p) => [p.id, p]));
 

@@ -56,6 +56,7 @@ export const createProductSchema = z
     healthBenefits: z.array(healthBenefitEnum).optional(),
     recommendedPositions: z.array(sleepingPositionEnum).optional(),
     availableColors: z.array(z.string()).optional(),
+    defaultColor: z.string().optional(),
 
     allowCustomSize: z.boolean().optional(),
     minWidth: z.coerce.number().min(1).nullable().optional(),
@@ -64,6 +65,8 @@ export const createProductSchema = z
     maxLength: z.coerce.number().min(1).nullable().optional(),
     customSizePricing: z.any().optional(),
     customSizeMrpPricing: z.any().optional(),
+    baseMrpPerSqFtPerInch: z.coerce.number().nullable().optional(),
+    baseSalePricePerSqFtPerInch: z.coerce.number().nullable().optional(),
 
     variants: z
       .array(productVariantSchema)

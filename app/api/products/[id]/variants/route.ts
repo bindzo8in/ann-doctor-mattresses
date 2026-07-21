@@ -143,6 +143,9 @@ export async function PATCH(req: NextRequest, { params }: RouteProps) {
           minLength: data.minLength ?? null,
           maxLength: data.maxLength ?? null,
           customSizePricing: data.customSizePricing ?? null,
+          customSizeMrpPricing: data.customSizeMrpPricing ?? null,
+          baseMrpPerSqFtPerInch: data.baseMrpPerSqFtPerInch ?? null,
+          baseSalePricePerSqFtPerInch: data.baseSalePricePerSqFtPerInch ?? null,
         },
       })
     );

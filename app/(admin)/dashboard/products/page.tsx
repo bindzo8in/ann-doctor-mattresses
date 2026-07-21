@@ -20,6 +20,11 @@ async function getProducts() {
     },
     include: {
       category: true,
+      images: {
+        orderBy: {
+          sortOrder: "asc",
+        },
+      },
     },
   });
 

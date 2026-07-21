@@ -23,6 +23,7 @@ export const basicInfoStepSchema = z.object({
   isFeatured: z.boolean(),
   isActive: z.boolean(),
   availableColors: z.array(z.string()).optional(),
+  defaultColor: z.string().optional(),
 });
 
 export type BasicInfoStepInput = z.infer<typeof basicInfoStepSchema>;
@@ -55,6 +56,8 @@ export const variantsStepSchema = z.object({
   maxLength: z.coerce.number().min(1).nullable().optional(),
   customSizePricing: z.any().optional(),
   customSizeMrpPricing: z.any().optional(),
+  baseMrpPerSqFtPerInch: z.coerce.number().nullable().optional(),
+  baseSalePricePerSqFtPerInch: z.coerce.number().nullable().optional(),
 }).superRefine((data, ctx) => {
   const defaultCount = data.variants.filter((v) => v.isDefault).length;
   if (data.variants.length > 0 && defaultCount !== 1) {

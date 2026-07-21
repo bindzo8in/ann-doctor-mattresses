@@ -58,12 +58,16 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 
     recommendedPositions: product.recommendedPositions || undefined,
     availableColors: product.availableColors || undefined,
+    defaultColor: product.defaultColor || undefined,
     allowCustomSize: product.allowCustomSize,
     minWidth: product.minWidth || undefined,
     maxWidth: product.maxWidth || undefined,
     minLength: product.minLength || undefined,
     maxLength: product.maxLength || undefined,
     customSizePricing: product.customSizePricing || undefined,
+    customSizeMrpPricing: product.customSizeMrpPricing || undefined,
+    baseMrpPerSqFtPerInch: product.baseMrpPerSqFtPerInch ?? undefined,
+    baseSalePricePerSqFtPerInch: product.baseSalePricePerSqFtPerInch ?? undefined,
     images: product.images.map(img => ({
       id: img.id,
       url: img.url,
@@ -130,7 +134,10 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Edit Product</h2>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 flex flex-wrap items-baseline gap-2">
+          Edit Product: <span className="text-red-600 font-semibold">{product.name}</span>
+          <span className="text-sm font-mono text-slate-500 font-normal">({product.slug})</span>
+        </h1>
       </div>
       <div className="mx-auto mt-6 bg-white p-6 rounded-lg shadow-sm border border-border">
         <ProductEditForm initialData={formattedProduct} productId={product.id} />

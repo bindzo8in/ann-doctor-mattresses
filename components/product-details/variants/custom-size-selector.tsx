@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ProductDetails } from "@/types/product-details";
-import { formatPrice } from "@/lib/price";
+import { formatPrice, roundPrice } from "@/lib/price";
 import { AlertCircle } from "lucide-react";
 
 interface Props {
@@ -46,7 +46,7 @@ export function CustomSizeSelector({ product, onCustomVariantUpdate }: Props) {
   if (isValid) {
     areaSqFt = (w * l) / 144;
     rate = customPricing[thickness.toString()] || 0;
-    calculatedPrice = Math.round(areaSqFt * rate);
+    calculatedPrice = roundPrice(areaSqFt * rate);
   }
 
   useEffect(() => {

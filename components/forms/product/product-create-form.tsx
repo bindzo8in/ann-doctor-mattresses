@@ -77,6 +77,7 @@ export function ProductCreateForm() {
         isFeatured: values.isFeatured,
         isActive: values.isActive,
         availableColors: values.availableColors,
+        defaultColor: values.defaultColor,
       };
 
       if (!productId) {
@@ -154,6 +155,8 @@ export function ProductCreateForm() {
         maxLength: values.maxLength,
         customSizePricing: values.customSizePricing,
         customSizeMrpPricing: values.customSizeMrpPricing,
+        baseMrpPerSqFtPerInch: values.baseMrpPerSqFtPerInch,
+        baseSalePricePerSqFtPerInch: values.baseSalePricePerSqFtPerInch,
       });
       if (!result.success) {
         applyServerErrors(result.errors);
@@ -234,6 +237,7 @@ export function ProductCreateForm() {
   const steps = useMemo(
     () => [
       {
+        title: "Basic Info",
         fields: [
           "name",
           "slug",
@@ -248,6 +252,7 @@ export function ProductCreateForm() {
       },
 
       {
+        title: "Media",
         fields: ["thumbnail", "images"],
         component: <MediaStep form={form as any} />,
       },
@@ -255,6 +260,7 @@ export function ProductCreateForm() {
       ...(productType === "MATTRESS"
         ? [
             {
+              title: "Mattress Attributes",
               fields: [
                 "firmness",
                 "comfortLevel",
@@ -267,32 +273,39 @@ export function ProductCreateForm() {
         : []),
 
       {
+        title: "Variants",
         fields: ["variants"],
         component: <VariantsStep form={form as any} />,
       },
 
       {
+        title: "Specifications",
         fields: ["specifications"],
         component: <SpecificationsStep form={form as any} />,
       },
 
       {
+        title: "Sections",
         fields: ["sections"],
         component: <SectionsStep form={form as any} />,
       },
 
       {
+        title: "FAQs",
         fields: ["faqs"],
         component: <FaqsStep form={form as any} />,
       },
 
       {
+        title: "Preview",
         fields: [],
         component: <PreviewStep form={form as any} />,
       },
     ],
     [form, productType]
   );
+
+  const productName = form.watch("name");
 
   return (
     <MultiStepFormProvider
@@ -312,7 +325,7 @@ export function ProductCreateForm() {
         className="w-full mx-auto p-4 sm:p-6 md:p-8 bg-white rounded-lg shadow-sm"
       >
         <MultiStepFormContent>
-          <FormHeader />
+          <FormHeader title={productName ? `Create Product: ${productName}` : "Create New Product"} />
 
           <StepFields />
 

@@ -4,6 +4,7 @@ import * as React from 'react'
 import { createContext, type ReactNode, useContext, useState } from 'react'
 
 export interface Stepfields {
+	title?: string
 	fields: string[]
 	component: JSX.Element
 }
@@ -18,7 +19,7 @@ export interface UseMultiFormStepsReturn {
 	goToNext: () => Promise<boolean>
 	goToPrevious: () => void
 	goToFirstStep: () => void
-	goToStep: (stepNumber: number) => void
+	goToStep: (stepNumber: number) => Promise<boolean> | boolean | void
 	setSteps: (newSteps: Stepfields[]) => void
 }
 
@@ -78,10 +79,21 @@ export function MultiStepFormProvider({
 		setCurrentStepIndex(1)
 	}
 
-	const goToStep = (stepNumber: number) => {
-		if (stepNumber >= 1 && stepNumber <= steps.length) {
-			setCurrentStepIndex(stepNumber)
+	const goToStep = async (stepNumber: number) => {
+		if (stepNumber < 1 || stepNumber > steps.length || stepNumber === currentStepIndex) {
+			return false
 		}
+
+		if (stepNumber > currentStepIndex) {
+			const currentStepData = steps[currentStepIndex - 1]
+			if (onStepValidation) {
+				const isValid = await onStepValidation(currentStepData, currentStepIndex)
+				if (!isValid) return false
+			}
+		}
+
+		setCurrentStepIndex(stepNumber)
+		return true
 	}
 
 	const setSteps = (newSteps: Stepfields[]) => {

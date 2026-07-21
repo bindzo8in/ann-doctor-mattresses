@@ -87,6 +87,7 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
         isFeatured: values.isFeatured,
         isActive: values.isActive,
         availableColors: values.availableColors,
+        defaultColor: values.defaultColor,
       });
       if (!result.success) {
         applyServerErrors(result.errors);
@@ -142,6 +143,8 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
         maxLength: values.maxLength,
         customSizePricing: values.customSizePricing,
         customSizeMrpPricing: values.customSizeMrpPricing,
+        baseMrpPerSqFtPerInch: values.baseMrpPerSqFtPerInch,
+        baseSalePricePerSqFtPerInch: values.baseSalePricePerSqFtPerInch,
       });
       if (!result.success) {
         applyServerErrors(result.errors);
@@ -205,6 +208,7 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
   const steps = useMemo(
     () => [
       {
+        title: "Basic Info",
         fields: [
           "name",
           "slug",
@@ -219,6 +223,7 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
       },
 
       {
+        title: "Media",
         fields: ["thumbnail", "images"],
         component: <MediaStep form={form as any} />,
       },
@@ -226,6 +231,7 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
       ...(productType === "MATTRESS"
         ? [
             {
+              title: "Mattress Attributes",
               fields: [
                 "firmness",
                 "comfortLevel",
@@ -238,26 +244,31 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
         : []),
 
       {
+        title: "Variants",
         fields: ["variants"],
         component: <VariantsStep form={form as any} />,
       },
 
       {
+        title: "Specifications",
         fields: ["specifications"],
         component: <SpecificationsStep form={form as any} />,
       },
 
       {
+        title: "Sections",
         fields: ["sections"],
         component: <SectionsStep form={form as any} />,
       },
 
       {
+        title: "FAQs",
         fields: ["faqs"],
         component: <FaqsStep form={form as any} />,
       },
 
       {
+        title: "Preview",
         fields: [],
         component: <PreviewStep form={form as any} />,
       },
@@ -278,6 +289,20 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
     }
   }
 
+  const productName = form.watch("name") || initialData?.name || "";
+  const productSlug = form.watch("slug") || initialData?.slug || "";
+
+  const titleNode = (
+    <div className="flex flex-wrap items-baseline gap-2">
+      <span>Edit Product: <span className="text-red-600 font-semibold">{productName || "Product"}</span></span>
+      {productSlug && (
+        <span className="text-xs sm:text-sm font-mono text-slate-500 font-normal">
+          ({productSlug})
+        </span>
+      )}
+    </div>
+  );
+
   return (
     <MultiStepFormProvider
       stepsFields={steps}
@@ -295,7 +320,7 @@ export function ProductEditForm({ initialData, productId }: ProductEditFormProps
         className="w-full mx-auto p-4 sm:p-6 md:p-8 bg-white rounded-lg shadow-sm"
       >
         <MultiStepFormContent>
-          <FormHeader />
+          <FormHeader title={titleNode} />
 
           <StepFields />
 

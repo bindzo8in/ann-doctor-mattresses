@@ -2,6 +2,8 @@ import { UseFormReturn } from "react-hook-form";
 import { CreateProductInput } from "@/lib/schema/product-form-schema";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getColorByValue } from "@/lib/colors";
+import { cn } from "@/lib/utils";
 
 interface PreviewStepProps {
   form: UseFormReturn<CreateProductInput>;
@@ -43,6 +45,30 @@ export function PreviewStep({ form }: PreviewStepProps) {
                 )}
               </div>
             </div>
+            {values.availableColors && values.availableColors.length > 0 && (
+              <div>
+                <span className="font-semibold block mb-1">Available Colors</span>
+                <div className="flex flex-wrap gap-2">
+                  {values.availableColors.map((colorVal) => {
+                    const colorObj = getColorByValue(colorVal);
+                    const isDefault = (values.defaultColor || values.availableColors?.[0]) === colorVal;
+                    return (
+                      <span
+                        key={colorVal}
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border",
+                          isDefault ? "bg-slate-900 text-white border-slate-900 font-semibold" : "bg-slate-50 text-slate-700 border-slate-200"
+                        )}
+                      >
+                        <span className={cn("w-3 h-3 rounded-full border border-slate-300 shrink-0", colorObj.tailwindClass)} />
+                        <span>{colorObj.label}</span>
+                        {isDefault && <span className="text-[10px] bg-primary text-white px-1 rounded">Default</span>}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

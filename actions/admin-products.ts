@@ -24,6 +24,7 @@ export interface CustomSizeSettingsInput {
   minLength?: number | null;
   maxLength?: number | null;
   customSizePricing?: any | null; // JSON object mapping thickness to price
+  customSizeMrpPricing?: any | null;
 }
 
 export async function upsertProductMatrix(
@@ -47,6 +48,7 @@ export async function upsertProductMatrix(
         minLength: customSettings.minLength,
         maxLength: customSettings.maxLength,
         customSizePricing: customSettings.customSizePricing || null,
+        customSizeMrpPricing: customSettings.customSizeMrpPricing || null,
       },
     });
 

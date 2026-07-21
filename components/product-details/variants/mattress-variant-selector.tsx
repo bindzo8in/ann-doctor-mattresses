@@ -55,6 +55,11 @@ export function MattressVariantSelector({
 
   const [tempQuantity, setTempQuantity] = useState(quantity);
 
+  const defaultThickness = useMemo(() => {
+    const defaultVar = variants.find(v => v.isDefault) || variants[0];
+    return defaultVar?.mattressVariant?.thickness || 0;
+  }, [variants]);
+
   // Open handler: initialize state
   useEffect(() => {
     if (isOpen) {
@@ -84,18 +89,20 @@ export function MattressVariantSelector({
   }, [variants, product.allowCustomSize]);
 
   const availableThicknesses = useMemo(() => {
+    let thicks: number[] = [];
     if (tempIsCustom) {
       const customPricing = (product.customSizePricing as Record<string, number>) || {};
-      return Object.keys(customPricing).map(Number).sort((a,b) => a-b);
+      thicks = Object.keys(customPricing).map(Number).sort((a,b) => a-b);
     } else {
-      const thicks = new Set<number>();
+      const thickSet = new Set<number>();
       variants.forEach(v => {
         if (v.mattressVariant?.sizeName === tempCategory) {
-          thicks.add(v.mattressVariant.thickness);
+          thickSet.add(v.mattressVariant.thickness);
         }
       });
-      return Array.from(thicks).sort((a,b) => a-b);
+      thicks = Array.from(thickSet).sort((a,b) => a-b);
     }
+    return thicks;
   }, [variants, tempCategory, tempIsCustom, product.customSizePricing]);
 
   // Handle Category change
@@ -108,18 +115,23 @@ export function MattressVariantSelector({
     } else {
       setTempIsCustom(false);
       // Auto-select the first available variant in this category
-      const variant = variants.find(v => v.mattressVariant?.sizeName === tempCategory && v.mattressVariant?.thickness === tempThickness);
+      const variant = variants.find(v => 
+        v.mattressVariant?.sizeName === tempCategory && 
+        v.mattressVariant?.thickness === tempThickness
+      );
       if (variant) {
         setTempVariant(variant);
       } else {
-        const fallback = variants.find(v => v.mattressVariant?.sizeName === tempCategory);
+        const fallback = variants.find(v => 
+          v.mattressVariant?.sizeName === tempCategory
+        );
         if (fallback) {
           setTempVariant(fallback);
           setTempThickness(fallback.mattressVariant!.thickness);
         }
       }
     }
-  }, [tempCategory]); // Intentionally omitting dependencies to avoid loops, this just reacts to category change
+  }, [tempCategory, availableThicknesses]); // Intentionally omitting dependencies to avoid loops, this just reacts to category change
 
   // Handle Thickness change
   useEffect(() => {
@@ -179,7 +191,7 @@ export function MattressVariantSelector({
       if (isCustomValid) {
         const areaSqFt = (w * l) / 144;
         const rate = ((product.customSizePricing as Record<string, number>) || {})[tempThickness.toString()] || 0;
-        price = Math.round(areaSqFt * rate);
+        price = roundPrice(areaSqFt * rate);
         mrp = price; // Custom items don't have MRP
       }
     } else if (tempVariant) {

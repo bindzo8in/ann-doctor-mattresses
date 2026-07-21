@@ -58,6 +58,7 @@ export async function PATCH(req: NextRequest, { params }: RouteProps) {
         isFeatured: data.isFeatured,
         isActive: data.isActive,
         availableColors: data.availableColors || [],
+        defaultColor: data.defaultColor || null,
       },
       select: { id: true },
     });

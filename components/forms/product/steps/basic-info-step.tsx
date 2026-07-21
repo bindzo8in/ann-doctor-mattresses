@@ -40,7 +40,7 @@ interface BasicInfoStepProps {
   isEditMode?: boolean;
 }
 
-import { STANDARD_COLORS } from "@/lib/colors";
+import { STANDARD_COLORS, getColorByValue } from "@/lib/colors";
 const PRODUCT_TYPES = [
   {
     value: "MATTRESS",
@@ -316,6 +316,60 @@ export function BasicInfoStep({ form, isEditMode }: BasicInfoStepProps) {
                 </div>
               </div>
 
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
+          );
+        }}
+      />
+
+      {/* DEFAULT COLOR */}
+      <Controller
+        name="defaultColor"
+        control={form.control}
+        render={({ field, fieldState }) => {
+          const available = form.watch("availableColors") || [];
+          const selectedColor = field.value || (available.length > 0 ? available[0] : "");
+
+          useEffect(() => {
+            if (available.length > 0 && (!field.value || !available.includes(field.value))) {
+              field.onChange(available[0]);
+            } else if (available.length === 0 && field.value) {
+              field.onChange("");
+            }
+          }, [available, field.value]);
+
+          if (available.length === 0) return <></>;
+
+          return (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel>Default Color</FieldLabel>
+              <FieldDescription>Select which color option will be pre-selected for customers when viewing this product.</FieldDescription>
+
+              <div className="flex flex-wrap gap-3 mt-2 p-4 border rounded-md bg-slate-50">
+                {available.map(colorValue => {
+                  const colorObj = getColorByValue(colorValue);
+                  const isDefault = selectedColor === colorValue;
+                  return (
+                    <button
+                      key={colorValue}
+                      type="button"
+                      onClick={() => field.onChange(colorValue)}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-medium transition-all cursor-pointer",
+                        isDefault 
+                          ? "bg-white border-primary ring-2 ring-primary ring-offset-1 text-slate-900 shadow-sm" 
+                          : "bg-white border-slate-200 text-slate-600 hover:bg-slate-100"
+                      )}
+                    >
+                      <div className={cn("w-3.5 h-3.5 rounded-full shrink-0", colorObj.tailwindClass)} />
+                      <span>{colorObj.label}</span>
+                      {isDefault && (
+                        <span className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0.2 rounded-full font-semibold">Default</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
           );
