@@ -28,7 +28,24 @@ import { useRouter } from "next/navigation";
 
 type Schema = z.infer<typeof formSchema>;
 
-export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
+interface LoginFormProps {
+  callbackUrl?: string;
+  callbackURL?: string;
+  callback?: string;
+}
+
+export function LoginForm({
+  callbackUrl,
+  callbackURL,
+  callback,
+}: LoginFormProps = {}) {
+  const rawCallbackUrl = callbackUrl || callbackURL || callback || "/";
+  const finalCallbackUrl =
+    typeof window !== "undefined" &&
+    !rawCallbackUrl.startsWith("http://") &&
+    !rawCallbackUrl.startsWith("https://")
+      ? new URL(rawCallbackUrl, window.location.origin).toString()
+      : rawCallbackUrl;
 
   const router = useRouter();
 
@@ -61,8 +78,9 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
         email: data.email,
         password: data.password,
         rememberMe: data.rememberMe,
-        callbackURL: callbackUrl,
+        callbackURL: finalCallbackUrl,
       });
+      console.log(error)
 
       if (error) {
         if (error.status === 403) {
@@ -75,7 +93,7 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
         return;
       }
 
-      router.push(callbackUrl);
+      router.push(finalCallbackUrl);
     } catch (err) {
       setError("Something went wrong.");
     }
@@ -90,7 +108,7 @@ export function LoginForm({ callbackUrl = "/" }: { callbackUrl?: string }) {
     try {
       const { error } = await sendVerificationEmail({
         email: unverifiedEmail,
-        callbackURL: callbackUrl,
+        callbackURL: finalCallbackUrl,
       });
 
       if (error) {
