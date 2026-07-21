@@ -4,9 +4,16 @@ import { adminClient } from "better-auth/client/plugins"
 import { ac, adminRole, customerRole, superAdminRole } from "@/lib/permissions";
 import { UserRole } from "@/app/generated/prisma/enums";
 
+const getBaseUrl = () => {
+    if (typeof window !== "undefined") {
+        return window.location.origin;
+    }
+    return env.NEXT_PUBLIC_SITE_URL;
+};
+
 const authClient = createAuthClient({
-    /** The base URL of the server (optional if you're using the same domain) */
-    baseURL: env.NEXT_PUBLIC_SITE_URL,
+    /** The base URL of the server */
+    baseURL: getBaseUrl(),
     plugins: [
         adminClient({
             ac,

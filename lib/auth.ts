@@ -10,6 +10,12 @@ import { UserRole } from "@/app/generated/prisma/enums";
 import { headers as nextHeaders } from "next/headers";
 
 export const authInstance = betterAuth({
+    secret: env.AUTH_SECRET,
+    baseURL: env.NEXT_PUBLIC_SITE_URL,
+    trustedOrigins: [env.NEXT_PUBLIC_SITE_URL],
+    advanced: {
+        trustedProxyHeaders: true,
+    },
     logger: {
         disabled: process.env.NODE_ENV !== 'development',
         disableColors: process.env.NODE_ENV !== 'development',

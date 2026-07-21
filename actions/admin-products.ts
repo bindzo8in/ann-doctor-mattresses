@@ -124,7 +124,7 @@ export async function upsertProductMatrix(
       entityId: productId,
       description: `Product matrix and custom settings updated for product ${productId}`,
       actorUserId: session!.user.id,
-      actorRole: session!.user.role ?? undefined,
+      actorRole: (session!.user as any).role ?? undefined,
     });
 
     revalidatePath("/dashboard/products");
