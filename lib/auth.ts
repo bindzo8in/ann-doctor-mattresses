@@ -12,7 +12,7 @@ import { headers as nextHeaders } from "next/headers";
 export const authInstance = betterAuth({
     secret: env.AUTH_SECRET,
     baseURL: env.NEXT_PUBLIC_SITE_URL,
-    trustedOrigins: [env.NEXT_PUBLIC_SITE_URL, "http://localhost:3000"],
+    trustedOrigins: [env.NEXT_PUBLIC_SITE_URL, env.NEXT_PUBLIC_SITE_URL_2, "http://localhost:3000"],
     advanced: {
         trustedProxyHeaders: true,
     },

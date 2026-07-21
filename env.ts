@@ -24,6 +24,7 @@ export const env = createEnv({
   client: {
     NEXT_PUBLIC_RAZORPAY_KEY_ID: z.string().nonempty(),
     NEXT_PUBLIC_SITE_URL: z.url(),
+    NEXT_PUBLIC_SITE_URL_2: z.url(),
     NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY: z.string().min(1),
     // NEXT_PUBLIC_SITE_NAME: z.string(),
     NEXT_PUBLIC_APP_NAME: z.string(),
@@ -45,6 +46,7 @@ export const env = createEnv({
     EMAIL_FROM: process.env.EMAIL_FROM,
     ADMIN_EMAIL: process.env.ADMIN_EMAIL,
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL,
+    NEXT_PUBLIC_SITE_URL_2: process.env.NEXT_PUBLIC_SITE_URL_2,
     AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST,
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
