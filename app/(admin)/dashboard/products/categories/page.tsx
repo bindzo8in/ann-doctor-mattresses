@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Loader2, PlusIcon, PencilIcon, TrashIcon } from "lucide-react";
+import { Loader2, PlusIcon, PencilIcon, TrashIcon, EyeIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Field, FieldLabel, FieldDescription, FieldError } from "@/components/ui
 import { getCategories, createCategory, updateCategory, deleteCategory } from "@/actions/categories";
 import { ImageUpload, UploadedImage } from "@/components/ui/image-upload";
 import Image from "next/image";
+import Link from "next/link";
 import { z } from "zod";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -244,7 +245,17 @@ export default function CategoriesPage() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenModal(category)}>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        asChild
+                        title="Preview category"
+                      >
+                        <Link href={`/categories/${category.slug}`} target="_blank" rel="noopener noreferrer">
+                          <EyeIcon className="w-4 h-4 text-slate-600 hover:text-slate-900" />
+                        </Link>
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleOpenModal(category)} title="Edit category">
                         <PencilIcon className="w-4 h-4 text-slate-600" />
                       </Button>
                       <Button
@@ -375,7 +386,7 @@ export default function CategoriesPage() {
               ))}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Controller
                 control={form.control}
                 name="thumbnailUrl"
@@ -384,8 +395,8 @@ export default function CategoriesPage() {
                     <FieldLabel>Thumbnail</FieldLabel>
                     <ImageUpload
                       value={
-                        field.value && form.getValues("thumbnailPublicId")
-                          ? { url: field.value, publicId: form.getValues("thumbnailPublicId")! }
+                        field.value
+                          ? { url: field.value, publicId: form.getValues("thumbnailPublicId") || "thumbnail" }
                           : null
                       }
                       onChange={(value) => {
@@ -402,14 +413,38 @@ export default function CategoriesPage() {
 
               <Controller
                 control={form.control}
+                name="coverImageUrl"
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel>Cover Image</FieldLabel>
+                    <ImageUpload
+                      value={
+                        field.value
+                          ? { url: field.value, publicId: form.getValues("coverImagePublicId") || "cover-image" }
+                          : null
+                      }
+                      onChange={(value) => {
+                        const uploaded = value as UploadedImage | null;
+                        field.onChange(uploaded?.url || null);
+                        form.setValue("coverImagePublicId", uploaded?.publicId || null, { shouldValidate: true });
+                      }}
+                      maxFiles={1}
+                    />
+                    <FieldError errors={[fieldState.error]} />
+                  </Field>
+                )}
+              />
+
+              <Controller
+                control={form.control}
                 name="layerImageUrl"
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
                     <FieldLabel>Layer Image</FieldLabel>
                     <ImageUpload
                       value={
-                        field.value && form.getValues("layerImagePublicId")
-                          ? { url: field.value, publicId: form.getValues("layerImagePublicId")! }
+                        field.value
+                          ? { url: field.value, publicId: form.getValues("layerImagePublicId") || "layer-image" }
                           : null
                       }
                       onChange={(value) => {
@@ -433,8 +468,8 @@ export default function CategoriesPage() {
                     <FieldLabel>Layer Video (Optional)</FieldLabel>
                     <ImageUpload
                       value={
-                        field.value && form.getValues("layerVideoPublicId")
-                          ? { url: field.value, publicId: form.getValues("layerVideoPublicId")! }
+                        field.value
+                          ? { url: field.value, publicId: form.getValues("layerVideoPublicId") || "layer-video" }
                           : null
                       }
                       onChange={(value) => {
@@ -444,30 +479,6 @@ export default function CategoriesPage() {
                       }}
                       maxFiles={1}
                       accept="video/*"
-                    />
-                    <FieldError errors={[fieldState.error]} />
-                  </Field>
-                )}
-              />
-
-              <Controller
-                control={form.control}
-                name="coverImageUrl"
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel>Cover Image</FieldLabel>
-                    <ImageUpload
-                      value={
-                        field.value && form.getValues("coverImagePublicId")
-                          ? { url: field.value, publicId: form.getValues("coverImagePublicId")! }
-                          : null
-                      }
-                      onChange={(value) => {
-                        const uploaded = value as UploadedImage | null;
-                        field.onChange(uploaded?.url || null);
-                        form.setValue("coverImagePublicId", uploaded?.publicId || null, { shouldValidate: true });
-                      }}
-                      maxFiles={1}
                     />
                     <FieldError errors={[fieldState.error]} />
                   </Field>

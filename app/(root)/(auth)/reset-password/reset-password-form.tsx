@@ -68,7 +68,6 @@ export function ResetPasswordForm({
         token,
         newPassword: data.password,
       });
-      console.log(error)
 
       if (error) {
         switch (error.status) {

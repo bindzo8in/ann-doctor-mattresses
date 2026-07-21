@@ -16,7 +16,6 @@ export async function getBranches() {
       }
     }
   })
-  console.log(hasPermission)
 
   if (!hasPermission.success) throw new Error("Unauthorized");
 
@@ -34,7 +33,6 @@ export async function createBranch(data: { name: string; address?: string; distr
   if (!session) {
     throw new Error("Unauthorized");
   }
-  console.log(session)
   const hasPermission = await auth.api.userHasPermission({
     headers: await headers(),
     body: {
@@ -44,8 +42,6 @@ export async function createBranch(data: { name: string; address?: string; distr
     }
   })
   
-  console.log(hasPermission)
-
   if (!hasPermission.success) {
     throw new Error("Unauthorized");
   }

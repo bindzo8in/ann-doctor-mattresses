@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { redirect } from "next/navigation";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -10,6 +11,7 @@ interface DashboardLayoutProps {
 
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { UserRole } from "@/app/generated/prisma/enums";
 
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
  const session = await auth.api.getSession({
@@ -17,7 +19,11 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
   })
 
   if (!session?.user) {
-    throw new Error("Unauthorized");
+    redirect("/signin");
+  }
+
+  if (session.user.role !== UserRole.SUPER_ADMIN && session.user.role !== UserRole.BRANCH_ADMIN) {
+    redirect("/unauthorized");
   }
 
   return (

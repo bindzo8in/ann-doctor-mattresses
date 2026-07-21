@@ -62,23 +62,22 @@ function SortableCard({ image, onDelete }: SortableCardProps) {
       }}
       className="
         relative
+        aspect-square
+        w-full
         overflow-hidden
         rounded-lg
         border
         cursor-move
+        bg-muted/10
       "
     >
-      <div {...attributes} {...listeners}>
+      <div {...attributes} {...listeners} className="relative h-full w-full">
         <Image
           src={image.url}
           alt=""
-          width={400}
-          height={400}
-          className="
-            aspect-square
-            w-full
-            object-cover
-          "
+          fill
+          sizes="(max-width: 768px) 50vw, 200px"
+          className="object-cover"
         />
       </div>
 

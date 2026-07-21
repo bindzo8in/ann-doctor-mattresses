@@ -197,9 +197,11 @@ export function ImageUpload({
     }
   }
 
-  const reachedLimit =
-    multiple &&
-    images.length >= maxFiles;
+  const isMultiple = Boolean(multiple && maxFiles > 1);
+
+  const reachedLimit = isMultiple
+    ? images.length >= maxFiles
+    : images.length >= 1;
 
   return (
     <div className="space-y-4">
@@ -225,7 +227,7 @@ export function ImageUpload({
             ref={inputRef}
             type="file"
             accept={accept}
-            multiple={multiple}
+            multiple={isMultiple}
             disabled={
               disabled ||
               uploading ||
@@ -253,7 +255,7 @@ export function ImageUpload({
                   "Click to upload"}
               </p>
 
-              {multiple && (
+              {isMultiple && (
                 <p className="text-muted-foreground text-xs">
                   {images.length}/
                   {maxFiles} uploaded
@@ -266,35 +268,17 @@ export function ImageUpload({
 
       {images.length > 0 && (
         <>
-          <div
-            className="
-              grid
-              grid-cols-2
-              gap-4
-              md:grid-cols-4
-            "
-          >
-            {images.map(
-              (image) => (
+          {isMultiple ? (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+              {images.map((image) => (
                 <div
-                  key={
-                    image.publicId
-                  }
-                  className="
-                    relative
-                    overflow-hidden
-                    rounded-lg
-                    border
-                  "
+                  key={image.publicId}
+                  className="relative aspect-square w-full overflow-hidden rounded-lg border bg-muted/10"
                 >
                   {image.url.match(/\.(mp4|webm|mov|mkv)$/i) ? (
                     <video
                       src={image.url}
-                      className="
-                        aspect-square
-                        w-full
-                        object-cover
-                      "
+                      className="h-full w-full object-cover"
                       autoPlay
                       muted
                       loop
@@ -304,13 +288,9 @@ export function ImageUpload({
                     <Image
                       src={image.url}
                       alt="Uploaded media"
-                      width={300}
-                      height={300}
-                      className="
-                        aspect-square
-                        w-full
-                        object-cover
-                      "
+                      fill
+                      sizes="(max-width: 768px) 50vw, 200px"
+                      className="object-cover"
                     />
                   )}
 
@@ -318,50 +298,74 @@ export function ImageUpload({
                     type="button"
                     size="icon"
                     variant="destructive"
-                    disabled={
-                      deleting
-                    }
-                    className="
-                      absolute
-                      right-2
-                      top-2
-                    "
-                    onClick={() =>
-                      handleRemove(
-                        image,
-                      )
-                    }
+                    disabled={deleting}
+                    className="absolute right-2 top-2 z-10 shadow-sm"
+                    onClick={() => handleRemove(image)}
                   >
-                    <Trash2 className="size-4" />
+                    {deleting ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="size-4" />
+                    )}
                   </Button>
                 </div>
-              ),
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="relative aspect-square min-h-32 w-full overflow-hidden rounded-lg border bg-muted/10">
+              {images[0].url.match(/\.(mp4|webm|mov|mkv)$/i) ? (
+                <video
+                  src={images[0].url}
+                  className="h-full w-full object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                />
+              ) : (
+                <Image
+                  src={images[0].url}
+                  alt="Uploaded media"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 300px"
+                  className="object-cover"
+                />
+              )}
 
-          {multiple &&
-            images.length >
-              1 && (
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={
-                    deleting
-                  }
-                  onClick={
-                    handleRemoveAll
-                  }
-                >
-                  {deleting ? (
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                  ) : (
-                    <Images className="mr-2 size-4" />
-                  )}
-                  Remove All
-                </Button>
-              </div>
-            )}
+              <Button
+                type="button"
+                size="icon"
+                variant="destructive"
+                disabled={deleting}
+                className="absolute right-2 top-2 z-10 shadow-sm"
+                onClick={() => handleRemove(images[0])}
+              >
+                {deleting ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Trash2 className="size-4" />
+                )}
+              </Button>
+            </div>
+          )}
+
+          {isMultiple && images.length > 1 && (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={deleting}
+                onClick={handleRemoveAll}
+              >
+                {deleting ? (
+                  <Loader2 className="mr-2 size-4 animate-spin" />
+                ) : (
+                  <Images className="mr-2 size-4" />
+                )}
+                Remove All
+              </Button>
+            </div>
+          )}
         </>
       )}
     </div>

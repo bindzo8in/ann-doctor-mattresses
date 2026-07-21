@@ -30,7 +30,9 @@ async function checkAdmin(permission: "create" | "read" | "update" | "delete", t
   return session;
 }
 export async function getCustomerOrders(cursor: string | null = null, limit = 10) {
-  const session = await checkAdmin("read", "orders");
+  const session = await auth.api.getSession({
+    headers: await headers()
+  });
   if (!session?.user?.id) {
     throw new Error("Unauthorized");
   }

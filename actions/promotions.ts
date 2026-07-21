@@ -30,6 +30,11 @@ export async function getAdminPromotions(cursor: string | null = null, limit = 1
 }
 
 export async function getPromotionsSelectionData() {
+  const session = await auth();
+  if (!session?.user || (session.user.role !== "SUPER_ADMIN" && session.user.role !== "BRANCH_ADMIN")) {
+    throw new Error("Unauthorized");
+  }
+
   try {
     const [products, categories] = await Promise.all([
       prisma.product.findMany({

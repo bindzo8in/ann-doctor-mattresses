@@ -138,7 +138,6 @@ export default function CheckoutPage() {
       });
 
       if (!res.ok) {
-        console.log("Failed to initialize checkout", res);
         throw new Error("Failed to initialize checkout");
       }
 

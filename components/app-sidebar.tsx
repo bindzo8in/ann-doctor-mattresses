@@ -153,7 +153,6 @@ function can(
   role: UserRole | undefined,
   permission?: Permission
 ) {
-  console.log('role permission => ', role, permission)
   if (!permission) return true;
   if (!role) return false;
 
