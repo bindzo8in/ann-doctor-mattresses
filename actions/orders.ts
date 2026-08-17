@@ -278,7 +278,7 @@ export async function initiateRazorpayRefund(orderId: string) {
   try {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
-      include: { payments: true }
+      include: { payments: { include: { refunds: true } } }
     });
 
     if (!order) {
@@ -289,9 +289,15 @@ export async function initiateRazorpayRefund(orderId: string) {
       throw new Error("Order must be cancelled before initiating a refund");
     }
 
-    const paidPayment = order.payments.find((p) => p.status === "PAID" && p.razorpayPaymentId);
+    const paidPayment = order.payments.find((p) => (p.status === "PAID" || p.status === "REFUNDED" || p.status === "PENDING") && p.razorpayPaymentId);
     if (!paidPayment || !paidPayment.razorpayPaymentId) {
       throw new Error("No successful Razorpay payment found to refund");
+    }
+
+    // Check if an active/completed refund already exists
+    const existingCompleted = paidPayment.refunds?.find((r) => r.status === "COMPLETED" || r.status === "INITIATED");
+    if (existingCompleted) {
+      throw new Error(`Refund has already been initiated for this payment (Refund ID: ${existingCompleted.razorpayRefundId || "N/A"})`);
     }
 
     const { env } = await import("@/env");
@@ -302,7 +308,7 @@ export async function initiateRazorpayRefund(orderId: string) {
       key_secret: env.RAZORPAY_KEY_SECRET,
     });
 
-    // Initiate full refund
+    // Initiate full refund via Razorpay API
     const refund = await razorpay.payments.refund(paidPayment.razorpayPaymentId, {
       amount: Math.round(paidPayment.amount.toNumber() * 100),
       notes: {
@@ -311,31 +317,44 @@ export async function initiateRazorpayRefund(orderId: string) {
       }
     });
 
-    // const session = await auth();
+    const isProcessed = refund.status === "processed";
 
-    // Create Refund record (Webhook will handle Payment status update)
+    // Create Refund record
     const refundRecord = await prisma.refund.create({
       data: {
         paymentId: paidPayment.id,
         razorpayRefundId: refund.id,
         amount: paidPayment.amount,
-        status: "INITIATED",
+        status: isProcessed ? "COMPLETED" : "INITIATED",
+        processedAt: isProcessed ? new Date() : null,
         initiatedByUserId: session?.user?.id || null,
         reason: "Admin initiated refund",
       }
+    });
+
+    // Update payment status immediately so UI and reports reflect refund immediately
+    await prisma.payment.update({
+      where: { id: paidPayment.id },
+      data: {
+        status: "REFUNDED",
+      },
     });
 
     await auditLogger.log({
       action: "REFUND_INITIATED",
       entityType: "Refund",
       entityId: refundRecord.id,
-      description: `Refund initiated for payment ${paidPayment.id}`,
-      metadata: { razorpayRefundId: refund.id },
+      description: `Refund initiated for payment ${paidPayment.id} (status: ${refund.status})`,
+      metadata: { razorpayRefundId: refund.id, status: refund.status },
       actorUserId: session?.user?.id,
       actorRole: session?.user?.role!,
     });
 
-    return { success: true, refundId: refund.id };
+    return { 
+      success: true, 
+      refundId: refund.id,
+      status: isProcessed ? "COMPLETED" : "INITIATED"
+    };
   } catch (error: any) {
     console.error("initiateRazorpayRefund Error:", error);
     throw new Error(error.description || error.message || "Failed to initiate refund");
@@ -425,6 +444,12 @@ export async function trackPublicOrder(params: { orderNumber: string; phoneOrEma
     payments: order.payments.map((p) => ({
       status: p.status,
       amount: roundPrice(p.amount.toNumber()),
+      refunds: p.refunds?.map((r) => ({
+        id: r.id,
+        razorpayRefundId: r.razorpayRefundId,
+        status: r.status,
+        amount: roundPrice(r.amount.toNumber()),
+      })),
     })),
   };
 }

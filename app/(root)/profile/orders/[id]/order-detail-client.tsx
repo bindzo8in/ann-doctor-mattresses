@@ -451,7 +451,17 @@ export function OrderDetailClient({ order }: OrderDetailClientProps) {
             <div>
               <h2 className="text-2xl font-bold text-slate-900 flex flex-wrap items-center gap-2">
                 Order details: {order.orderNumber}
-                {getStatusBadge(status)}
+                {status === "CANCELLED" ? (
+                  order.payments?.some((p: any) => p.status === "REFUNDED" || p.refunds?.some((r: any) => r.status === "COMPLETED")) ? (
+                    <Badge className="bg-rose-100 text-rose-800 border-rose-200 hover:bg-rose-100">Refunded</Badge>
+                  ) : order.payments?.some((p: any) => p.status === "PARTIALLY_REFUNDED" || p.refunds?.some((r: any) => r.status === "INITIATED")) ? (
+                    <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">Refund Initiated</Badge>
+                  ) : (
+                    <Badge variant="destructive">Cancelled</Badge>
+                  )
+                ) : (
+                  getStatusBadge(status)
+                )}
               </h2>
               <p className="text-sm text-slate-500">
                 Placed on {new Date(order.createdAt).toLocaleDateString("en-IN", {

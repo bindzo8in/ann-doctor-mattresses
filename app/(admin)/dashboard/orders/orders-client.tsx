@@ -487,9 +487,39 @@ export function OrdersPageClient({ initialData }: OrdersPageClientProps) {
       return res;
     },
     onSuccess: (res) => {
-      toast.success(`Refund initiated successfully! Refund ID: ${res.refundId}`);
+      toast.success(`Refund initiated successfully! (Status: ${res.status}, ID: ${res.refundId})`);
       queryClient.invalidateQueries({ queryKey: ["orders"] });
-      setSelectedOrder(null);
+      setSelectedOrder((prev: any) => {
+        if (!prev) return null;
+        const updatedPayments = prev.payments?.map((p: any) => ({
+          ...p,
+          status: "REFUNDED",
+          refunds: [
+            ...(p.refunds || []),
+            {
+              id: res.refundId,
+              razorpayRefundId: res.refundId,
+              amount: p.amount,
+              status: res.status,
+              createdAt: new Date(),
+            }
+          ]
+        })) || [
+          {
+            status: "REFUNDED",
+            refunds: [
+              {
+                id: res.refundId,
+                razorpayRefundId: res.refundId,
+                amount: prev.totalAmount,
+                status: res.status,
+                createdAt: new Date(),
+              }
+            ]
+          }
+        ];
+        return { ...prev, payments: updatedPayments };
+      });
     },
     onError: (err: any) => {
       console.error(err);
@@ -499,7 +529,7 @@ export function OrdersPageClient({ initialData }: OrdersPageClientProps) {
 
   const handleInitiateRefund = () => {
     if (!selectedOrder) return;
-    const confirmRefund = window.confirm(`Are you sure you want to refund this order via Razorpay? This cannot be undone.`);
+    const confirmRefund = window.confirm(`Are you sure you want to refund ₹${formatPrice(Number(selectedOrder.totalAmount))} via Razorpay? This cannot be undone.`);
     if (!confirmRefund) return;
     refundMutation.mutate(selectedOrder.id);
   };
@@ -562,6 +592,25 @@ export function OrdersPageClient({ initialData }: OrdersPageClientProps) {
       default:
         return <Badge variant="outline">{orderStatus}</Badge>;
     }
+  };
+
+  const getOrderBadge = (order: any) => {
+    if (order.status === "CANCELLED") {
+      const hasCompletedRefund = order.payments?.some((p: any) => 
+        p.status === "REFUNDED" || p.refunds?.some((r: any) => r.status === "COMPLETED")
+      );
+      const hasInitiatedRefund = order.payments?.some((p: any) => 
+        p.refunds?.some((r: any) => r.status === "INITIATED")
+      );
+      if (hasCompletedRefund) {
+        return <Badge className="bg-rose-100 text-rose-800 border-rose-200">Refunded</Badge>;
+      }
+      if (hasInitiatedRefund) {
+        return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Refund Initiated</Badge>;
+      }
+      return <Badge variant="destructive">Cancelled</Badge>;
+    }
+    return getStatusBadge(order.status);
   };
 
   const statusOptions = [
@@ -680,7 +729,7 @@ export function OrdersPageClient({ initialData }: OrdersPageClientProps) {
                   <TableCell className="font-semibold text-slate-800">
                     ₹{formatPrice(Number(order.totalAmount))}
                   </TableCell>
-                  <TableCell>{getStatusBadge(order.status)}</TableCell>
+                  <TableCell>{getOrderBadge(order)}</TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <Button variant="outline" size="sm" onClick={() => handleOpenSheet(order)} className="gap-1.5">
                       <Edit3 className="w-3.5 h-3.5" /> Edit
@@ -776,12 +825,65 @@ export function OrdersPageClient({ initialData }: OrdersPageClientProps) {
                 </div>
               )}
 
+              {/* Payment & Refund Details */}
+              {selectedOrder.payments && selectedOrder.payments.length > 0 && (
+                <div className="space-y-3 border-t pt-4">
+                  <h3 className="text-xs uppercase font-bold text-slate-400">Payment & Refund Details</h3>
+                  {selectedOrder.payments.map((p: any) => {
+                    const latestRefund = p.refunds?.[p.refunds.length - 1];
+                    const isRefunded = p.status === "REFUNDED" || latestRefund;
+
+                    return (
+                      <div key={p.id || p.razorpayOrderId} className="bg-slate-50 border rounded-xl p-3 text-xs space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-semibold text-slate-700">Razorpay Payment</span>
+                          <Badge className={
+                            p.status === "REFUNDED" || latestRefund?.status === "COMPLETED" 
+                              ? "bg-rose-100 text-rose-800 border-rose-200" 
+                              : latestRefund?.status === "INITIATED"
+                              ? "bg-amber-100 text-amber-800 border-amber-200"
+                              : p.status === "PAID"
+                              ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+                              : "bg-slate-100 text-slate-800"
+                          }>
+                            {latestRefund ? (latestRefund.status === "COMPLETED" ? "Refunded" : "Refund Initiated") : p.status}
+                          </Badge>
+                        </div>
+                        {p.razorpayPaymentId && (
+                          <div className="text-slate-500 font-mono text-[11px]">
+                            Payment ID: <span className="text-slate-800 font-medium">{p.razorpayPaymentId}</span>
+                          </div>
+                        )}
+                        {latestRefund && (
+                          <div className="bg-white border rounded-lg p-2.5 space-y-1 text-slate-600 shadow-2xs">
+                            <div className="flex justify-between font-semibold text-slate-900">
+                              <span>Refund ID:</span>
+                              <span className="font-mono text-rose-700">{latestRefund.razorpayRefundId || latestRefund.id}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Refund Amount:</span>
+                              <span className="font-bold text-slate-900">₹{formatPrice(Number(latestRefund.amount || p.amount))}</span>
+                            </div>
+                            <div className="flex justify-between text-[11px] text-slate-400">
+                              <span>Status:</span>
+                              <span className={`font-semibold ${latestRefund.status === "COMPLETED" ? "text-emerald-700" : "text-amber-700"}`}>
+                                {latestRefund.status}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
               {/* Status Update UI */}
               <div className="space-y-4">
                 <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg border">
                   <div>
                     <p className="text-[10px] uppercase font-semibold text-slate-500 mb-1">Current Status</p>
-                    {getStatusBadge(selectedOrder.status)}
+                    {getOrderBadge(selectedOrder)}
                   </div>
                   {status !== selectedOrder.status && (
                     <div className="text-right">
@@ -796,18 +898,17 @@ export function OrdersPageClient({ initialData }: OrdersPageClientProps) {
                   <div className="flex flex-wrap gap-2">
                     {getNextStatusOptions(selectedOrder.status).filter(opt => {
                         if (opt.value === "INITIATE_REFUND") {
-                          // Only show if there's a PAID payment and no completed refunds
-                          const hasPaidPayment = selectedOrder?.payments?.some((p: any) => p.status === "PAID");
-                          const isFullyRefunded = selectedOrder?.payments?.some((p: any) => p.status === "REFUNDED");
-                          return hasPaidPayment && !isFullyRefunded;
+                          const hasPaidPayment = selectedOrder?.payments?.some((p: any) => (p.status === "PAID" || p.razorpayPaymentId));
+                          const isRefunded = selectedOrder?.payments?.some((p: any) => p.status === "REFUNDED" || (p.refunds && p.refunds.length > 0));
+                          return hasPaidPayment && !isRefunded;
                         }
                         return true;
                       }).length > 0 ? (
                       getNextStatusOptions(selectedOrder.status).filter(opt => {
                         if (opt.value === "INITIATE_REFUND") {
-                          const hasPaidPayment = selectedOrder?.payments?.some((p: any) => p.status === "PAID");
-                          const isFullyRefunded = selectedOrder?.payments?.some((p: any) => p.status === "REFUNDED");
-                          return hasPaidPayment && !isFullyRefunded;
+                          const hasPaidPayment = selectedOrder?.payments?.some((p: any) => (p.status === "PAID" || p.razorpayPaymentId));
+                          const isRefunded = selectedOrder?.payments?.some((p: any) => p.status === "REFUNDED" || (p.refunds && p.refunds.length > 0));
+                          return hasPaidPayment && !isRefunded;
                         }
                         return true;
                       }).map(opt => (

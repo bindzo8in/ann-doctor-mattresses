@@ -50,7 +50,15 @@ export function OrdersClient({ initialOrders, initialNextCursor }: OrdersClientP
   const [cancelReasonInput, setCancelReasonInput] = useState("");
   const router = useRouter();
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, payments?: any[]) => {
+    if (status === "CANCELLED") {
+      const isFullyRefunded = payments?.some((p: any) => p.status === "REFUNDED" || p.refunds?.some((r: any) => r.status === "COMPLETED"));
+      const hasRefundInitiated = payments?.some((p: any) => p.status === "PARTIALLY_REFUNDED" || p.refunds?.some((r: any) => r.status === "INITIATED"));
+      if (isFullyRefunded) return <Badge className="bg-rose-100 text-rose-800 border-rose-200 hover:bg-rose-100">Refunded</Badge>;
+      if (hasRefundInitiated) return <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">Refund Initiated</Badge>;
+      return <Badge variant="destructive">Cancelled</Badge>;
+    }
+
     switch (status) {
       case "PENDING_PAYMENT":
         return <Badge className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">Pending Payment</Badge>;
@@ -70,12 +78,6 @@ export function OrdersClient({ initialOrders, initialNextCursor }: OrdersClientP
         return <Badge className="bg-purple-100 text-purple-800 border-purple-200 hover:bg-purple-100">Out for Delivery</Badge>;
       case "DELIVERED":
         return <Badge className="bg-slate-900 text-white hover:bg-slate-900">Delivered</Badge>;
-      case "CANCELLED":
-        return <Badge variant="destructive">Cancelled</Badge>;
-      case "REFUND_INITIATED":
-        return <Badge className="bg-rose-50 text-rose-600 border-rose-100 hover:bg-rose-50">Refund Initiated</Badge>;
-      case "REFUNDED":
-        return <Badge className="bg-rose-100 text-rose-800 border-rose-200 hover:bg-rose-100">Refunded</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -247,7 +249,7 @@ export function OrdersClient({ initialOrders, initialNextCursor }: OrdersClientP
                   <TableCell className="font-semibold text-slate-800">
                     ₹{formatPrice(order.totalAmount)}
                   </TableCell>
-                  <TableCell>{getStatusBadge(order.status)}</TableCell>
+                  <TableCell>{getStatusBadge(order.status, order.payments)}</TableCell>
                   <TableCell className="text-right space-x-2">
                     <Button
                       variant="ghost"

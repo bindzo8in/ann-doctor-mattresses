@@ -60,7 +60,23 @@ function getStepIndex(status: string): number {
   }
 }
 
-function getStatusBadge(status: string) {
+function getStatusBadge(status: string, payments?: any[]) {
+  if (status === "CANCELLED") {
+    const hasCompletedRefund = payments?.some((p: any) => 
+      p.status === "REFUNDED" || p.refunds?.some((r: any) => r.status === "COMPLETED")
+    );
+    const hasInitiatedRefund = payments?.some((p: any) => 
+      p.refunds?.some((r: any) => r.status === "INITIATED")
+    );
+    if (hasCompletedRefund) {
+      return <Badge className="bg-rose-100 text-rose-800 border-rose-200">Refunded</Badge>;
+    }
+    if (hasInitiatedRefund) {
+      return <Badge className="bg-amber-100 text-amber-800 border-amber-200">Refund Initiated</Badge>;
+    }
+    return <Badge variant="destructive">Cancelled</Badge>;
+  }
+
   switch (status) {
     case "PENDING_PAYMENT":
       return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Pending Payment</Badge>;
@@ -76,8 +92,6 @@ function getStatusBadge(status: string) {
       return <Badge className="bg-indigo-600 hover:bg-indigo-700 text-white">Out for Delivery</Badge>;
     case "DELIVERED":
       return <Badge className="bg-green-700 hover:bg-green-800 text-white">Delivered</Badge>;
-    case "CANCELLED":
-      return <Badge variant="destructive">Cancelled</Badge>;
     default:
       return <Badge variant="secondary">{status}</Badge>;
   }
@@ -205,7 +219,7 @@ export function TrackOrderClient() {
                       Placed on {new Date(orderData.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                     </p>
                   </div>
-                  <div>{getStatusBadge(orderData.status)}</div>
+                  <div>{getStatusBadge(orderData.status, orderData.payments)}</div>
                 </div>
 
                 {/* Progress Steps Timeline */}
@@ -239,9 +253,22 @@ export function TrackOrderClient() {
                     </div>
                   </div>
                 ) : (
-                  <div className="p-4 bg-red-50 text-red-800 rounded-xl border border-red-200 text-sm flex items-center gap-3">
-                    <AlertCircle className="w-5 h-5 flex-shrink-0 text-red-600" />
-                    <span>This order has been cancelled. If you made a payment, refunds are automatically processed to the original payment source.</span>
+                  <div className="p-4 bg-rose-50 text-rose-900 rounded-xl border border-rose-200 text-sm space-y-1.5">
+                    <div className="flex items-center gap-2 font-semibold text-rose-800">
+                      <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600" />
+                      <span>Order Cancelled</span>
+                    </div>
+                    {orderData.payments?.some((p: any) => p.status === "REFUNDED" || p.refunds?.length > 0) ? (
+                      <p className="text-xs text-rose-700">
+                        {orderData.payments.find((p: any) => p.refunds?.length > 0)?.refunds?.[0]?.status === "COMPLETED" || orderData.payments.some((p: any) => p.status === "REFUNDED")
+                          ? `Your refund has been processed. Refund ID: ${orderData.payments.find((p: any) => p.refunds?.length > 0)?.refunds?.[0]?.razorpayRefundId || "Processed"}. Funds will reflect in your account within 5-7 business days.`
+                          : `Refund has been initiated for this order and is being processed.`}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-rose-700">
+                        This order has been cancelled. If you made a payment, refunds are automatically processed to the original payment source.
+                      </p>
+                    )}
                   </div>
                 )}
 
