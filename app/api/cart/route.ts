@@ -2,30 +2,90 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { calculateCartTotals } from "@/lib/checkout";
+import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({
-      items: [],
-      subTotal: 0,
-      discountTotal: 0,
-      shippingTotal: 0,
-      totalAmount: 0,
-      pincode: null,
-    });
+function getGuestSessionId(req: NextRequest): { sessionId: string; isNew: boolean } {
+  const existing = req.cookies.get("guest_session_id")?.value;
+  if (existing) {
+    return { sessionId: existing, isNew: false };
   }
+  const newId = `guest_${crypto.randomUUID()}`;
+  return { sessionId: newId, isNew: true };
+}
 
+export async function GET(req: NextRequest) {
   try {
-    const cartItems = await prisma.cartItem.findMany({
-      where: { userId: session.user.id },
-      include: {
-        product: true,
-        variant: true,
-      },
-    });
+    const session = await auth();
+    let cartItems: any[] = [];
+    let pincode: string | undefined = undefined;
+
+    if (session?.user?.id) {
+      // Merge guest cart items if guest_session_id cookie is present
+      const guestSessionId = req.cookies.get("guest_session_id")?.value;
+      if (guestSessionId) {
+        const guestItems = await prisma.cartItem.findMany({
+          where: { sessionId: guestSessionId, userId: null },
+        });
+        for (const gItem of guestItems) {
+          const userExisting = await prisma.cartItem.findFirst({
+            where: {
+              userId: session.user.id,
+              productId: gItem.productId,
+              variantId: gItem.variantId,
+              isCustom: gItem.isCustom,
+              color: gItem.color,
+            },
+          });
+          if (userExisting) {
+            await prisma.cartItem.update({
+              where: { id: userExisting.id },
+              data: { quantity: Math.min(20, userExisting.quantity + gItem.quantity) },
+            });
+            await prisma.cartItem.delete({ where: { id: gItem.id } });
+          } else {
+            await prisma.cartItem.update({
+              where: { id: gItem.id },
+              data: { userId: session.user.id, sessionId: null },
+            });
+          }
+        }
+      }
+
+      cartItems = await prisma.cartItem.findMany({
+        where: { userId: session.user.id },
+        include: {
+          product: true,
+          variant: true,
+        },
+      });
+
+      // Look up default address pincode for shipping estimate
+      const defaultAddress = await prisma.address.findFirst({
+        where: { userId: session.user.id, isDefault: true },
+        select: { postalCode: true },
+      });
+      const anyAddress = !defaultAddress
+        ? await prisma.address.findFirst({
+            where: { userId: session.user.id },
+            select: { postalCode: true },
+            orderBy: { createdAt: "desc" },
+          })
+        : null;
+      pincode = defaultAddress?.postalCode ?? anyAddress?.postalCode ?? undefined;
+    } else {
+      const guestSessionId = req.cookies.get("guest_session_id")?.value;
+      if (guestSessionId) {
+        cartItems = await prisma.cartItem.findMany({
+          where: { sessionId: guestSessionId, userId: null },
+          include: {
+            product: true,
+            variant: true,
+          },
+        });
+      }
+    }
 
     if (cartItems.length === 0) {
       return NextResponse.json({
@@ -34,25 +94,11 @@ export async function GET(req: NextRequest) {
         discountTotal: 0,
         shippingTotal: 0,
         totalAmount: 0,
+        pincode: null,
       });
     }
 
-    // Look up the user's default address pincode for shipping estimate
-    const defaultAddress = await prisma.address.findFirst({
-      where: { userId: session.user.id, isDefault: true },
-      select: { postalCode: true },
-    });
-    // Fall back to any address if no default is set
-    const anyAddress = !defaultAddress
-      ? await prisma.address.findFirst({
-          where: { userId: session.user.id },
-          select: { postalCode: true },
-          orderBy: { createdAt: "desc" },
-        })
-      : null;
-    const pincode = defaultAddress?.postalCode ?? anyAddress?.postalCode ?? undefined;
-
-    const itemsForTotals = cartItems.map(item => ({
+    const itemsForTotals = cartItems.map((item) => ({
       productId: item.productId,
       variantId: item.variantId,
       quantity: item.quantity,
@@ -71,8 +117,16 @@ export async function GET(req: NextRequest) {
         quantityPurchased: calc?.quantityPurchased ?? cartItem.quantity,
         quantityFree: calc?.quantityFree ?? 0,
         totalDelivered: calc?.totalDelivered ?? cartItem.quantity,
-        unitPrice: calc?.unitPrice ?? (cartItem.isCustom && cartItem.customData ? Number((cartItem.customData as any).calculatedPrice) : Number(cartItem.variant?.salePrice || 0)),
-        totalPaid: calc?.totalPaid ?? ((cartItem.isCustom && cartItem.customData ? Number((cartItem.customData as any).calculatedPrice) : Number(cartItem.variant?.salePrice || 0)) * cartItem.quantity),
+        unitPrice:
+          calc?.unitPrice ??
+          (cartItem.isCustom && cartItem.customData
+            ? Number((cartItem.customData as any).calculatedPrice)
+            : Number(cartItem.variant?.salePrice || 0)),
+        totalPaid:
+          calc?.totalPaid ??
+          (cartItem.isCustom && cartItem.customData
+            ? Number((cartItem.customData as any).calculatedPrice)
+            : Number(cartItem.variant?.salePrice || 0)) * cartItem.quantity,
         saved: calc?.saved ?? 0,
         offerType: calc?.offerType ?? null,
         offerName: calc?.offerName ?? null,
@@ -93,14 +147,9 @@ export async function GET(req: NextRequest) {
   }
 }
 
-
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const session = await auth();
     const body = await req.json();
     const { productId, variantId, quantity, isCustom, customData, color } = body;
 
@@ -112,26 +161,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Maximum quantity per item is 20" }, { status: 400 });
     }
 
+    const { sessionId, isNew } = getGuestSessionId(req);
+    const userId = session?.user?.id || null;
+
     let existing;
     if (isCustom) {
       const items = await prisma.cartItem.findMany({
-        where: {
-          userId: session.user.id,
-          productId,
-          isCustom: true,
-          color: color || null,
-        }
+        where: userId
+          ? { userId, productId, isCustom: true, color: color || null }
+          : { sessionId, userId: null, productId, isCustom: true, color: color || null },
       });
-      existing = items.find(item => JSON.stringify(item.customData) === JSON.stringify(customData));
+      existing = items.find((item) => JSON.stringify(item.customData) === JSON.stringify(customData));
     } else {
       existing = await prisma.cartItem.findFirst({
-        where: {
-          userId: session.user.id,
-          productId,
-          variantId: variantId || null,
-          isCustom: false,
-          color: color || null,
-        }
+        where: userId
+          ? { userId, productId, variantId: variantId || null, isCustom: false, color: color || null }
+          : { sessionId, userId: null, productId, variantId: variantId || null, isCustom: false, color: color || null },
       });
     }
 
@@ -148,7 +193,8 @@ export async function POST(req: NextRequest) {
     } else {
       cartItem = await prisma.cartItem.create({
         data: {
-          userId: session.user.id,
+          userId,
+          sessionId: userId ? null : sessionId,
           productId,
           variantId: variantId || null,
           quantity,
@@ -159,7 +205,17 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    return NextResponse.json(cartItem);
+    const response = NextResponse.json(cartItem);
+    if (!userId && isNew) {
+      response.cookies.set("guest_session_id", sessionId, {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30, // 30 days
+      });
+    }
+
+    return response;
   } catch (error) {
     console.error("Cart POST Error:", error);
     return NextResponse.json({ message: "Internal server error" }, { status: 500 });
@@ -167,12 +223,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const session = await auth();
     const body = await req.json();
     const { cartItemId, quantity } = body;
 
@@ -184,8 +236,29 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ message: "Maximum quantity per item is 20" }, { status: 400 });
     }
 
+    const userId = session?.user?.id;
+    const guestSessionId = req.cookies.get("guest_session_id")?.value;
+
+    const item = await prisma.cartItem.findUnique({
+      where: { id: cartItemId },
+    });
+
+    if (!item) {
+      return NextResponse.json({ message: "Item not found" }, { status: 404 });
+    }
+
+    if (userId) {
+      if (item.userId !== userId) {
+        return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
+      }
+    } else {
+      if (!guestSessionId || item.sessionId !== guestSessionId) {
+        return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
+      }
+    }
+
     const updated = await prisma.cartItem.update({
-      where: { id: cartItemId, userId: session.user.id },
+      where: { id: cartItemId },
       data: { quantity },
     });
 
@@ -197,12 +270,8 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const session = await auth();
     const { searchParams } = new URL(req.url);
     const cartItemId = searchParams.get("id");
 
@@ -210,8 +279,29 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ message: "Missing item ID" }, { status: 400 });
     }
 
+    const userId = session?.user?.id;
+    const guestSessionId = req.cookies.get("guest_session_id")?.value;
+
+    const item = await prisma.cartItem.findUnique({
+      where: { id: cartItemId },
+    });
+
+    if (!item) {
+      return NextResponse.json({ message: "Item not found" }, { status: 404 });
+    }
+
+    if (userId) {
+      if (item.userId !== userId) {
+        return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
+      }
+    } else {
+      if (!guestSessionId || item.sessionId !== guestSessionId) {
+        return NextResponse.json({ message: "Unauthorized" }, { status: 403 });
+      }
+    }
+
     await prisma.cartItem.delete({
-      where: { id: cartItemId, userId: session.user.id },
+      where: { id: cartItemId },
     });
 
     return NextResponse.json({ success: true });

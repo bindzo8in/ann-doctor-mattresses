@@ -24,6 +24,7 @@ import { CheckoutSource } from "@/app/generated/prisma/enums";
 import { useWishlist } from "@/hooks/use-wishlist";
 import { getColorByValue } from "@/lib/colors";
 import { cn } from "@/lib/utils";
+import { BuyAsGuestAuth } from "../buy-as-guest-auth";
 
 interface Props {
   product: ProductDetails;
@@ -44,6 +45,8 @@ export function ProductPurchaseCardV2({ product, branchGroups }: Props) {
   );
   const [quantity, setQuantity] = useState(1);
   const [isCustomMode, setIsCustomMode] = useState(isDefaultCustom);
+  const [isOpen, setIsOpen] = useState(false);
+  console.log('isOpen', isOpen)
   const [customData, setCustomData] = useState<{
     width: number;
     length: number;
@@ -51,21 +54,21 @@ export function ProductPurchaseCardV2({ product, branchGroups }: Props) {
     calculatedPrice: number;
     isValid: boolean;
   } | null>(() => {
-     if (isDefaultCustom) {
-        const t = sortedVariants[0]?.mattressVariant?.thickness || 6;
-        const w = product.minWidth || 30;
-        const l = product.minLength || 70;
-        const areaSqFt = (w * l) / 144;
-        const rate = ((product.customSizePricing as Record<string, number>) || {})[t.toString()] || 0;
-        return {
-           width: w,
-           length: l,
-           thickness: t,
-           calculatedPrice: roundPrice(areaSqFt * rate),
-           isValid: true
-        };
-     }
-     return null;
+    if (isDefaultCustom) {
+      const t = sortedVariants[0]?.mattressVariant?.thickness || 6;
+      const w = product.minWidth || 30;
+      const l = product.minLength || 70;
+      const areaSqFt = (w * l) / 144;
+      const rate = ((product.customSizePricing as Record<string, number>) || {})[t.toString()] || 0;
+      return {
+        width: w,
+        length: l,
+        thickness: t,
+        calculatedPrice: roundPrice(areaSqFt * rate),
+        isValid: true
+      };
+    }
+    return null;
   });
 
   const [selectedColor, setSelectedColor] = useState<string | null>(
@@ -79,7 +82,7 @@ export function ProductPurchaseCardV2({ product, branchGroups }: Props) {
 
   const actualReviewCount = product.reviews?.length || 0;
   const reviewCount = actualReviewCount;
-  const averageRating = actualReviewCount > 0 
+  const averageRating = actualReviewCount > 0
     ? product.reviews.reduce((acc, r) => acc + r.rating, 0) / actualReviewCount
     : 5;
 
@@ -128,32 +131,23 @@ export function ProductPurchaseCardV2({ product, branchGroups }: Props) {
       }
       toast.success("Added to cart");
     } catch (error: any) {
-      if (error.message === "UNAUTHORIZED") {
-        toast.error("Please login to add items to cart");
-        router.push(`${routes.login}?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
-      } else {
-        toast.error(error.message || "Failed to add to cart. Please ensure you are logged in.");
-      }
+      toast.error(error.message || "Failed to add to cart.");
     }
   };
 
-  const setCheckoutSession = useCheckoutStore(state => state.setCheckoutSession);
+  const handleLogin = () => {
+    setIsOpen(false);
+    router.push(`${routes.login}?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
+  };
 
-  const handleBuyNow = async () => {
-    if (status === "unauthenticated") {
-      toast.error("Please login to proceed to checkout");
-      router.push(`${routes.login}?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
-      return;
-    }
+  const handleContinueAsGuest = () => {
+    setIsOpen(false);
+    proceedToBuy();
+  };
 
+  const proceedToBuy = async () => {
     setIsBuyingNow(true);
     try {
-      // Dynamic auth check using cart API status
-      const authCheck = await fetch("/api/cart", { cache: "no-store" });
-      if (authCheck.status === 401) {
-        throw new Error("UNAUTHORIZED");
-      }
-
       if (isCustomMode && !customData?.isValid) {
         toast.error("Please enter valid dimensions for the custom size.");
         setIsBuyingNow(false);
@@ -180,21 +174,22 @@ export function ProductPurchaseCardV2({ product, branchGroups }: Props) {
 
       router.push(routes.checkout);
     } catch (error: any) {
-      if (error.message === "UNAUTHORIZED") {
-        toast.error("Please login to proceed to checkout");
-        router.push(`${routes.login}?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
-      } else {
-        toast.error("Failed to proceed to checkout. Please try again.");
-      }
+      toast.error(error.message || "Failed to proceed to checkout. Please try again.");
     } finally {
       setIsBuyingNow(false);
     }
   };
 
-  const price = isCustomMode 
+  const setCheckoutSession = useCheckoutStore(state => state.setCheckoutSession);
+
+  const handleBuyNow = async () => {
+    await proceedToBuy();
+  };
+
+  const price = isCustomMode
     ? (customData?.calculatedPrice || 0)
     : roundPrice(Number(selectedVariant.salePrice));
-  
+
   const mrp = isCustomMode
     ? price // Custom items don't have MRP discount currently
     : roundPrice(Number(selectedVariant.mrp));
@@ -202,170 +197,175 @@ export function ProductPurchaseCardV2({ product, branchGroups }: Props) {
   const discount = mrp > price ? Math.round(((mrp - price) / mrp) * 100) : 0;
 
   return (
-    <div className="flex flex-col gap-6 font-montserrat">
-      {/* Title & Description */}
-      <div>
-        <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground mb-2">
-          {product.name}
-        </h1>
-        <div className="text-muted-foreground">
-          <ul className="pl-0 space-y-1">
-            {product.shortDescription.map((desc, i) => (
-              <li key={i} className="text-sm flex flex-nowrap items-center gap-2">
-                <span className="text-[#E53935] text-[10px]"><CheckCircle2Icon className="size-2"/></span> <span>{desc}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="flex items-center gap-2 mt-4 text-sm font-medium text-slate-700">
-            <span className="flex text-amber-500">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="w-5 h-5 fill-current" />
+    <>
+      <div className="flex flex-col gap-6 font-montserrat">
+        {/* Title & Description */}
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground mb-2">
+            {product.name}
+          </h1>
+          <div className="text-muted-foreground">
+            <ul className="pl-0 space-y-1">
+              {product.shortDescription.map((desc, i) => (
+                <li key={i} className="text-sm flex flex-nowrap items-center gap-2">
+                  <span className="text-[#E53935] text-[10px]"><CheckCircle2Icon className="size-2" /></span> <span>{desc}</span>
+                </li>
               ))}
-            </span>
-            <span className="text-slate-500">|</span>
-            <span className="border-2 border-green-800 rounded-l-2xl rounded-r-2xl bg-green-300/40 text-green-800 px-2 py-0.5">{averageRating}/5 ({reviewCount})</span>
-          </div>
-        </div>
-      </div>
-
-            {/* Variants (Modal) */}
-      <div className="pt-4 space-y-4">
-        {product.availableColors && product.availableColors.length > 0 && (
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            <span className="text-sm font-bold text-slate-900 shrink-0">
-              Colour: <span className="text-slate-600 font-normal">{getColorByValue(selectedColor || "")?.label}</span>
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {product.availableColors.map((colorValue) => {
-                const color = getColorByValue(colorValue);
-                const isSelected = selectedColor === colorValue;
-                return (
-                  <button
-                    key={colorValue}
-                    onClick={() => setSelectedColor(colorValue)}
-                    className={cn(
-                      "w-6 h-6 rounded-full transition-all border border-slate-200",
-                      color.tailwindClass,
-                      isSelected ? "ring-2 ring-offset-2 ring-slate-800 scale-110" : "hover:scale-110"
-                    )}
-                    title={color.label}
-                  />
-                );
-              })}
+            </ul>
+            <div className="flex items-center gap-2 mt-4 text-sm font-medium text-slate-700">
+              <span className="flex text-amber-500">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Star key={i} className="w-5 h-5 fill-current" />
+                ))}
+              </span>
+              <span className="text-slate-500">|</span>
+              <span className="border-2 border-green-800 rounded-l-2xl rounded-r-2xl bg-green-300/40 text-green-800 px-2 py-0.5">{averageRating}/5 ({reviewCount})</span>
             </div>
           </div>
-        )}
-
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full">
-          <span className="text-sm font-bold text-slate-900 shrink-0 sm:min-w-[80px]">Select Size:</span>
-          {product.type === "MATTRESS" ? (
-            <MattressVariantSelector
-              product={product}
-              variants={sortedVariants as ProductVariantWithDetails[]}
-              selectedVariant={selectedVariant}
-              onSelect={setSelectedVariant}
-              quantity={quantity}
-              setQuantity={setQuantity}
-              isCustomMode={isCustomMode}
-              setIsCustomMode={setIsCustomMode}
-              setCustomData={setCustomData}
-              customData={customData}
-            />
-          ) : product.type === "SOFA" ? (
-            <SofaVariantSelector
-              variants={sortedVariants as ProductVariantWithDetails[]}
-              selectedVariant={selectedVariant}
-              onSelect={setSelectedVariant}
-            />
-          ) : null}
         </div>
-      </div>
 
-      {/* Pricing Inline */}
-      <div className="flex items-center gap-4 pt-4 flex-wrap">
-        <div className="text-3xl font-bold text-[#E53935]">
-          ₹{formatPrice(price)}
-        </div>
-        {mrp > price && (
-          <div className="text-lg text-slate-400 line-through">
-            ₹{formatPrice(mrp)}
-          </div>
-        )}
-        <div className="ml-auto bg-[#E53935] text-white text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wide">
-          Buy 1 Get 1 Free
-        </div>
-      </div>
-
-      {/* Variant Selection */}
-
-
-      {/* Purchase Actions */}
-      <div className="mt-4 pt-4 border-t border-border flex flex-col sm:flex-row gap-4 items-center">
-        {/* Quantity Selector */}
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-bold text-slate-900">Quantity:</span>
-          <div className="flex items-center border border-input rounded-md overflow-hidden bg-white">
-            <button
-              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-              className="p-2 hover:bg-slate-50 transition-colors text-[#E53935]"
-            >
-              <Minus className="w-4 h-4" />
-            </button>
-            <div className="flex items-center justify-center h-10 w-12 text-sm font-medium">
-              {quantity}
+        {/* Variants (Modal) */}
+        <div className="pt-4 space-y-4">
+          {product.availableColors && product.availableColors.length > 0 && (
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+              <span className="text-sm font-bold text-slate-900 shrink-0">
+                Colour: <span className="text-slate-600 font-normal">{getColorByValue(selectedColor || "")?.label}</span>
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {product.availableColors.map((colorValue) => {
+                  const color = getColorByValue(colorValue);
+                  const isSelected = selectedColor === colorValue;
+                  return (
+                    <button
+                      key={colorValue}
+                      onClick={() => setSelectedColor(colorValue)}
+                      className={cn(
+                        "w-6 h-6 rounded-full transition-all border border-slate-200",
+                        color.tailwindClass,
+                        isSelected ? "ring-2 ring-offset-2 ring-slate-800 scale-110" : "hover:scale-110"
+                      )}
+                      title={color.label}
+                    />
+                  );
+                })}
+              </div>
             </div>
-            <button
-              onClick={() => setQuantity((q) => Math.min(10, q + 1))}
-              className="p-2 hover:bg-slate-50 transition-colors text-[#E53935]"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
+          )}
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 w-full">
+            <span className="text-sm font-bold text-slate-900 shrink-0 sm:min-w-[80px]">Select Size:</span>
+            {product.type === "MATTRESS" ? (
+              <MattressVariantSelector
+                product={product}
+                variants={sortedVariants as ProductVariantWithDetails[]}
+                selectedVariant={selectedVariant}
+                onSelect={setSelectedVariant}
+                quantity={quantity}
+                setQuantity={setQuantity}
+                isCustomMode={isCustomMode}
+                setIsCustomMode={setIsCustomMode}
+                setCustomData={setCustomData}
+                customData={customData}
+              />
+            ) : product.type === "SOFA" ? (
+              <SofaVariantSelector
+                variants={sortedVariants as ProductVariantWithDetails[]}
+                selectedVariant={selectedVariant}
+                onSelect={setSelectedVariant}
+              />
+            ) : null}
           </div>
         </div>
 
-        <div className="flex-1 flex gap-3 w-full sm:w-auto">
-          <Button
-            size="lg"
-            variant="outline"
-            className="flex-1 h-12 border-[#E53935] text-[#E53935] hover:bg-red-50 shadow-sm"
-            onClick={handleAddToCart}
-            disabled={isAddingToCart || isBuyingNow || (isCustomMode && !customData?.isValid)}
-          >
-            {isAddingToCart ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
-            Add to Cart
-          </Button>
-          <Button
-            size="lg"
-            className="flex-1 h-12 bg-[#E53935] hover:bg-red-700 text-white shadow-md"
-            onClick={handleBuyNow}
-            disabled={isAddingToCart || isBuyingNow || (isCustomMode && !customData?.isValid)}
-          >
-            {isBuyingNow ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-            Buy Now
-          </Button>
+        {/* Pricing Inline */}
+        <div className="flex items-center gap-4 pt-4 flex-wrap">
+          <div className="text-3xl font-bold text-[#E53935]">
+            ₹{formatPrice(price)}
+          </div>
+          {mrp > price && (
+            <div className="text-lg text-slate-400 line-through">
+              ₹{formatPrice(mrp)}
+            </div>
+          )}
+          <div className="ml-auto bg-[#E53935] text-white text-xs font-bold px-3 py-1 rounded-md uppercase tracking-wide">
+            Buy 1 Get 1 Free
+          </div>
         </div>
-      </div>
 
-      {/* Visit Store Action */}
-      <div className="mt-2">
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button 
-              variant="outline" 
-              className="w-full h-12 text-slate-700 border-slate-300 hover:bg-slate-50 font-semibold tracking-wide"
+        {/* Variant Selection */}
+
+
+        {/* Purchase Actions */}
+        <div className="mt-4 pt-4 border-t border-border flex flex-col sm:flex-row gap-4 items-center">
+          {/* Quantity Selector */}
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-bold text-slate-900">Quantity:</span>
+            <div className="flex items-center border border-input rounded-md overflow-hidden bg-white">
+              <button
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                className="p-2 hover:bg-slate-50 transition-colors text-[#E53935]"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <div className="flex items-center justify-center h-10 w-12 text-sm font-medium">
+                {quantity}
+              </div>
+              <button
+                onClick={() => setQuantity((q) => Math.min(10, q + 1))}
+                className="p-2 hover:bg-slate-50 transition-colors text-[#E53935]"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex-1 flex gap-3 w-full sm:w-auto">
+            <Button
+              size="lg"
+              variant="outline"
+              className="flex-1 h-12 border-[#E53935] text-[#E53935] hover:bg-red-50 shadow-sm"
+              onClick={handleAddToCart}
+              disabled={isAddingToCart || isBuyingNow || (isCustomMode && !customData?.isValid)}
             >
-              <MapPin className="mr-2 h-5 w-5 text-[#E53935]" />
-              Visit Nearby Store
+              {isAddingToCart ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShoppingCart className="mr-2 h-4 w-4" />}
+              Add to Cart
             </Button>
-          </DialogTrigger>
-          <DialogContent className="p-0 border-none bg-transparent overflow-hidden sm:rounded-[30px] w-[95vw] max-w-[95vw] sm:max-w-5xl lg:max-w-6xl max-h-[90vh]">
-            <DialogTitle className="sr-only">Our Branches</DialogTitle>
-            <div className="overflow-y-auto max-h-[90vh] no-scrollbar rounded-[20px] sm:rounded-[30px] bg-[#005814]">
-              {branchGroups ? <BranchesSection branchGroups={branchGroups} /> : null}
-            </div>
-          </DialogContent>
-        </Dialog>
+
+            <Button
+              size="lg"
+              className="flex-1 h-12 bg-[#E53935] hover:bg-red-700 text-white shadow-md"
+              onClick={handleBuyNow}
+              disabled={isAddingToCart || isBuyingNow || (isCustomMode && !customData?.isValid)}
+            >
+              {isBuyingNow ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+              Buy Now
+            </Button>
+          </div>
+        </div>
+
+        {/* Visit Store Action */}
+        <div className="mt-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="w-full h-12 text-slate-700 border-slate-300 hover:bg-slate-50 font-semibold tracking-wide"
+              >
+                <MapPin className="mr-2 h-5 w-5 text-[#E53935]" />
+                Visit Nearby Store
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="p-0 border-none bg-transparent overflow-hidden sm:rounded-[30px] w-[95vw] max-w-[95vw] sm:max-w-5xl lg:max-w-6xl max-h-[90vh]">
+              <DialogTitle className="sr-only">Our Branches</DialogTitle>
+              <div className="overflow-y-auto max-h-[90vh] no-scrollbar rounded-[20px] sm:rounded-[30px] bg-[#005814]">
+                {branchGroups ? <BranchesSection branchGroups={branchGroups} /> : null}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
-    </div>
+      <BuyAsGuestAuth isOpen={isOpen} setIsOpen={setIsOpen} onLogin={handleLogin} onContinueAsGuest={handleContinueAsGuest} />
+    </>
+
   );
 }

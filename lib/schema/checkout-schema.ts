@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const addressSchema = z.object({
   fullName: z.string().min(2, "Full name is required"),
+  email: z.email("Valid email address is required").optional().or(z.literal("")),
   phone: z.string()
     .transform((val) => {
       const digits = val.replace(/\D/g, "");
@@ -39,7 +40,8 @@ export const cartItemSchema = z.object({
 });
 
 export const checkoutSchema = z.object({
-  addressId: z.string().min(1, "Shipping address is required"),
+  addressId: z.string().optional(),
+  address: addressSchema.optional(),
   notes: z.string().optional(),
 });
 

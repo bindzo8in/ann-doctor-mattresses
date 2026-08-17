@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "@/hooks/use-cart";
-import { AddressSelector } from "@/components/checkout/address-selector";
+import { AddressSelector, CheckoutAddress } from "@/components/checkout/address-selector";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft, ShieldCheck, CheckCircle2, AlertCircle, ShoppingCart } from "lucide-react";
@@ -23,19 +23,17 @@ export default function CheckoutPage() {
   const router = useRouter();
 
   // Get active checkout source
-  const source = useCheckoutStore(state => state.source);
-  const buyNowItem = useCheckoutStore(state => state.buyNowItem);
+  const source = useCheckoutStore((state) => state.source);
+  const buyNowItem = useCheckoutStore((state) => state.buyNowItem);
 
-  const checkoutItems = source === CheckoutSource.BUY_NOW && buyNowItem
-    ? [buyNowItem]
-    : cartItems;
+  const checkoutItems = source === CheckoutSource.BUY_NOW && buyNowItem ? [buyNowItem] : cartItems;
 
   // Multi-step state: 1 = Address, 2 = Review, 3 = Payment
   const [step, setStep] = useState(1);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-  const [selectedAddress, setSelectedAddress] = useState<any>(null);
+  const [selectedAddress, setSelectedAddress] = useState<CheckoutAddress | null>(null);
   const [notes, setNotes] = useState("");
-  
+
   // Totals calculation state
   const [totals, setTotals] = useState({
     subTotal: 0,
@@ -59,7 +57,7 @@ export default function CheckoutPage() {
 
   // Load totals when selected address or step changes, or on mount
   useEffect(() => {
-    const hasAnyItems = source === CheckoutSource.BUY_NOW ? !!buyNowItem : (cartItems && cartItems.length > 0);
+    const hasAnyItems = source === CheckoutSource.BUY_NOW ? !!buyNowItem : cartItems && cartItems.length > 0;
     if (!hasAnyItems) return;
 
     const fetchTotals = async () => {
@@ -68,11 +66,16 @@ export default function CheckoutPage() {
         const res = await getCheckoutTotals({
           source: source === CheckoutSource.BUY_NOW ? "BUY_NOW" : "CART",
           pincode: selectedAddress?.postalCode,
-          buyNowItem: source === CheckoutSource.BUY_NOW && buyNowItem ? {
-            productId: buyNowItem.productId,
-            variantId: buyNowItem.variantId,
-            quantity: buyNowItem.quantity
-          } : undefined
+          buyNowItem:
+            source === CheckoutSource.BUY_NOW && buyNowItem
+              ? {
+                  productId: buyNowItem.productId,
+                  variantId: buyNowItem.variantId,
+                  quantity: buyNowItem.quantity,
+                  isCustom: buyNowItem.isCustom,
+                  customData: buyNowItem.customData,
+                }
+              : undefined,
         });
         setTotals(res);
       } catch (err) {
@@ -83,7 +86,7 @@ export default function CheckoutPage() {
       }
     };
     fetchTotals();
-  }, [step, selectedAddress, source, buyNowItem, cartItems]);
+  }, [step, selectedAddress?.postalCode, source, buyNowItem, cartItems]);
 
   if (isCartLoading) {
     return (
@@ -93,7 +96,7 @@ export default function CheckoutPage() {
     );
   }
 
-  const hasItems = source === CheckoutSource.BUY_NOW ? !!buyNowItem : (cartItems && cartItems.length > 0);
+  const hasItems = source === CheckoutSource.BUY_NOW ? !!buyNowItem : cartItems && cartItems.length > 0;
 
   if (!hasItems) {
     return (
@@ -104,15 +107,18 @@ export default function CheckoutPage() {
           </div>
           <h2 className="text-2xl font-bold text-slate-900">Your cart is empty</h2>
           <p className="text-slate-500">Add some comfortable mattresses or premium sofas to get started.</p>
-          <Button className="w-full" onClick={() => router.push(routes.products)}>Continue Shopping</Button>
+          <Button className="w-full" onClick={() => router.push(routes.products)}>
+            Continue Shopping
+          </Button>
         </div>
       </div>
     );
   }
 
   const handleCheckoutInit = async () => {
-    if (!selectedAddressId) {
-      toast.error("Please select a shipping address");
+    if (!selectedAddress?.fullName || !selectedAddress?.phone || !selectedAddress?.addressLine1 || !selectedAddress?.postalCode) {
+      toast.error("Please provide a valid delivery address");
+      setStep(1);
       return;
     }
 
@@ -122,31 +128,41 @@ export default function CheckoutPage() {
       // Step 3 transition
       setStep(3);
 
+      const isGuestAddress = !selectedAddressId || selectedAddressId === "guest-address";
+
       const res = await fetch("/api/checkout/init", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          addressId: selectedAddressId, 
+        body: JSON.stringify({
+          addressId: isGuestAddress ? undefined : selectedAddressId,
+          address: selectedAddress,
           notes,
           source: source === CheckoutSource.BUY_NOW ? "BUY_NOW" : "CART",
-          buyNowItem: source === CheckoutSource.BUY_NOW && buyNowItem ? {
-            productId: buyNowItem.productId,
-            variantId: buyNowItem.variantId,
-            quantity: buyNowItem.quantity
-          } : undefined
+          buyNowItem:
+            source === CheckoutSource.BUY_NOW && buyNowItem
+              ? {
+                  productId: buyNowItem.productId,
+                  variantId: buyNowItem.variantId,
+                  quantity: buyNowItem.quantity,
+                  isCustom: buyNowItem.isCustom,
+                  customData: buyNowItem.customData,
+                  color: buyNowItem.color,
+                }
+              : undefined,
         }),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to initialize checkout");
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to initialize checkout");
       }
 
       const data = await res.json();
       setCreatedOrder(data);
       triggerRazorpayPayment(data);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Checkout initialization failed. Please try again.");
+      toast.error(error.message || "Checkout initialization failed. Please try again.");
       setStep(2);
       setIsProcessing(false);
     }
@@ -193,17 +209,18 @@ export default function CheckoutPage() {
       prefill: {
         name: selectedAddress?.fullName || "",
         contact: selectedAddress?.phone || "",
+        email: selectedAddress?.email || "",
       },
       theme: {
         color: "#0f172a",
       },
       modal: {
-        ondismiss: function() {
+        ondismiss: function () {
           toast.warning("Payment modal closed. Order is saved, you can try again.");
           setPaymentFailed(true);
           setIsProcessing(false);
-        }
-      }
+        },
+      },
     };
 
     const rzp = new (window as any).Razorpay(options);
@@ -234,26 +251,52 @@ export default function CheckoutPage() {
     }
   };
 
+  const isAddressValid = Boolean(
+    selectedAddress?.fullName &&
+    selectedAddress?.phone &&
+    selectedAddress?.addressLine1 &&
+    selectedAddress?.postalCode &&
+    selectedAddress?.city &&
+    selectedAddress?.state
+  );
+
   return (
     <>
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       <div className="min-h-screen bg-slate-50/50 py-10 px-4 md:px-8">
         <div className="container mx-auto max-w-6xl space-y-8">
-          
           {/* Breadcrumb Steps Header */}
           <div className="flex justify-between items-center max-w-lg mx-auto mb-8 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
             <div className="flex items-center gap-2">
-              <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${step >= 1 ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-400"}`}>1</span>
+              <span
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${
+                  step >= 1 ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-400"
+                }`}
+              >
+                1
+              </span>
               <span className={`text-sm font-medium ${step === 1 ? "text-slate-900" : "text-slate-400"}`}>Shipping</span>
             </div>
             <div className="w-12 h-0.5 bg-slate-100" />
             <div className="flex items-center gap-2">
-              <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${step >= 2 ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-400"}`}>2</span>
+              <span
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${
+                  step >= 2 ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-400"
+                }`}
+              >
+                2
+              </span>
               <span className={`text-sm font-medium ${step === 2 ? "text-slate-900" : "text-slate-400"}`}>Confirm</span>
             </div>
             <div className="w-12 h-0.5 bg-slate-100" />
             <div className="flex items-center gap-2">
-              <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${step >= 3 ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-400"}`}>3</span>
+              <span
+                className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${
+                  step >= 3 ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-400"
+                }`}
+              >
+                3
+              </span>
               <span className={`text-sm font-medium ${step === 3 ? "text-slate-900" : "text-slate-400"}`}>Payment</span>
             </div>
           </div>
@@ -262,17 +305,17 @@ export default function CheckoutPage() {
             {/* Step 1: Address Selection */}
             {step === 1 && (
               <div className="lg:col-span-2 space-y-6">
-                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-                  <h2 className="text-2xl font-bold text-slate-900">Select Delivery Address</h2>
-                  <p className="text-sm text-slate-500">Choose a saved address or create a new one to proceed.</p>
-                  <AddressSelector 
-                    selectedAddressId={selectedAddressId} 
-                    onSelect={setSelectedAddressId} 
-                    onSelectAddress={setSelectedAddress} 
+                <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+                  <h2 className="text-2xl font-bold text-slate-900">Delivery Address</h2>
+                  <p className="text-sm text-slate-500">Provide your shipping address details to proceed.</p>
+                  <AddressSelector
+                    selectedAddressId={selectedAddressId}
+                    onSelect={setSelectedAddressId}
+                    onSelectAddress={setSelectedAddress}
                   />
                 </div>
-                
-                {selectedAddressId && (
+
+                {isAddressValid && (
                   <div className="flex justify-end">
                     <Button size="lg" className="px-8" onClick={() => setStep(2)}>
                       Continue to Review
@@ -285,7 +328,7 @@ export default function CheckoutPage() {
             {/* Step 2: Order Notes & Review */}
             {step === 2 && (
               <div className="lg:col-span-2 space-y-6">
-                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
+                <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-sm space-y-6">
                   <div className="flex items-center gap-4 border-b pb-4">
                     <Button variant="ghost" size="icon" onClick={() => setStep(1)}>
                       <ArrowLeft className="w-5 h-5" />
@@ -298,22 +341,33 @@ export default function CheckoutPage() {
 
                   {/* Address Summary Card */}
                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
-                    <div className="font-semibold text-slate-900">Shipping to:</div>
-                    <div className="text-slate-700 text-sm">
-                      <p className="font-medium">{selectedAddress?.fullName}</p>
+                    <div className="flex justify-between items-center">
+                      <span className="font-semibold text-slate-900">Shipping to:</span>
+                      <Button variant="link" size="sm" className="text-xs text-primary p-0 h-auto" onClick={() => setStep(1)}>
+                        Change Address
+                      </Button>
+                    </div>
+                    <div className="text-slate-700 text-sm leading-relaxed">
+                      <p className="font-medium text-slate-900">{selectedAddress?.fullName}</p>
                       <p>{selectedAddress?.addressLine1}</p>
                       {selectedAddress?.addressLine2 && <p>{selectedAddress?.addressLine2}</p>}
-                      <p>{selectedAddress?.city}, {selectedAddress?.state} - <span className="font-semibold">{selectedAddress?.postalCode}</span></p>
-                      <p className="mt-1">Phone: {selectedAddress?.phone}</p>
+                      <p>
+                        {selectedAddress?.city}, {selectedAddress?.state} -{" "}
+                        <span className="font-semibold">{selectedAddress?.postalCode}</span>
+                      </p>
+                      <p className="mt-1 font-medium">Mobile: {selectedAddress?.phone}</p>
+                      {selectedAddress?.email && <p className="text-slate-500">Email: {selectedAddress?.email}</p>}
                     </div>
                   </div>
 
                   {/* Order Notes Field */}
                   <div className="space-y-2">
-                    <label className="text-sm font-semibold text-slate-900">Delivery Instructions / Order Notes (Optional)</label>
-                    <Textarea 
-                      placeholder="E.g. Please leave the mattress at the front desk, deliver after 2 PM, or landmark near the park." 
-                      value={notes} 
+                    <label className="text-sm font-semibold text-slate-900">
+                      Delivery Instructions / Order Notes (Optional)
+                    </label>
+                    <Textarea
+                      placeholder="E.g. Please leave the mattress at the front desk, deliver after 2 PM, or landmark near the park."
+                      value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       className="min-h-24 resize-none"
                     />
@@ -327,7 +381,9 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <Button variant="outline" onClick={() => setStep(1)}>Go Back</Button>
+                  <Button variant="outline" onClick={() => setStep(1)}>
+                    Go Back
+                  </Button>
                   <Button size="lg" className="px-8" onClick={handleCheckoutInit} disabled={isCalculating}>
                     Confirm & Proceed to Payment
                   </Button>
@@ -343,7 +399,9 @@ export default function CheckoutPage() {
                     <div className="space-y-4">
                       <Loader2 className="animate-spin w-12 h-12 text-slate-900 mx-auto" />
                       <h3 className="text-xl font-bold text-slate-900">Initializing Payment Gateway...</h3>
-                      <p className="text-slate-500 max-w-sm mx-auto">Creating secure payment order. Please complete the Razorpay checkout overlay once it loads.</p>
+                      <p className="text-slate-500 max-w-sm mx-auto">
+                        Creating secure payment order. Please complete the Razorpay checkout overlay once it loads.
+                      </p>
                     </div>
                   ) : paymentFailed ? (
                     <div className="space-y-6">
@@ -353,7 +411,8 @@ export default function CheckoutPage() {
                       <div className="space-y-2">
                         <h3 className="text-2xl font-bold text-slate-900">Payment Pending / Failed</h3>
                         <p className="text-slate-500 max-w-md mx-auto">
-                          Your order <strong>{createdOrder?.orderNumber}</strong> has been created, but payment was not completed. You can retry the payment or cancel this order to go back.
+                          Your order <strong>{createdOrder?.orderNumber}</strong> has been created, but payment was not completed.
+                          You can retry the payment or cancel this order to go back.
                         </p>
                       </div>
 
@@ -361,7 +420,12 @@ export default function CheckoutPage() {
                         <Button size="lg" className="flex-1" onClick={() => triggerRazorpayPayment(createdOrder)}>
                           Retry Payment (₹{formatPrice(createdOrder?.amount ?? 0)})
                         </Button>
-                        <Button size="lg" variant="outline" className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200" onClick={handleCancelOrder}>
+                        <Button
+                          size="lg"
+                          variant="outline"
+                          className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                          onClick={handleCancelOrder}
+                        >
                           Cancel Order
                         </Button>
                       </div>
@@ -393,23 +457,34 @@ export default function CheckoutPage() {
                       const isBogo = calc && calc.quantityFree > 0;
 
                       return (
-                        <div key={(item as any).id || item.productId} className="flex gap-4 border-b pb-3 last:border-b-0 last:pb-0">
+                        <div
+                          key={(item as any).id || item.productId}
+                          className="flex gap-4 border-b pb-3 last:border-b-0 last:pb-0"
+                        >
                           <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 border bg-slate-50">
                             {item.product.thumbnailUrl && (
-                              <Image src={item.product.thumbnailUrl} alt={item.product.name} fill className="object-cover" sizes="80px" />
+                              <Image
+                                src={item.product.thumbnailUrl}
+                                alt={item.product.name}
+                                fill
+                                className="object-cover"
+                                sizes="80px"
+                              />
                             )}
                           </div>
                           <div className="flex-1 text-sm space-y-1">
                             <div className="font-semibold text-slate-800 line-clamp-1">{item.product.name}</div>
-                            
+
                             {(item as any).isCustom && (item as any).customData && (
                               <div className="text-xs text-slate-500">
-                                Custom: {((item as any).customData as any).width}" × {((item as any).customData as any).length}" × {((item as any).customData as any).thickness}"
+                                Custom: {((item as any).customData as any).width}" × {((item as any).customData as any).length}" ×{" "}
+                                {((item as any).customData as any).thickness}"
                               </div>
                             )}
                             {!(item as any).isCustom && (item.variant as any)?.mattressVariant && (
                               <div className="text-xs text-slate-500">
-                                {(item.variant as any).mattressVariant.sizeName} ({(item.variant as any).mattressVariant.width}"×{(item.variant as any).mattressVariant.length}") • {(item.variant as any).mattressVariant.thickness}"
+                                {(item.variant as any).mattressVariant.sizeName} ({(item.variant as any).mattressVariant.width}"×
+                                {(item.variant as any).mattressVariant.length}") • {(item.variant as any).mattressVariant.thickness}"
                               </div>
                             )}
                             {!(item as any).isCustom && (item.variant as any)?.sofaVariant && (
@@ -417,11 +492,13 @@ export default function CheckoutPage() {
                                 {(item.variant as any).sofaVariant.seatingCapacity} Seater
                               </div>
                             )}
-                            
+
                             {isBogo ? (
                               <div className="space-y-1">
                                 <div className="flex justify-between text-xs text-slate-600">
-                                  <span>{calc.quantityPurchased} Purchased @ ₹{formatPrice(Number(calc.unitPrice))}</span>
+                                  <span>
+                                    {calc.quantityPurchased} Purchased @ ₹{formatPrice(Number(calc.unitPrice))}
+                                  </span>
                                   <span className="font-semibold text-slate-800">₹{formatPrice(Number(calc.totalPaid))}</span>
                                 </div>
                                 <div className="flex justify-between text-xs text-emerald-600 font-medium bg-emerald-50/50 px-1.5 py-0.5 rounded">
@@ -436,7 +513,14 @@ export default function CheckoutPage() {
                               <div className="flex justify-between text-slate-500">
                                 <span>Qty: {item.quantity}</span>
                                 <span className="font-semibold text-slate-700">
-                                  ₹{formatPrice(Number((item as any).isCustom && (item as any).customData ? (item as any).customData.calculatedPrice : (item.variant?.salePrice || 0)))}
+                                  ₹
+                                  {formatPrice(
+                                    Number(
+                                      (item as any).isCustom && (item as any).customData
+                                        ? (item as any).customData.calculatedPrice
+                                        : item.variant?.salePrice || 0
+                                    )
+                                  )}
                                 </span>
                               </div>
                             )}
@@ -458,7 +542,24 @@ export default function CheckoutPage() {
                       <div className="border-t pt-4 space-y-2 text-sm text-slate-600">
                         <div className="flex justify-between">
                           <span>Subtotal</span>
-                          <span className="font-medium text-slate-800">₹{formatPrice(totals.subTotal > 0 ? totals.subTotal : checkoutItems.reduce((t, i) => t + Number((i as any).isCustom && (i as any).customData ? (i as any).customData.calculatedPrice : (i.variant?.salePrice || 0)) * i.quantity, 0))}</span>
+                          <span className="font-medium text-slate-800">
+                            ₹
+                            {formatPrice(
+                              totals.subTotal > 0
+                                ? totals.subTotal
+                                : checkoutItems.reduce(
+                                    (t, i) =>
+                                      t +
+                                      Number(
+                                        (i as any).isCustom && (i as any).customData
+                                          ? (i as any).customData.calculatedPrice
+                                          : i.variant?.salePrice || 0
+                                      ) *
+                                        i.quantity,
+                                    0
+                                  )
+                            )}
+                          </span>
                         </div>
                         {totals.discountTotal > 0 && (
                           <div className="flex justify-between text-emerald-600 font-medium">
@@ -469,26 +570,31 @@ export default function CheckoutPage() {
                         <div className="flex justify-between">
                           <span>Shipping</span>
                           <span className="font-medium text-slate-800">
-                            {step >= 2 
-                              ? totals.shippingTotal === 0 ? "Free" : `₹${totals.shippingTotal}` 
-                              : "Calculated next"}
+                            {selectedAddress?.postalCode
+                              ? totals.shippingTotal === 0
+                                ? "Free"
+                                : `₹${totals.shippingTotal}`
+                              : "Enter PIN code"}
                           </span>
                         </div>
                       </div>
 
                       <div className="border-t pt-4 flex justify-between font-bold text-lg text-slate-900">
                         <span>Total</span>
-                        <span>₹{formatPrice(step >= 2 ? totals.totalAmount : Math.max(0, totals.subTotal - totals.discountTotal))}</span>
+                        <span>
+                          ₹
+                          {formatPrice(
+                            selectedAddress?.postalCode
+                              ? totals.totalAmount
+                              : Math.max(0, totals.subTotal - totals.discountTotal)
+                          )}
+                        </span>
                       </div>
                     </>
                   )}
 
-                  {step === 1 && selectedAddressId && (
-                    <Button 
-                      className="w-full" 
-                      size="lg" 
-                      onClick={() => setStep(2)}
-                    >
+                  {step === 1 && isAddressValid && (
+                    <Button className="w-full" size="lg" onClick={() => setStep(2)}>
                       Continue
                     </Button>
                   )}
@@ -498,16 +604,17 @@ export default function CheckoutPage() {
                       <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                       <span>
                         <strong className="block mb-0.5">High Value Transaction</strong>
-                        Your total exceeds ₹1,00,000. Please note that standard UPI transfers typically have a limit of ₹1 Lakh per day. We recommend using Net Banking or Credit/Debit Cards for this payment.
+                        Your total exceeds ₹1,00,000. Please note that standard UPI transfers typically have a limit of ₹1
+                        Lakh per day. We recommend using Net Banking or Credit/Debit Cards for this payment.
                       </span>
                     </div>
                   )}
 
                   {step === 2 && (
-                    <Button 
-                      className="w-full" 
-                      size="lg" 
-                      onClick={handleCheckoutInit} 
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      onClick={handleCheckoutInit}
                       disabled={isCalculating || isProcessing}
                     >
                       {isProcessing ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}

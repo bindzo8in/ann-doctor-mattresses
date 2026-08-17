@@ -11,5 +11,6 @@ export default defineConfig({
   },
   datasource: {
     url: process.env["PRISMA_DATABASE_URL"],
+    shadowDatabaseUrl: process.env["SHADOW_DATABASE_URL"],
   },
 });

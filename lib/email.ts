@@ -122,16 +122,19 @@ export async function sendOrderConfirmationEmail(orderId: string): Promise<void>
     },
   });
 
-  if (!order || !order.customer?.email) {
+  const recipientEmail = order?.customer?.email || (order?.shippingAddress as any)?.email;
+  const customerName = order?.customer?.name || (order?.shippingAddress as any)?.fullName || "Customer";
+
+  if (!order || !recipientEmail) {
     console.warn(`[Email] sendOrderConfirmationEmail: no order or email for id=${orderId}`);
     return;
   }
 
   await sendEmail({
-    to: order.customer.email,
+    to: recipientEmail,
     subject: `Order Confirmation - ${order.orderNumber}`,
     react: OrderConfirmationEmail({
-      customerName: order.customer.name || "Customer",
+      customerName,
       orderNumber: order.orderNumber,
       items: order.items.map((item) => ({
         productName: item.productName,

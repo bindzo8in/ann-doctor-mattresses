@@ -1,17 +1,9 @@
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import { routes } from "@/lib/routes";
+import React from "react";
 
-export default async function CheckoutLayout({
+export default function CheckoutLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-
-  if (!session?.user) {
-    redirect(`${routes.login}?callbackUrl=/checkout`);
-  }
-
   return <>{children}</>;
 }

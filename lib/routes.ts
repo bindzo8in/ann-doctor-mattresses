@@ -10,6 +10,7 @@ export const routes = {
     products: "/products",
     checkout: "/checkout",
     checkoutSuccess: "/checkout/success",
+    trackOrder: "/track-order",
     help: "/help",
     shippingPolicy: "/shipping-policy",
     returnPolicy: "/return-policy",
@@ -68,6 +69,8 @@ export const publicRoutes = [
     routes.home,
     routes.products,
     routes.checkout, // Checkout entry page is public, login check is performed inline during action
+    routes.checkoutSuccess,
+    routes.trackOrder,
     routes.help,
     routes.shippingPolicy,
     routes.returnPolicy,

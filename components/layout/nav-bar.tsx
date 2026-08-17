@@ -16,6 +16,7 @@ const contactInfo = [
 const navLinks = [
   { label: "Home", href: routes.home },
   { label: "Products", href: routes.products },
+  { label: "Track Order", href: routes.trackOrder },
   { label: "Wishlist", href: routes.wishlist },
   { label: "Help", href: routes.help },
 ];

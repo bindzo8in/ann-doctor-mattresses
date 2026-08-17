@@ -92,32 +92,15 @@ export function ProductPurchaseCard({ product }: Props) {
       }
       toast.success("Added to cart");
     } catch (error: any) {
-      if (error.message === "UNAUTHORIZED") {
-        toast.error("Please login to add items to cart");
-        router.push(`${routes.login}?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
-      } else {
-        toast.error(error.message || "Failed to add to cart. Please ensure you are logged in.");
-      }
+      toast.error(error.message || "Failed to add to cart.");
     }
   };
 
   const setCheckoutSession = useCheckoutStore(state => state.setCheckoutSession);
 
   const handleBuyNow = async () => {
-    if (status === "unauthenticated") {
-      toast.error("Please login to proceed to checkout");
-      router.push(`${routes.login}?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
-      return;
-    }
-
     setIsBuyingNow(true);
     try {
-      // Dynamic auth check using cart API status
-      const authCheck = await fetch("/api/cart", { cache: "no-store" });
-      if (authCheck.status === 401) {
-        throw new Error("UNAUTHORIZED");
-      }
-
       if (isCustomMode && !customData?.isValid) {
         toast.error("Please enter valid dimensions for the custom size.");
         setIsBuyingNow(false);
@@ -143,12 +126,7 @@ export function ProductPurchaseCard({ product }: Props) {
 
       router.push(routes.checkout);
     } catch (error: any) {
-      if (error.message === "UNAUTHORIZED") {
-        toast.error("Please login to proceed to checkout");
-        router.push(`${routes.login}?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
-      } else {
-        toast.error("Failed to proceed to checkout. Please try again.");
-      }
+      toast.error(error.message || "Failed to proceed to checkout. Please try again.");
     } finally {
       setIsBuyingNow(false);
     }

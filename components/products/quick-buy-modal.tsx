@@ -63,12 +63,6 @@ export function QuickBuyModal({ product, trigger }: Props) {
   };
 
   const handleBuyNow = () => {
-    if (status === "unauthenticated") {
-      toast.error("Please login to proceed to checkout");
-      router.push(`${routes.login}?callbackUrl=${encodeURIComponent(window.location.pathname)}`);
-      return;
-    }
-
     if (isCustomMode && (!customData || !customData.isValid)) {
       toast.error("Please enter valid custom dimensions.");
       return;

@@ -341,3 +341,90 @@ export async function initiateRazorpayRefund(orderId: string) {
     throw new Error(error.description || error.message || "Failed to initiate refund");
   }
 }
+
+export async function trackPublicOrder(params: { orderNumber: string; phoneOrEmail: string }) {
+  const { orderNumber, phoneOrEmail } = params;
+
+  if (!orderNumber || !phoneOrEmail) {
+    throw new Error("Order number and contact information are required");
+  }
+
+  const cleanOrderNumber = orderNumber.trim();
+  const cleanContact = phoneOrEmail.trim().toLowerCase();
+  const cleanPhoneDigits = cleanContact.replace(/\D/g, "");
+
+  const order = await prisma.order.findFirst({
+    where: {
+      orderNumber: {
+        equals: cleanOrderNumber,
+        mode: "insensitive",
+      },
+    },
+    include: {
+      branch: { select: { name: true, city: true, phone: true } },
+      items: {
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              thumbnailUrl: true,
+            },
+          },
+        },
+      },
+      payments: {
+        include: { refunds: true },
+      },
+    },
+  });
+
+  if (!order) {
+    throw new Error("No order found with the provided Order Number.");
+  }
+
+  const shippingAddr = order.shippingAddress as Record<string, any> | null;
+  const addressPhone = String(shippingAddr?.phone || "").replace(/\D/g, "");
+  const addressEmail = String(shippingAddr?.email || "").toLowerCase().trim();
+
+  const isPhoneMatch =
+    cleanPhoneDigits.length >= 10 &&
+    (addressPhone.endsWith(cleanPhoneDigits.slice(-10)) || cleanPhoneDigits.endsWith(addressPhone.slice(-10)));
+  const isEmailMatch = cleanContact.includes("@") && addressEmail === cleanContact;
+
+  if (!isPhoneMatch && !isEmailMatch) {
+    throw new Error("The contact information does not match the order records.");
+  }
+
+  return {
+    id: order.id,
+    orderNumber: order.orderNumber,
+    status: order.status,
+    createdAt: order.createdAt,
+    updatedAt: order.updatedAt,
+    courierName: order.courierName,
+    trackingNumber: order.trackingNumber,
+    trackingUrl: order.trackingUrl,
+    subTotal: roundPrice(order.subTotal.toNumber()),
+    discountTotal: roundPrice(order.discountTotal.toNumber()),
+    shippingTotal: roundPrice(order.shippingTotal.toNumber()),
+    totalAmount: roundPrice(order.totalAmount.toNumber()),
+    shippingAddress: order.shippingAddress,
+    branch: order.branch,
+    items: order.items.map((item) => ({
+      ...item,
+      price: roundPrice(item.price.toNumber()),
+      quantityPurchased: item.quantityPurchased,
+      quantityFree: item.quantityFree,
+      unitPrice: roundPrice(item.unitPrice.toNumber()),
+      totalPaid: roundPrice(item.totalPaid.toNumber()),
+      offerType: item.offerType,
+      saved: roundPrice(item.unitPrice.mul(item.quantityFree).toNumber()),
+    })),
+    payments: order.payments.map((p) => ({
+      status: p.status,
+      amount: roundPrice(p.amount.toNumber()),
+    })),
+  };
+}

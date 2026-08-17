@@ -84,6 +84,7 @@ const useCartStore = create<CartStore>((set, get) => ({
       set({ isLoading: !get().hasLoaded });
       try {
         const res = await fetch("/api/cart", { cache: "no-store" });
+        console.log(res)
         if (!res.ok) {
           if (res.status === 401) {
             set({ cartItems: [], subTotal: 0, discountTotal: 0, shippingTotal: 0, totalAmount: 0, pincode: null, isLoading: false, hasLoaded: true });
@@ -121,7 +122,6 @@ const useCartStore = create<CartStore>((set, get) => ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId, variantId, quantity, isCustom, customData, color }),
       });
-      if (res.status === 401) throw new Error("UNAUTHORIZED");
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.message || "Failed to add to cart");

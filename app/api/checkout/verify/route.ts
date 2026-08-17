@@ -78,17 +78,28 @@ export async function POST(req: NextRequest) {
       console.error("Failed to trigger admin notification", err);
     }
 
-    // Empty user's cart only if the order source is CART
+    // Empty user's or guest's cart only if the order source is CART
     if (order.checkoutSource === CheckoutSource.CART) {
       const orderItems = await prisma.orderItem.findMany({ where: { orderId: order.id } });
+      const guestSessionId = req.cookies.get("guest_session_id")?.value;
       for (const item of orderItems) {
-        await prisma.cartItem.deleteMany({
-          where: {
-            userId: order.customerId,
-            productId: item.productId,
-            variantId: item.variantId,
-          }
-        });
+        if (order.customerId) {
+          await prisma.cartItem.deleteMany({
+            where: {
+              userId: order.customerId,
+              productId: item.productId,
+              variantId: item.variantId,
+            },
+          });
+        } else if (guestSessionId) {
+          await prisma.cartItem.deleteMany({
+            where: {
+              sessionId: guestSessionId,
+              productId: item.productId,
+              variantId: item.variantId,
+            },
+          });
+        }
       }
     }
 

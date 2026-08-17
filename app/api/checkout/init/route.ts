@@ -5,22 +5,20 @@ import { calculateCartTotals } from "@/lib/checkout";
 import { OrderStatus, CheckoutSource } from "@/app/generated/prisma/client";
 import { env } from "@/env";
 import { roundPrice, toRazorpayAmount } from "@/lib/price";
+import { addressSchema } from "@/lib/schema/checkout-schema";
 import crypto from "crypto";
 
 const idempotencyKeys = new Map<string, number>();
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
-  if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
-
   try {
+    const session = await auth();
     const body = await req.json();
-    const { addressId, notes, source, buyNowItem, idempotencyKey } = body;
+    const { addressId, address: rawAddress, notes, source, buyNowItem, idempotencyKey } = body;
 
+    const userIdentifier = session?.user?.id || "guest";
     if (idempotencyKey) {
-      const key = `checkout:${session.user.id}:${idempotencyKey}`;
+      const key = `checkout:${userIdentifier}:${idempotencyKey}`;
       const existing = idempotencyKeys.get(key);
       if (existing) {
         return NextResponse.json({ message: "Duplicate checkout request detected" }, { status: 409 });
@@ -28,17 +26,32 @@ export async function POST(req: NextRequest) {
       idempotencyKeys.set(key, Date.now());
     }
 
-    if (!addressId) {
-      return NextResponse.json({ message: "Shipping address is required" }, { status: 400 });
+    let shippingAddress: any = null;
+
+    if (addressId && session?.user?.id) {
+      // Look up saved address for logged-in user
+      const dbAddress = await prisma.address.findUnique({
+        where: { id: addressId },
+      });
+      if (dbAddress && dbAddress.userId === session.user.id) {
+        shippingAddress = dbAddress;
+      }
     }
 
-    // Fetch address
-    const address = await prisma.address.findUnique({
-      where: { id: addressId },
-    });
+    if (!shippingAddress && rawAddress) {
+      // Validate guest or directly provided address
+      const parsedAddress = addressSchema.safeParse(rawAddress);
+      if (!parsedAddress.success) {
+        return NextResponse.json(
+          { message: parsedAddress.error.issues[0]?.message || "Invalid shipping address" },
+          { status: 400 }
+        );
+      }
+      shippingAddress = parsedAddress.data;
+    }
 
-    if (!address || address.userId !== session.user.id) {
-      return NextResponse.json({ message: "Invalid address" }, { status: 400 });
+    if (!shippingAddress) {
+      return NextResponse.json({ message: "Valid shipping address is required" }, { status: 400 });
     }
 
     let calculation: Awaited<ReturnType<typeof calculateCartTotals>>;
@@ -50,6 +63,7 @@ export async function POST(req: NextRequest) {
       variantData: any;
       price: number;
       quantityPurchased: number;
+      quantityFree: number;
       unitPrice: number;
       totalPaid: number;
       offerType: string | null;
@@ -82,47 +96,65 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      const itemsForTotals = [{
-        productId: buyNowItem.productId,
-        variantId: buyNowItem.variantId,
-        quantity: buyNowItem.quantity,
-        isCustom: buyNowItem.isCustom,
-        customData: buyNowItem.customData,
-      }];
+      const itemsForTotals = [
+        {
+          productId: buyNowItem.productId,
+          variantId: buyNowItem.variantId,
+          quantity: buyNowItem.quantity,
+          isCustom: buyNowItem.isCustom,
+          customData: buyNowItem.customData,
+        },
+      ];
 
-      calculation = await calculateCartTotals(itemsForTotals, address.postalCode);
+      calculation = await calculateCartTotals(itemsForTotals, shippingAddress.postalCode);
 
-      orderItemsData = calculation.items.map(item => ({
+      orderItemsData = calculation.items.map((item) => ({
         productId: item.productId,
         variantId: item.variantId,
         quantity: item.totalDelivered,
         productName: product.name,
-        variantData: buyNowItem.isCustom 
-          ? { isCustom: true, customData: buyNowItem.customData } 
-          : (variant || {}),
+        variantData: buyNowItem.isCustom
+          ? { isCustom: true, customData: buyNowItem.customData }
+          : variant || {},
         price: item.unitPrice,
         quantityPurchased: item.quantityPurchased,
+        quantityFree: item.quantityFree,
         unitPrice: item.unitPrice,
         totalPaid: item.totalPaid,
         offerType: item.offerType,
         color: buyNowItem.color || null,
       }));
     } else {
-      // Fetch cart
-      const cartItems = await prisma.cartItem.findMany({
-        where: { userId: session.user.id },
-        include: {
-          product: true,
-          variant: true,
+      // Fetch cart items for user or guest
+      let cartItems: any[] = [];
+
+      if (session?.user?.id) {
+        cartItems = await prisma.cartItem.findMany({
+          where: { userId: session.user.id },
+          include: {
+            product: true,
+            variant: true,
+          },
+        });
+      } else {
+        const guestSessionId = req.cookies.get("guest_session_id")?.value;
+        if (guestSessionId) {
+          cartItems = await prisma.cartItem.findMany({
+            where: { sessionId: guestSessionId, userId: null },
+            include: {
+              product: true,
+              variant: true,
+            },
+          });
         }
-      });
+      }
 
       if (cartItems.length === 0) {
         return NextResponse.json({ message: "Cart is empty" }, { status: 400 });
       }
 
       // Calculate totals
-      calculation = await calculateCartTotals(cartItems, address.postalCode);
+      calculation = await calculateCartTotals(cartItems, shippingAddress.postalCode);
 
       orderItemsData = calculation.items.map((item, index) => {
         const originalItem = cartItems[index];
@@ -130,10 +162,10 @@ export async function POST(req: NextRequest) {
           productId: item.productId,
           variantId: item.variantId,
           quantity: item.totalDelivered,
-          productName: originalItem?.product.name || "Unknown Product",
+          productName: originalItem?.product?.name || "Unknown Product",
           variantData: originalItem?.isCustom
             ? { isCustom: true, customData: originalItem.customData }
-            : (originalItem?.variant || {}),
+            : originalItem?.variant || {},
           price: item.unitPrice,
           quantityPurchased: item.quantityPurchased,
           quantityFree: item.quantityFree,
@@ -145,7 +177,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Create Order Number without race condition
+    // Create Order Number
     const orderNumber = `ORD-${Date.now()}-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
 
     // Initialize Razorpay Order via REST API (Basic Auth)
@@ -161,21 +193,20 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": authHeader
+        Authorization: authHeader,
       },
       body: JSON.stringify({
         amount: amountInPaise,
         currency: "INR",
         receipt: orderNumber,
-      })
+      }),
     });
 
     if (!rzpRes.ok) {
       const errorData = await rzpRes.json();
       console.error("Razorpay Error:", errorData);
-      // Remove idempotency key if external API fails, allowing retry
       if (idempotencyKey) {
-        const key = `checkout:${session.user.id}:${idempotencyKey}`;
+        const key = `checkout:${userIdentifier}:${idempotencyKey}`;
         idempotencyKeys.delete(key);
       }
       return NextResponse.json({ message: "Failed to initialize payment gateway" }, { status: 500 });
@@ -183,18 +214,18 @@ export async function POST(req: NextRequest) {
 
     const rzpOrder = await rzpRes.json();
 
-    // Create Order and Payment in Database atomically via nested create
+    // Create Order and Payment in Database atomically
     const order = await prisma.order.create({
       data: {
         orderNumber,
-        customerId: session.user.id,
+        customerId: session?.user?.id || null,
         status: OrderStatus.PENDING_PAYMENT,
         checkoutSource,
         subTotal: calculation.subTotal,
         discountTotal: calculation.discountTotal,
         shippingTotal: calculation.shippingTotal,
         totalAmount: calculation.totalAmount,
-        shippingAddress: address as any, // Snapshot
+        shippingAddress: shippingAddress as any, // Snapshot
         notes: notes || null,
         items: {
           create: orderItemsData,
@@ -203,9 +234,9 @@ export async function POST(req: NextRequest) {
           create: {
             razorpayOrderId: rzpOrder.id,
             amount: finalAmount,
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     return NextResponse.json({

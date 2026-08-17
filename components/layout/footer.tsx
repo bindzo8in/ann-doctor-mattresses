@@ -255,6 +255,16 @@ function MainFooterBlock() {
             <ul className="space-y-3 text-sm text-slate-400">
               <li>
                 <Link
+                  href={routes.trackOrder}
+                  className="hover:text-white transition-colors"
+                  scroll
+                >
+                  Track Your Order
+                </Link>
+              </li>
+
+              <li>
+                <Link
                   href={routes.help}
                   className="hover:text-white transition-colors"
                   scroll

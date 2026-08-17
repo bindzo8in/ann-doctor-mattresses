@@ -29,6 +29,7 @@ export const env = createEnv({
     // NEXT_PUBLIC_SITE_NAME: z.string(),
     NEXT_PUBLIC_APP_NAME: z.string(),
     NEXT_PUBLIC_SUPPORT_EMAIL: z.email(),
+    NEXT_PUBLIC_GA_ID: z.string(),
   },
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
@@ -51,6 +52,7 @@ export const env = createEnv({
     UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,
     NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
-    NEXT_PUBLIC_SUPPORT_EMAIL: process.env.NEXT_PUBLIC_SUPPORT_EMAIL
+    NEXT_PUBLIC_SUPPORT_EMAIL: process.env.NEXT_PUBLIC_SUPPORT_EMAIL,
+    NEXT_PUBLIC_GA_ID: process.env.NEXT_PUBLIC_GA_ID,
   },
 });
