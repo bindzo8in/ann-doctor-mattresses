@@ -78,7 +78,13 @@ export function ProductCard({
     <>
       {/* IMAGE */}
       <div className="relative aspect-4/3 overflow-hidden bg-muted shrink-0">
-        <Image src={image} alt={name} fill className="object-cover" sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
+        <Image 
+          src={image} 
+          alt={name} 
+          fill 
+          className="object-cover" 
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw" 
+        />
         {badge && (
           <div className="absolute right-3 top-3 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground">
             {badge}

@@ -47,8 +47,9 @@ export function ContactBlock() {
           <Image
             src="/logo.webp"
             className="object-contain w-auto h-16 md:h-20 lg:h-24"
-            width={1887}
-            height={512}
+            width={280}
+            height={76}
+            sizes="(max-width: 768px) 180px, 260px"
             alt="Ann Doctor Logo"
           />
         </Link>
@@ -58,7 +59,14 @@ export function ContactBlock() {
       <div className="w-full lg:w-[65%] xl:w-[70%] bg-[#222222] text-white py-8 lg:py-10 relative overflow-hidden flex items-center shadow-inner">
         {/* Large watermark logo */}
         <div className="absolute inset-0 opacity-10 pointer-events-none">
-          <Image src="/footer_bed.png" fill alt="" className="object-cover object-center" sizes="100vw" />
+          <Image 
+            src="/footer_bed.png" 
+            fill 
+            alt="" 
+            className="object-cover object-center" 
+            sizes="(max-width: 1024px) 100vw, 70vw" 
+            quality={60}
+          />
         </div>
 
         <div className="w-full px-6 sm:px-12 xl:px-16 relative z-10 max-w-6xl mx-auto">

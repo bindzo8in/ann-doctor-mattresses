@@ -12,52 +12,34 @@ import { env } from "@/env";
 const fontSans = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
 });
 
 const fontSerif = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-serif",
+  display: "swap",
 });
 
 const fontMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
+  display: "swap",
 });
 
 const montserrat = Montserrat({
   subsets: ["latin"],
   variable: "--font-montserrat",
   display: "swap",
-  weight: [
-    "100",
-    "200",
-    "300",
-    "400",
-    "500",
-    "600",
-    "700",
-    "800",
-    "900",
-  ],
-})
+  weight: ["400", "500", "600", "700"],
+});
 
 const montserratAlternates = Montserrat_Alternates({
   subsets: ["latin"],
   variable: "--font-montserrat-alternates",
   display: "swap",
-  weight: [
-    "100",
-    "200",
-    "300",
-    "400",
-    "500",
-    "600",
-    "700",
-    "800",
-    "900",
-  ],
+  weight: ["400", "600", "700"],
 });
-
 
 export const metadata: Metadata = {
   title: "Ann Doctor Mattresses",
@@ -67,15 +49,13 @@ export const metadata: Metadata = {
   }
 };
 
-
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   return (
-    <html lang="en" className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} ${montserratAlternates.variable} antialiased`}>
+    <html lang="en" className={`${fontSans.variable} ${fontSerif.variable} ${fontMono.variable} ${montserrat.variable} ${montserratAlternates.variable} antialiased`}>
       <body>
         <QueryProvider>
           <AppSessionProvider>

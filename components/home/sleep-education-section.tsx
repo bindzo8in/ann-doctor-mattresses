@@ -1,7 +1,31 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Layers, Wind, ShieldBan } from "lucide-react";
 
 export function SleepEducationSection() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldLoadVideo(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    if (videoRef.current) {
+      observer.observe(videoRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
   return (
     <section className="py-[80px] md:py-[120px] lg:py-[150px] bg-white font-montserrat">
       <div className="page-container">
@@ -10,22 +34,28 @@ export function SleepEducationSection() {
             {/* LEFT */}
             <div className="overflow-hidden rounded-3xl border border-slate-200 shadow-sm h-full">
               {/* Video */}
-              <div className="relative aspect-video">
+              <div className="relative aspect-video bg-slate-900">
                 <video
+                  ref={videoRef}
                   className="absolute inset-0 h-full w-full object-cover"
                   autoPlay
                   muted
                   loop
                   playsInline
+                  preload="none"
                 >
-                  <source
-                    src="/layers/mattresses-layers.mp4"
-                    type="video/mp4"
-                  />
-                  <source
-                    src="/layers/mattress-layers.webm"
-                    type="video/webm"
-                  />
+                  {shouldLoadVideo && (
+                    <>
+                      <source
+                        src="/layers/mattress-layers.webm"
+                        type="video/webm"
+                      />
+                      <source
+                        src="/layers/mattresses-layers.mp4"
+                        type="video/mp4"
+                      />
+                    </>
+                  )}
                   Your browser does not support the video tag.
                 </video>
               </div>
@@ -67,7 +97,6 @@ export function SleepEducationSection() {
                   fill
                   className="object-contain p-3 sm:p-4 md:p-6"
                   sizes="(max-width: 1024px) 100vw, 50vw"
-                  priority
                 />
               </div>
 

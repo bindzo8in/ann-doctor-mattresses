@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { routes } from "@/lib/routes";
 import { CartDrawer } from "@/components/cart/cart-drawer";
+import { useSession } from "@/lib/auth-client";
 
 const contactInfo = [
   { state: "TN", phone: "+91 70257 37666", href: "tel:+917025737666" },
@@ -23,6 +24,7 @@ const navLinks = [
 
 export default function NavBar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-sm border-b border-border shadow-sm">
@@ -32,8 +34,8 @@ export default function NavBar() {
           <Image
             src="/logo.webp"
             className="object-contain w-auto h-10"
-            width={1887}
-            height={512}
+            width={180}
+            height={48}
             alt="Ann Doctor Logo"
             priority
           />
@@ -93,8 +95,8 @@ export default function NavBar() {
             </Link>
             <CartDrawer />
             <Link
-              aria-label="Profile"
-              href={routes.profile}
+              aria-label={session?.user ? "Profile" : "Sign In"}
+              href={session?.user ? routes.profile : routes.login}
               className="p-2 rounded-md hover:bg-muted transition-colors"
               scroll
             >

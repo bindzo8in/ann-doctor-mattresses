@@ -4,16 +4,24 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, ShoppingBag, Heart, User, HelpCircle } from "lucide-react";
 
-const bottomNavItems = [
-  { label: "Home", href: "/", icon: Home },
-  { label: "Products", href: "/products", icon: ShoppingBag },
-  { label: "Wishlist", href: "/wishlist", icon: Heart },
-  { label: "Profile", href: "/profile", icon: User },
-  { label: "Help", href: "/help", icon: HelpCircle },
-];
+import { useSession } from "@/lib/auth-client";
+import { routes } from "@/lib/routes";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+
+  const bottomNavItems = [
+    { label: "Home", href: routes.home, icon: Home },
+    { label: "Products", href: routes.products, icon: ShoppingBag },
+    { label: "Wishlist", href: routes.wishlist, icon: Heart },
+    { 
+      label: session?.user ? "Profile" : "Account", 
+      href: session?.user ? routes.profile : routes.login, 
+      icon: User 
+    },
+    { label: "Help", href: routes.help, icon: HelpCircle },
+  ];
 
   return (
     /* Only visible on mobile, hidden md+ */
@@ -22,7 +30,7 @@ export default function MobileBottomNav() {
         {bottomNavItems.map(({ label, href, icon: Icon }) => {
           const active = pathname === href || (href !== "/" && pathname.startsWith(href));
           return (
-            <li key={href} className="relative flex-1">
+            <li key={label} className="relative flex-1">
               <Link
                 href={href}
                 aria-label={label}
