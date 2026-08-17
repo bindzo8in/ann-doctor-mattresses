@@ -7,6 +7,7 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { PushManager } from "@/components/notifications/push-manager";
 import { AppSessionProvider } from "@/components/providers/session-provider";
 import { GoogleAnalytics } from '@next/third-parties/google'
+import { env } from "@/env";
 
 const fontSans = Inter({
   subsets: ["latin"],
@@ -85,7 +86,7 @@ export default async function RootLayout({
             <PushManager />
           </AppSessionProvider>
         </QueryProvider>
-        <GoogleAnalytics gaId="G-LMHMP0TYL2" />
+        <GoogleAnalytics gaId={env.NEXT_PUBLIC_GA_ID} />
       </body>
     </html>
   );
