@@ -338,6 +338,14 @@ export default function Footer() {
     <footer>
       <ContactBlock />
       <MainFooterBlock />
+      
+      {/* Verification Text */}
+      <div className="w-full bg-[#111111] py-4 flex items-center justify-center border-t border-white/10">
+        <p className="text-white/60 text-xs sm:text-sm font-medium text-center px-4">
+          DOCTOR MATTRESSES a Unit of ANN INDUSTRIES Managed by RAJIV JOHN
+        </p>
+      </div>
+
       {/* Bottom Red Bar */}
       <div className="h-10 w-full bg-[#da251d] flex items-center justify-center">
         <p className="text-white text-xs sm:text-sm font-medium">
