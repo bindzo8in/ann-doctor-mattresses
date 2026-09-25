@@ -1,0 +1,15 @@
+services:
+  web:
+    image: ghcr.io/bindzo8in/ann-doctor-mattresses:latest
+    container_name: ann-doctor-mattresses
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    networks:
+      - web_network
+
+networks:
+  web_network:
+    external: true

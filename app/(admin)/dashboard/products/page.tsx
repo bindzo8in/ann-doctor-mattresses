@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { columns } from "./columns";
 import { DataTable } from "./data-table";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Products",
   description: "Manage products",

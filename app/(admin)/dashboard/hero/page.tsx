@@ -3,6 +3,8 @@ import { AlertCircle } from "lucide-react";
 import prisma from "@/lib/prisma";
 import { HeroTable } from "./hero-table";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Manage Hero Carousel",
 };

@@ -1,0 +1,249 @@
+name: Build & Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+
+          labels: |
+            ${{ steps.meta.outputs.labels }}
+
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+          secrets: |
+            AUTH_SECRET=${{ secrets.AUTH_SECRET }}
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
+            PRISMA_DATABASE_URL=${{ secrets.PRISMA_DATABASE_URL }}
+            SHADOW_DATABASE_URL=${{ secrets.SHADOW_DATABASE_URL }}
+            CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+            CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
+            CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
+            CLOUDINARY_URL=${{ secrets.CLOUDINARY_URL }}
+            NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
+            NEXT_PUBLIC_SITE_URL_2=${{ secrets.NEXT_PUBLIC_SITE_URL_2 }}
+            NEXT_PUBLIC_RAZORPAY_KEY_ID=${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
+            RAZORPAY_KEY_SECRET=${{ secrets.RAZORPAY_KEY_SECRET }}
+            RAZORPAY_WEBHOOK_SECRET=${{ secrets.RAZORPAY_WEBHOOK_SECRET }}
+            NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY=${{ secrets.NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY }}
+            WEB_PUSH_PRIVATE_KEY=${{ secrets.WEB_PUSH_PRIVATE_KEY }}
+            WEB_PUSH_EMAIL=${{ secrets.WEB_PUSH_EMAIL }}
+            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+            EMAIL_FROM=${{ secrets.EMAIL_FROM }}
+            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+            UPSTASH_REDIS_REST_URL=${{ secrets.UPSTASH_REDIS_REST_URL }}
+            UPSTASH_REDIS_REST_TOKEN=${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+            BETTER_AUTH_SECRET=${{ secrets.BETTER_AUTH_SECRET }}
+            BETTER_AUTH_URL=${{ secrets.BETTER_AUTH_URL }}
+            NEXT_PUBLIC_APP_NAME=${{ secrets.NEXT_PUBLIC_APP_NAME }}
+            NEXT_PUBLIC_SUPPORT_EMAIL=${{ secrets.NEXT_PUBLIC_SUPPORT_EMAIL }}
+            NEXT_PUBLIC_GA_ID=${{ secrets.NEXT_PUBLIC_GA_ID }}
+            AUTH_TRUST_HOST=${{ secrets.AUTH_TRUST_HOST }}
+            AUTH_URL=${{ secrets.AUTH_URL }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # --------------------------------------------------
+      # 1. Checkout repository
+      # --------------------------------------------------
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+
+      # --------------------------------------------------
+      # 2. Create VPS application directory
+      # --------------------------------------------------
+
+      - name: Prepare VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+
+          script: |
+            set -e
+
+            mkdir -p "$HOME/apps/ann-doctor-mattresses"
+
+            docker network inspect web_network >/dev/null 2>&1 || \
+              docker network create web_network
+
+
+      # --------------------------------------------------
+      # 3. Copy docker-compose.yml to VPS
+      # --------------------------------------------------
+
+      - name: Copy Docker Compose
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+
+          source: "docker-compose.yml"
+          target: "apps/ann-doctor-mattresses"
+
+
+      # --------------------------------------------------
+      # 4. Deploy
+      # --------------------------------------------------
+
+      - name: Deploy application
+        uses: appleboy/ssh-action@v1.0.3
+
+        env:
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          PRISMA_DATABASE_URL: ${{ secrets.PRISMA_DATABASE_URL }}
+          SHADOW_DATABASE_URL: ${{ secrets.SHADOW_DATABASE_URL }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
+          NEXT_PUBLIC_SITE_URL: ${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          NEXT_PUBLIC_SITE_URL_2: ${{ secrets.NEXT_PUBLIC_SITE_URL_2 }}
+          NEXT_PUBLIC_RAZORPAY_KEY_ID: ${{ secrets.NEXT_PUBLIC_RAZORPAY_KEY_ID }}
+          RAZORPAY_KEY_SECRET: ${{ secrets.RAZORPAY_KEY_SECRET }}
+          RAZORPAY_WEBHOOK_SECRET: ${{ secrets.RAZORPAY_WEBHOOK_SECRET }}
+          NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY }}
+          WEB_PUSH_PRIVATE_KEY: ${{ secrets.WEB_PUSH_PRIVATE_KEY }}
+          WEB_PUSH_EMAIL: ${{ secrets.WEB_PUSH_EMAIL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+          BETTER_AUTH_SECRET: ${{ secrets.BETTER_AUTH_SECRET }}
+          BETTER_AUTH_URL: ${{ secrets.BETTER_AUTH_URL }}
+          NEXT_PUBLIC_APP_NAME: ${{ secrets.NEXT_PUBLIC_APP_NAME }}
+          NEXT_PUBLIC_SUPPORT_EMAIL: ${{ secrets.NEXT_PUBLIC_SUPPORT_EMAIL }}
+          NEXT_PUBLIC_GA_ID: ${{ secrets.NEXT_PUBLIC_GA_ID }}
+          AUTH_TRUST_HOST: ${{ secrets.AUTH_TRUST_HOST }}
+          AUTH_URL: ${{ secrets.AUTH_URL }}
+
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+
+          envs: AUTH_SECRET,DATABASE_URL,PRISMA_DATABASE_URL,SHADOW_DATABASE_URL,CLOUDINARY_CLOUD_NAME,CLOUDINARY_API_KEY,CLOUDINARY_API_SECRET,CLOUDINARY_URL,NEXT_PUBLIC_SITE_URL,NEXT_PUBLIC_SITE_URL_2,NEXT_PUBLIC_RAZORPAY_KEY_ID,RAZORPAY_KEY_SECRET,RAZORPAY_WEBHOOK_SECRET,NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY,WEB_PUSH_PRIVATE_KEY,WEB_PUSH_EMAIL,RESEND_API_KEY,EMAIL_FROM,ADMIN_EMAIL,UPSTASH_REDIS_REST_URL,UPSTASH_REDIS_REST_TOKEN,BETTER_AUTH_SECRET,BETTER_AUTH_URL,NEXT_PUBLIC_APP_NAME,NEXT_PUBLIC_SUPPORT_EMAIL,NEXT_PUBLIC_GA_ID,AUTH_TRUST_HOST,AUTH_URL
+
+          script: |
+            set -e
+
+            mkdir -p "$HOME/apps/ann-doctor-mattresses"
+
+            cd "$HOME/apps/ann-doctor-mattresses"
+
+            echo "Logging into GHCR..."
+
+            echo "$GHCR_TOKEN" | docker login ghcr.io \
+              -u "$GHCR_USERNAME" \
+              --password-stdin
+
+            echo "Creating production .env..."
+
+            cat > .env <<EOF
+            AUTH_SECRET=$AUTH_SECRET
+            DATABASE_URL=$DATABASE_URL
+            PRISMA_DATABASE_URL=$PRISMA_DATABASE_URL
+            SHADOW_DATABASE_URL=$SHADOW_DATABASE_URL
+            CLOUDINARY_CLOUD_NAME=$CLOUDINARY_CLOUD_NAME
+            CLOUDINARY_API_KEY=$CLOUDINARY_API_KEY
+            CLOUDINARY_API_SECRET=$CLOUDINARY_API_SECRET
+            CLOUDINARY_URL=$CLOUDINARY_URL
+            NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+            NEXT_PUBLIC_SITE_URL_2=$NEXT_PUBLIC_SITE_URL_2
+            NEXT_PUBLIC_RAZORPAY_KEY_ID=$NEXT_PUBLIC_RAZORPAY_KEY_ID
+            RAZORPAY_KEY_SECRET=$RAZORPAY_KEY_SECRET
+            RAZORPAY_WEBHOOK_SECRET=$RAZORPAY_WEBHOOK_SECRET
+            NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY=$NEXT_PUBLIC_WEB_PUSH_PUBLIC_KEY
+            WEB_PUSH_PRIVATE_KEY=$WEB_PUSH_PRIVATE_KEY
+            WEB_PUSH_EMAIL=$WEB_PUSH_EMAIL
+            RESEND_API_KEY=$RESEND_API_KEY
+            EMAIL_FROM=$EMAIL_FROM
+            ADMIN_EMAIL=$ADMIN_EMAIL
+            UPSTASH_REDIS_REST_URL=$UPSTASH_REDIS_REST_URL
+            UPSTASH_REDIS_REST_TOKEN=$UPSTASH_REDIS_REST_TOKEN
+            BETTER_AUTH_URL=$BETTER_AUTH_URL
+            BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET
+            NEXT_PUBLIC_APP_NAME=$NEXT_PUBLIC_APP_NAME
+            NEXT_PUBLIC_SUPPORT_EMAIL=$NEXT_PUBLIC_SUPPORT_EMAIL
+            NEXT_PUBLIC_GA_ID=$NEXT_PUBLIC_GA_ID
+            AUTH_TRUST_HOST=$AUTH_TRUST_HOST
+            AUTH_URL=$AUTH_URL
+            EOF
+
+            echo "Pulling latest Docker image..."
+
+            docker compose pull
+
+            echo "Starting application..."
+
+            docker compose up -d
+
+            echo "Running Prisma migrations..."
+
+            docker compose exec -T web prisma migrate deploy
+
+            echo "Cleaning old Docker images..."
+
+            docker image prune -f
+
+            echo "Deployment completed."
+
+            docker compose ps
