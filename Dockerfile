@@ -77,7 +77,7 @@ RUN --mount=type=secret,id=AUTH_SECRET,env=AUTH_SECRET \
     --mount=type=secret,id=NEXT_PUBLIC_SUPPORT_EMAIL,env=NEXT_PUBLIC_SUPPORT_EMAIL \
     --mount=type=secret,id=NEXT_PUBLIC_GA_ID,env=NEXT_PUBLIC_GA_ID \
     --mount=type=secret,id=AUTH_TRUST_HOST,env=AUTH_TRUST_HOST \
-    --mount=type=secret,id=AUTH_URL,env=AUTH_URL
+    --mount=type=secret,id=AUTH_URL,env=AUTH_URL \
     pnpm run build
 
 
