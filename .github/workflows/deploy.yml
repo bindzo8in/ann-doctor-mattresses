@@ -191,8 +191,11 @@ jobs:
 
             echo "Logging into GHCR..."
 
-            echo "$GHCR_TOKEN" | docker login ghcr.io \
-              -u "$GHCR_USERNAME" \
+            # echo "$GHCR_TOKEN" | docker login ghcr.io \
+            #   -u "$GHCR_USERNAME" \
+            #   --password-stdin
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
+              -u "${{ github.actor }}" \
               --password-stdin
 
             echo "Creating production .env..."
