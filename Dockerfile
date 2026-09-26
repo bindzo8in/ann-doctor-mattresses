@@ -53,7 +53,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN --mount=type=secret,id=AUTH_SECRET,env=AUTH_SECRET \
     --mount=type=secret,id=DATABASE_URL,env=DATABASE_URL \
     --mount=type=secret,id=PRISMA_DATABASE_URL,env=PRISMA_DATABASE_URL \
-    --mount=type=secret,id=SHADOW_DATABASE_URL,env=SHADOW_DATABASE_URL \
     --mount=type=secret,id=CLOUDINARY_CLOUD_NAME,env=CLOUDINARY_CLOUD_NAME \
     --mount=type=secret,id=CLOUDINARY_API_KEY,env=CLOUDINARY_API_KEY \
     --mount=type=secret,id=CLOUDINARY_API_SECRET,env=CLOUDINARY_API_SECRET \
