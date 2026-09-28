@@ -194,15 +194,37 @@ export default function HomeHeroSection({
                 />
               </>
             ) : (
-              <Image
-                src={banner.backgroundImageUrl}
-                alt={banner.title}
-                fill
-                priority={idx === 0}
-                className={`w-full ${banner.type === "STATIC" ? "object-cover object-top" : "object-cover object-center"}`}
-                sizes="100vw"
-                style={{ opacity: banner.type === "STATIC" ? 1 : 0.55 }}
-              />
+              <div className="absolute inset-0 overflow-hidden">
+  {/* Ambient blurred background */}
+  <Image
+    src={banner.backgroundImageUrl}
+    alt=""
+    fill
+    aria-hidden="true"
+    className="scale-110 object-cover opacity-50 blur-3xl"
+    sizes="100vw"
+  />
+
+  {/* Dark overlay */}
+  <div className="absolute inset-0 bg-black/30" />
+
+  {/* Main image */}
+  <Image
+    src={banner.backgroundImageUrl}
+    alt={banner.title}
+    fill
+    priority={idx === 0}
+    className={`w-full ${
+      banner.type === "STATIC"
+        ? "object-contain object-top"
+        : "object-cover object-center"
+    }`}
+    sizes="100vw"
+    style={{
+      opacity: banner.type === "STATIC" ? 1 : 0.55,
+    }}
+  />
+</div>
             )}
           </div>
         );
